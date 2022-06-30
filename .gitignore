@@ -34,3 +34,4 @@
 # xmake folders
 .xmake/*
 vsxmake2019/*
+build/*

@@ -4,6 +4,7 @@ add_rules("mode.debug", "mode.release")
 add_rules("plugin.vsxmake.autoupdate")
 
 add_includedirs("include")
+add_headerfiles("include/**.hpp", "include/**.inl")
 add_files("src/**.cpp")
 
 set_languages("cxx17")

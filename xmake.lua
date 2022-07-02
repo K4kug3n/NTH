@@ -10,6 +10,14 @@ add_files("src/**.cpp")
 set_languages("cxx17")
 set_warnings("allextra")
 
+if is_plat("linux") then
+	add_defines("NTH_UNIX", "VK_USE_PLATFORM_XLIB_KHR")
+end
+
+if is_plat("windows") then
+	add_defines("NTH_WINDOWS", "VK_USE_PLATFORM_WIN32_KHR")
+end
+
 target("basic_render")
 	add_defines("VK_NO_PROTOTYPES")
 

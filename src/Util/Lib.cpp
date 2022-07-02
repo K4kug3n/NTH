@@ -21,10 +21,12 @@ namespace Nth{
 	}
 
 	bool Lib::load(std::filesystem::path const& path){
-		#if defined _WIN32
+		#if defined(_WIN32)
 			m_handle = LoadLibrary(path.generic_u8string().c_str());
-		#elif defined __unix__
+		#elif defined(__unix__)
 			m_handle = dlopen(path.c_str(), RTLD_NOW);
+		#else
+			#error "OS not supported"
 		#endif
 
 		if (!m_handle) {
@@ -44,6 +46,8 @@ namespace Nth{
 			return reinterpret_cast<LibFunction>(GetProcAddress(m_handle, name.data()));
 		#elif defined __unix__
 			return reinterpret_cast<LibFunction>(dlsym(m_handle, name.c_str()));
+		#else
+			#error "OS not supported"
 		#endif
 	}
 

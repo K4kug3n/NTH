@@ -1,4 +1,4 @@
-#include "Renderer/Loader.hpp"
+#include "Renderer/VulkanLoader.hpp"
 
 #include "Util/String.hpp"
 #include "Renderer/VkUtil.hpp"
@@ -10,7 +10,7 @@ namespace Nth {
 	
 	Lib VulkanLoader::m_vulkan;
 	PFN_vkGetInstanceProcAddr VulkanLoader::vkGetInstanceProcAddr = nullptr;
-	#define NTH_GLOBAL_FUNCTION(fun) PFN_##fun Loader::fun = nullptr;
+	#define NTH_GLOBAL_FUNCTION(fun) PFN_##fun VulkanLoader::fun = nullptr;
 	#define NTH_GLOBAL_FUNCTION_OPTIONAL(fun) NTH_GLOBAL_FUNCTION(fun)
 	#include "Renderer/GlobalFunctions.inl"
 

@@ -1,6 +1,6 @@
 #include "Renderer/VulkanInstance.hpp"
 
-#include "Renderer/Loader.hpp"
+#include "Renderer/VulkanLoader.hpp"
 #include "Renderer/Surface.hpp"
 #include "Renderer/PhysicalDevice.hpp"
 
@@ -20,17 +20,17 @@ namespace Nth {
 
 		m_classInstance = this;
 
-		if (!Loader::initialize()) {
+		if (!VulkanLoader::initialize()) {
 			throw std::runtime_error("Can't load Vulkan");
 		}
 
 		uint32_t supportedApi{ VK_MAKE_VERSION(1, 0, 0) };
-		if (Loader::vkEnumerateInstanceVersion) {
-			Loader::vkEnumerateInstanceVersion(&supportedApi);
+		if (VulkanLoader::vkEnumerateInstanceVersion) {
+			VulkanLoader::vkEnumerateInstanceVersion(&supportedApi);
 		}
 
 		std::unordered_set<std::string> availableLayer{};
-		for (VkLayerProperties const& layerProp : Loader::enumerateLayerProperties()) {
+		for (VkLayerProperties const& layerProp : VulkanLoader::enumerateLayerProperties()) {
 			availableLayer.insert(layerProp.layerName);
 		}
 

@@ -132,7 +132,7 @@ namespace Nth {
 		};
 
 		m_device = std::make_shared<Device>(m_instance);
-		if (!m_device->create(physicalDevice, deviceCreateInfo, presentQueueFamilyIndex, graphicsQueueFamilyIndex)) {
+		if (!m_device->create(std::move(physicalDevice), deviceCreateInfo, presentQueueFamilyIndex, graphicsQueueFamilyIndex)) {
 			std::cerr << "Error : Canno't create device" << std::endl;
 			return {};
 		}

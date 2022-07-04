@@ -19,7 +19,6 @@ namespace Nth {
 		~Surface();
 
 		bool create(WindowHandle const& infos);
-		//void destroy();
 
 		bool getPhysicalDeviceSurfaceSupport(PhysicalDevice const& device, uint32_t queueFamilyIndex, bool & supported) const;
 		bool getCapabilities(PhysicalDevice const& physicalDevice, VkSurfaceCapabilitiesKHR & capabilities) const;

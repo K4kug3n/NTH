@@ -11,6 +11,9 @@ namespace Nth {
 	Device::Device(Instance const& instance) :
 		m_device{ VK_NULL_HANDLE },
 		m_physicalDevice{ nullptr },
+		m_graphicQueueFamilyIndex{ UINT32_MAX },
+		m_presentQueueFamilyIndex{ UINT32_MAX },
+		m_allocator{ VK_NULL_HANDLE },
 		m_instance{ instance } {
 
 		#define NTH_DEVICE_FUNCTION(fun) fun = nullptr;
@@ -26,16 +29,16 @@ namespace Nth {
 		}
 	}
 
-	bool Device::create(PhysicalDevice const& physicalDevice, VkDeviceCreateInfo const& infos, uint32_t presentQueueFamilyIndex, uint32_t graphicQueueFamilyIndex) {
-		VkResult result{ m_instance.vkCreateDevice(physicalDevice(), &infos, nullptr, &m_device) };
+	bool Device::create(PhysicalDevice physicalDevice, VkDeviceCreateInfo const& infos, uint32_t presentQueueFamilyIndex, uint32_t graphicQueueFamilyIndex) {
+		m_physicalDevice = std::make_unique<PhysicalDevice>(std::move(physicalDevice));
+		m_presentQueueFamilyIndex = presentQueueFamilyIndex;
+		m_graphicQueueFamilyIndex = graphicQueueFamilyIndex;
+
+		VkResult result{ m_instance.vkCreateDevice((*m_physicalDevice)(), &infos, nullptr, &m_device) };
 		if (result != VkResult::VK_SUCCESS) {
 			std::cerr << "Error: Can't create device, " + toString(result) << std::endl;
 			return false;
 		}
-
-		m_physicalDevice = &physicalDevice;
-		m_presentQueueFamilyIndex = presentQueueFamilyIndex;
-		m_graphicQueueFamilyIndex = graphicQueueFamilyIndex;
 
 		for (uint32_t i{ 0 }; i < infos.enabledExtensionCount; ++i) {
 			m_extensions.emplace(infos.ppEnabledExtensionNames[i]);
@@ -79,7 +82,7 @@ namespace Nth {
 
 		VmaAllocatorCreateInfo allocatorInfo = {};
 		allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_0;
-		allocatorInfo.physicalDevice = physicalDevice();
+		allocatorInfo.physicalDevice = (*m_physicalDevice)();
 		allocatorInfo.device = m_device;
 		allocatorInfo.instance = m_instance();
 		allocatorInfo.pVulkanFunctions = &vulkanFunctions;

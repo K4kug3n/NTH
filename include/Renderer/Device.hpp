@@ -9,6 +9,7 @@
 #include <vulkan/vulkan.h>
 
 #include <unordered_set>
+#include <memory>
 #include <string>
 
 namespace Nth {
@@ -22,7 +23,7 @@ namespace Nth {
 		Device(Device&&) = delete;
 		~Device();
 
-		bool create(PhysicalDevice const& physicalDevice, VkDeviceCreateInfo const& infos, uint32_t presentQueueFamilyIndex, uint32_t graphicQueueFamilyIndex);
+		bool create(PhysicalDevice physicalDevice, VkDeviceCreateInfo const& infos, uint32_t presentQueueFamilyIndex, uint32_t graphicQueueFamilyIndex);
 
 		bool isValid() const;
 		bool isLoadedExtension(std::string const& name) const;
@@ -47,7 +48,7 @@ namespace Nth {
 		PFN_vkVoidFunction loadDeviceFunction(const char* name);
 
 		VkDevice m_device;
-		PhysicalDevice const* m_physicalDevice;
+		std::unique_ptr<PhysicalDevice> m_physicalDevice;
 		uint32_t m_presentQueueFamilyIndex;
 		uint32_t m_graphicQueueFamilyIndex;
 		Instance const& m_instance;

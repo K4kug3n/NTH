@@ -15,13 +15,13 @@ namespace Nth {
 	#include "Renderer/GlobalFunctions.inl"
 
 	bool VulkanLoader::initialize() {
-	#if defined(_WIN32)
+		#if defined(_WIN32)
 		m_vulkan.load("vulkan-1.dll");
-	#elif defined(__unix__)
+		#elif defined(__unix__)
 		m_vulkan.load("libvulkan.so");
-	#else
+		#else
 		#error "OS not supported"
-	#endif
+		#endif
 
 		if (!m_vulkan.isValid()) {
 			std::cerr << "Error: Can't load Vulkan" << std::endl;

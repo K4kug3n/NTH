@@ -17,7 +17,7 @@ namespace Nth {
 		PhysicalDevice(Instance const& instance, VkPhysicalDevice const& physicalDevice);
 		PhysicalDevice() = delete;
 		PhysicalDevice(PhysicalDevice const&) = delete;
-		PhysicalDevice(PhysicalDevice&&) = default;
+		PhysicalDevice(PhysicalDevice&&) noexcept = default;
 		~PhysicalDevice() = default;
 
 		VkPhysicalDeviceProperties getProperties() const;

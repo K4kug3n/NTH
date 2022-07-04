@@ -1,0 +1,97 @@
+
+#if !defined(NTH_DEVICE_FUNCTION)
+#define NTH_DEVICE_FUNCTION( fun )
+#endif
+
+#if !defined(NTH_DEVICE_EXT_FUNCTION_BEGIN)
+#define NTH_DEVICE_EXT_FUNCTION_BEGIN(ext)
+#endif
+
+#if !defined(NTH_DEVICE_EXT_FUNCTION_END)
+#define NTH_DEVICE_EXT_FUNCTION_END()
+#endif
+
+
+NTH_DEVICE_FUNCTION(vkGetDeviceQueue)
+NTH_DEVICE_FUNCTION(vkDeviceWaitIdle)
+NTH_DEVICE_FUNCTION(vkDestroyDevice)
+
+NTH_DEVICE_FUNCTION(vkCreateSemaphore)
+NTH_DEVICE_FUNCTION(vkCreateCommandPool)
+NTH_DEVICE_FUNCTION(vkAllocateCommandBuffers)
+NTH_DEVICE_FUNCTION(vkBeginCommandBuffer)
+NTH_DEVICE_FUNCTION(vkCmdPipelineBarrier)
+NTH_DEVICE_FUNCTION(vkCmdClearColorImage)
+NTH_DEVICE_FUNCTION(vkEndCommandBuffer)
+NTH_DEVICE_FUNCTION(vkQueueSubmit)
+NTH_DEVICE_FUNCTION(vkFreeCommandBuffers)
+NTH_DEVICE_FUNCTION(vkDestroyCommandPool)
+NTH_DEVICE_FUNCTION(vkDestroySemaphore)
+
+NTH_DEVICE_EXT_FUNCTION_BEGIN(VK_KHR_swapchain)
+	NTH_DEVICE_FUNCTION(vkCreateSwapchainKHR)
+	NTH_DEVICE_FUNCTION(vkGetSwapchainImagesKHR)
+	NTH_DEVICE_FUNCTION(vkAcquireNextImageKHR)
+	NTH_DEVICE_FUNCTION(vkQueuePresentKHR)
+	NTH_DEVICE_FUNCTION(vkDestroySwapchainKHR)
+NTH_DEVICE_EXT_FUNCTION_END()
+
+NTH_DEVICE_FUNCTION(vkCreateImageView)
+NTH_DEVICE_FUNCTION(vkCreateRenderPass)
+NTH_DEVICE_FUNCTION(vkCreateFramebuffer)
+NTH_DEVICE_FUNCTION(vkCreateShaderModule)
+NTH_DEVICE_FUNCTION(vkCreatePipelineLayout)
+NTH_DEVICE_FUNCTION(vkCreateGraphicsPipelines)
+NTH_DEVICE_FUNCTION(vkCmdBeginRenderPass)
+NTH_DEVICE_FUNCTION(vkCmdBindPipeline)
+NTH_DEVICE_FUNCTION(vkCmdDraw)
+NTH_DEVICE_FUNCTION(vkCmdDrawIndexed)
+NTH_DEVICE_FUNCTION(vkCmdEndRenderPass)
+NTH_DEVICE_FUNCTION(vkDestroyShaderModule)
+NTH_DEVICE_FUNCTION(vkDestroyPipelineLayout)
+NTH_DEVICE_FUNCTION(vkDestroyPipeline)
+NTH_DEVICE_FUNCTION(vkDestroyRenderPass)
+NTH_DEVICE_FUNCTION(vkDestroyFramebuffer)
+NTH_DEVICE_FUNCTION(vkDestroyImageView)
+
+NTH_DEVICE_FUNCTION(vkCreateFence)
+NTH_DEVICE_FUNCTION(vkCreateBuffer)
+NTH_DEVICE_FUNCTION(vkGetBufferMemoryRequirements)
+NTH_DEVICE_FUNCTION(vkAllocateMemory)
+NTH_DEVICE_FUNCTION(vkBindBufferMemory)
+NTH_DEVICE_FUNCTION(vkMapMemory)
+NTH_DEVICE_FUNCTION(vkFlushMappedMemoryRanges)
+NTH_DEVICE_FUNCTION(vkInvalidateMappedMemoryRanges)
+NTH_DEVICE_FUNCTION(vkUnmapMemory)
+NTH_DEVICE_FUNCTION(vkCmdSetViewport)
+NTH_DEVICE_FUNCTION(vkCmdSetScissor)
+NTH_DEVICE_FUNCTION(vkCmdBindVertexBuffers)
+NTH_DEVICE_FUNCTION(vkCmdBindIndexBuffer)
+NTH_DEVICE_FUNCTION(vkCmdPushConstants)
+NTH_DEVICE_FUNCTION(vkResetCommandPool)
+NTH_DEVICE_FUNCTION(vkWaitForFences)
+NTH_DEVICE_FUNCTION(vkResetFences)
+NTH_DEVICE_FUNCTION(vkFreeMemory)
+NTH_DEVICE_FUNCTION(vkDestroyBuffer)
+NTH_DEVICE_FUNCTION(vkDestroyFence)
+
+NTH_DEVICE_FUNCTION(vkCmdCopyBuffer)
+
+NTH_DEVICE_FUNCTION(vkCreateImage)
+NTH_DEVICE_FUNCTION(vkGetImageMemoryRequirements)
+NTH_DEVICE_FUNCTION(vkBindImageMemory)
+NTH_DEVICE_FUNCTION(vkCreateSampler)
+NTH_DEVICE_FUNCTION(vkCmdCopyBufferToImage)
+NTH_DEVICE_FUNCTION(vkCreateDescriptorSetLayout)
+NTH_DEVICE_FUNCTION(vkCreateDescriptorPool)
+NTH_DEVICE_FUNCTION(vkAllocateDescriptorSets)
+NTH_DEVICE_FUNCTION(vkUpdateDescriptorSets)
+NTH_DEVICE_FUNCTION(vkCmdBindDescriptorSets)
+NTH_DEVICE_FUNCTION(vkDestroyDescriptorPool)
+NTH_DEVICE_FUNCTION(vkDestroyDescriptorSetLayout)
+NTH_DEVICE_FUNCTION(vkDestroySampler)
+NTH_DEVICE_FUNCTION(vkDestroyImage)
+
+#undef NTH_DEVICE_FUNCTION
+#undef NTH_DEVICE_EXT_FUNCTION_BEGIN
+#undef NTH_DEVICE_EXT_FUNCTION_END

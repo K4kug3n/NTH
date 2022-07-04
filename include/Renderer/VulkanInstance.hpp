@@ -25,7 +25,7 @@ namespace Nth {
 
 		static bool isInitialized();
 
-		std::shared_ptr<Device> createDevice(Surface & surface);
+		std::shared_ptr<Device> createDevice(Surface& surface);
 
 		Instance& getInstance();
 		std::shared_ptr<Device>& getDevice();
@@ -34,11 +34,9 @@ namespace Nth {
 		VulkanInstance& operator=(VulkanInstance&&) = delete;
 
 		static VulkanInstance* instance();
-		/*static constexpr uint32_t ViewShaderBindingSet = 0;
-		static constexpr uint32_t ObjectShaderBindingSet = 1;
-		static constexpr uint32_t TextureShaderBindingSet = 2;*/
+
 	private:
-		bool checkPhysicalDeviceProperties(PhysicalDevice& physicalDevice, Surface & surface, uint32_t & graphicsQueueFamilyIndex, uint32_t & presentQueueFamilyIndex);
+		bool checkPhysicalDeviceProperties(PhysicalDevice& physicalDevice, Surface& surface, uint32_t& graphicsQueueFamilyIndex, uint32_t& presentQueueFamilyIndex);
 
 		Instance m_instance;
 		std::shared_ptr<Device> m_device;

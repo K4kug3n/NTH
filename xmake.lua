@@ -10,6 +10,8 @@ add_files("src/**.cpp")
 set_languages("cxx17")
 set_warnings("allextra")
 
+add_defines("VK_NO_PROTOTYPES")
+
 if is_plat("linux") then
 	add_defines("NTH_UNIX", "VK_USE_PLATFORM_XLIB_KHR")
 end
@@ -19,8 +21,6 @@ if is_plat("windows") then
 end
 
 target("basic_render")
-	add_defines("VK_NO_PROTOTYPES")
-
 	add_files("exemples/basic_render/main.cpp")
 
 	add_packages("vulkan-memory-allocator", "vulkan-headers", "libsdl", "tinyobjloader", "stb")
@@ -29,4 +29,4 @@ target("basic_render")
 target("test")
 	add_files("tests/**.cpp")
 
-	add_packages("catch2")
+	add_packages("catch2", "vulkan-memory-allocator", "vulkan-headers", "libsdl", "tinyobjloader", "stb")

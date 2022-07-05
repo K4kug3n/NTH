@@ -60,7 +60,7 @@ namespace Nth {
 			return false;
 		}
 
-		VmaVulkanFunctions vulkanFunctions = {
+		/*VmaVulkanFunctions vulkanFunctions = {
 			m_instance.vkGetPhysicalDeviceProperties,
 			m_instance.vkGetPhysicalDeviceMemoryProperties,
 			vkAllocateMemory,
@@ -78,7 +78,26 @@ namespace Nth {
 			vkCreateImage,
 			vkDestroyImage,
 			vkCmdCopyBuffer
-		};
+		};*/
+
+		VmaVulkanFunctions vulkanFunctions{};
+		vulkanFunctions.vkGetPhysicalDeviceProperties = m_instance.vkGetPhysicalDeviceProperties;
+		vulkanFunctions.vkGetPhysicalDeviceMemoryProperties = m_instance.vkGetPhysicalDeviceMemoryProperties;
+		vulkanFunctions.vkAllocateMemory = vkAllocateMemory;
+		vulkanFunctions.vkFreeMemory = vkFreeMemory;
+		vulkanFunctions.vkMapMemory = vkMapMemory;
+		vulkanFunctions.vkUnmapMemory = vkUnmapMemory;
+		vulkanFunctions.vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges;
+		vulkanFunctions.vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges;
+		vulkanFunctions.vkBindBufferMemory = vkBindBufferMemory;
+		vulkanFunctions.vkBindImageMemory = vkBindImageMemory;
+		vulkanFunctions.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements;
+		vulkanFunctions.vkGetImageMemoryRequirements = vkGetImageMemoryRequirements;
+		vulkanFunctions.vkCreateBuffer = vkCreateBuffer;
+		vulkanFunctions.vkDestroyBuffer = vkDestroyBuffer;
+		vulkanFunctions.vkCreateImage = vkCreateImage;
+		vulkanFunctions.vkDestroyImage = vkDestroyImage;
+		vulkanFunctions.vkCmdCopyBuffer = vkCmdCopyBuffer;
 
 		VmaAllocatorCreateInfo allocatorInfo = {};
 		allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_0;

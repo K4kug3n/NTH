@@ -5,8 +5,6 @@
 
 #include <vulkan/vulkan.h>
 
-#include "Renderer/ImageView.hpp"
-
 #include <vector>
 
 namespace Nth {
@@ -35,12 +33,7 @@ namespace Nth {
 
 		Swapchain& operator=(Swapchain const&) = delete;
 		Swapchain& operator=(Swapchain&& object) noexcept;
-
-		struct ImageParameters {
-			VkImage image;
-			ImageView view;
-		};
-
+		
 	private:
 		VkSwapchainKHR m_swapchain;
 		VkFormat m_format;

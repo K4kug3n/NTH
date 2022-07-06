@@ -42,7 +42,7 @@ namespace Nth {
 			return false;
 		}
 
-		if (!m_surface.create(getHandle())) {
+		if (!m_surface.create(gNTHandle())) {
 			std::cerr << "Error: Can't create surface" << std::endl;
 			return false;
 		}
@@ -699,7 +699,7 @@ namespace Nth {
 
 	VkPresentModeKHR RenderWindow::getSwapchainPresentMode(std::vector<VkPresentModeKHR> const& presentModes) const {
 		// FIFO present mode is always available
-		// MAILBOX is the lowest latency V-Sync enabled mode (something like triple-buffering) so use it if available
+		// MAILBOX is the lowest latency V-Sync enabled mode (somNTHing like triple-buffering) so use it if available
 		for (VkPresentModeKHR const& presentMode : presentModes) {
 			if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
 				return presentMode;

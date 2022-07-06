@@ -1,8 +1,8 @@
-name: Window-Build
+name: Linux-Build
 on: [push]
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Get project
         uses: actions/checkout@v3

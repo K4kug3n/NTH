@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef ETH_EVENTHANDLER_HPP
-#define ETH_EVENTHANDLER_HPP
+#ifndef NTH_EVENTHANDLER_HPP
+#define NTH_EVENTHANDLER_HPP
 
 #include "Util/Signal.hpp"
 #include "Window/WindowEvent.hpp"

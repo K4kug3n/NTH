@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef ETH_WINDOWEVENT_HPP
-#define ETH_WINDOWEVENT_HPP
+#ifndef NTH_WINDOWEVENT_HPP
+#define NTH_WINDOWEVENT_HPP
 
 #include <SDL2/SDL_events.h>
 

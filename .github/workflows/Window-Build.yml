@@ -4,8 +4,16 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: xmake-io/github-action-setup-xmake@v1
+      - name: Checkout project
+        uses: actions/checkout@v3
+
+      - name: Install xmake
+        uses: xmake-io/github-action-setup-xmake@v1
         with:
           xmake-version: latest
-      - run: xmake build --yes
+
+      - name: Build all targets
+        run: xmake build --yes
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2

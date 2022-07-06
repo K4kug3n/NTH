@@ -55,8 +55,8 @@ jobs:
 
     - name: build
       uses: xmake-io/github-action-setup-xmake@v1
-        with:
-          xmake-version: latest
+      with:
+        xmake-version: latest
       run: xmake build --yes
 
     - name: Perform CodeQL Analysis

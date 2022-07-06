@@ -14,6 +14,3 @@ jobs:
 
       - name: Build all targets
         run: xmake build --yes
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2

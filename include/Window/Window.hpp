@@ -37,7 +37,7 @@ namespace Nth {
 
 		Vector2ui size() const;
 		EventHandler& getEventHandler();
-		WindowHandle getHandle() const;
+		WindowHandle gNTHandle() const;
 
 	private:
 		static int handleInput(void* userdata, SDL_Event* event);

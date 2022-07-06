@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef ETH_VIDEOMODE_HPP
-#define ETH_VIDEOMODE_HPP
+#ifndef NTH_VIDEOMODE_HPP
+#define NTH_VIDEOMODE_HPP
 
 #include <vector>
 

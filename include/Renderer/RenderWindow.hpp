@@ -12,6 +12,11 @@
 #include "Renderer/Semaphore.hpp"
 #include "Renderer/CommandPool.hpp"
 #include "Renderer/CommandBuffer.hpp"
+#include "Renderer/RenderPass.hpp"
+#include "Renderer/Framebuffer.hpp"
+#include "Renderer/ShaderModule.hpp"
+#include "Renderer/PipelineLayout.hpp"
+#include "Renderer/Pipeline.hpp"
 
 #include "Math/Vector2.hpp"
 
@@ -28,7 +33,7 @@ namespace Nth {
 		~RenderWindow();
 
 		bool create(VideoMode const& mode, std::string const& title);
-		void draw();
+		bool draw();
 
 		RenderWindow& operator=(RenderWindow const&) = delete;
 		RenderWindow& operator=(RenderWindow&&) = default;
@@ -37,6 +42,9 @@ namespace Nth {
 		bool createSwapchain();
 		bool createCommandBuffers();
 		bool recordCommandBuffers();
+		bool createRenderPass();
+		bool createFrameBuffers();
+		bool createPipeline();
 		void onWindowSizeChanged();
 
 		VkSurfaceFormatKHR getSwapchainFormat(std::vector<VkSurfaceFormatKHR> const& surfaceFormats) const;
@@ -45,6 +53,8 @@ namespace Nth {
 		VkImageUsageFlags getSwapchainUsageFlags(VkSurfaceCapabilitiesKHR const& capabilities) const;
 		VkSurfaceTransformFlagBitsKHR getSwapchainTransform(VkSurfaceCapabilitiesKHR const& capabilities) const;
 		VkPresentModeKHR getSwapchainPresentMode(std::vector<VkPresentModeKHR> const& presentModes) const;
+		ShaderModule createShaderModule(std::string const& filename) const;
+		PipelineLayout createPipelineLayout();
 
 		VulkanInstance& m_vulkanInstance;
 		Surface m_surface;
@@ -53,9 +63,12 @@ namespace Nth {
 		Queue m_graphicsQueue;
 		Semaphore m_imageAvailableSemaphore;
 		Semaphore m_renderingFinishedSemaphore;
-		CommandPool m_presentQueueCommandPool;
-		std::vector<CommandBuffer> m_presentQueueCmdBuffers;
-
+		CommandPool m_graphicCommandPool;
+		std::vector<CommandBuffer> m_graphicsCmdBuffers;
+		std::vector<Framebuffer> m_framebuffers;
+		RenderPass m_renderPass;
+		Pipeline m_graphicPipeline;
+		
 		Vector2ui m_swapchainSize;
 	};
 }

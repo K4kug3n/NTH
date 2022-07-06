@@ -3,6 +3,8 @@
 #ifndef NTH_SWAPCHAIN_HPP
 #define NTH_SWAPCHAIN_HPP
 
+#include "Renderer/ImageView.hpp"
+
 #include <vulkan/vulkan.h>
 
 #include <vector>
@@ -11,10 +13,13 @@ namespace Nth {
 	class Device;
 	class Semaphore;
 
+	struct SwapchainImage {
+		VkImage image;
+		ImageView view;
+	};
+
 	class Swapchain {
 	public:
-		struct ImageParameters;
-
 		Swapchain();
 		Swapchain(Swapchain const&) = delete;
 		Swapchain(Swapchain&& object) noexcept;
@@ -27,9 +32,9 @@ namespace Nth {
 
 		VkFormat getFormat() const;
 		uint32_t getImageCount() const;
-		std::vector<VkImage> getImages() const;
+		std::vector<SwapchainImage> const& getImages() const;
 
-		VkSwapchainKHR const& operator()() const;
+		VkSwapchainKHR operator()() const;
 
 		Swapchain& operator=(Swapchain const&) = delete;
 		Swapchain& operator=(Swapchain&& object) noexcept;
@@ -37,6 +42,8 @@ namespace Nth {
 	private:
 		VkSwapchainKHR m_swapchain;
 		VkFormat m_format;
+
+		std::vector<SwapchainImage> m_images;
 
 		Device const* m_device;
 	};

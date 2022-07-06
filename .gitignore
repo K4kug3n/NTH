@@ -35,3 +35,6 @@
 .xmake/*
 vsxmake2019/*
 build/*
+
+# Useless assets
+assets/*.txt

@@ -23,6 +23,8 @@ end
 target("basic_render")
 	add_files("exemples/basic_render/main.cpp")
 
+	set_rundir("assets")
+
 	add_packages("vulkan-memory-allocator", "vulkan-headers", "libsdl", "tinyobjloader", "stb")
 
 

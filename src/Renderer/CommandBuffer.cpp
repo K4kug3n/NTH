@@ -30,6 +30,7 @@ namespace Nth {
 	void CommandBuffer::free() {
 		if (m_commandBuffer != VK_NULL_HANDLE) {
 			m_pool->getDevice()->vkFreeCommandBuffers((*m_pool->getDevice())(), (*m_pool)(), 1, &m_commandBuffer);
+			m_commandBuffer = VK_NULL_HANDLE;
 		}
 	}
 
@@ -117,7 +118,7 @@ namespace Nth {
 	}
 
 	CommandBuffer& CommandBuffer::operator=(CommandBuffer&& object) noexcept {
-		m_commandBuffer = object.m_commandBuffer;
+		std::swap(m_commandBuffer, object.m_commandBuffer);
 		m_pool = object.m_pool;
 
 		return *this;

@@ -85,7 +85,7 @@ namespace Nth {
 		return m_eventHandler;
 	}
 
-	WindowHandle Window::gNTHandle() const {
+	WindowHandle Window::getHandle() const {
 		if (!m_handle) {
 			throw std::runtime_error("Window not created, can't get handle");
 		}

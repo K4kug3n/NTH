@@ -17,12 +17,20 @@
 #include "Renderer/ShaderModule.hpp"
 #include "Renderer/PipelineLayout.hpp"
 #include "Renderer/Pipeline.hpp"
+#include "Renderer/Buffer.hpp"
+#include "Renderer/DeviceMemory.hpp"
+#include "Renderer/RenderingResource.hpp"
 
 #include "Math/Vector2.hpp"
 
 #include <vector>
 
 namespace Nth {
+
+	struct VertexData {
+		float   x, y, z, w;
+		float   r, g, b, a;
+	};
 
 	class RenderWindow : public Window {
 	public:
@@ -35,16 +43,20 @@ namespace Nth {
 		bool create(VideoMode const& mode, std::string const& title);
 		bool draw();
 
+		static constexpr uint32_t resourceCount = 3;
+
 		RenderWindow& operator=(RenderWindow const&) = delete;
 		RenderWindow& operator=(RenderWindow&&) = default;
 
 	private:
 		bool createSwapchain();
+		bool createSemaphores();
+		bool createFences();
 		bool createCommandBuffers();
-		bool recordCommandBuffers();
 		bool createRenderPass();
-		bool createFrameBuffers();
 		bool createPipeline();
+		bool createVertexBuffer();
+		bool createRenderingResources();
 		void onWindowSizeChanged();
 
 		VkSurfaceFormatKHR getSwapchainFormat(std::vector<VkSurfaceFormatKHR> const& surfaceFormats) const;
@@ -55,21 +67,24 @@ namespace Nth {
 		VkPresentModeKHR getSwapchainPresentMode(std::vector<VkPresentModeKHR> const& presentModes) const;
 		ShaderModule createShaderModule(std::string const& filename) const;
 		PipelineLayout createPipelineLayout();
+		bool allocateBufferMemory(Buffer const& buffer, DeviceMemory& memory);
+		bool prepareFrame(CommandBuffer& commandbuffer, SwapchainImage const& imageParameters, Framebuffer& framebuffer);
+		bool createFramebuffer(Framebuffer& framebuffer, ImageView const& imageView) const ;
 
 		VulkanInstance& m_vulkanInstance;
 		Surface m_surface;
 		Swapchain m_swapchain;
 		Queue m_presentQueue;
 		Queue m_graphicsQueue;
-		Semaphore m_imageAvailableSemaphore;
-		Semaphore m_renderingFinishedSemaphore;
 		CommandPool m_graphicCommandPool;
-		std::vector<CommandBuffer> m_graphicsCmdBuffers;
-		std::vector<Framebuffer> m_framebuffers;
 		RenderPass m_renderPass;
 		Pipeline m_graphicPipeline;
-		
+		Buffer m_vertexBuffer;
+		DeviceMemory m_deviceMemory;
+		std::vector<RenderingResource> m_renderingResources;
+
 		Vector2ui m_swapchainSize;
+		size_t m_resourceIndex;
 	};
 }
 

@@ -38,31 +38,29 @@ namespace Nth {
 	void CommandPool::destroy() {
 		if (m_commandPool != VK_NULL_HANDLE) {
 			m_device->vkDestroyCommandPool((*m_device)(), m_commandPool, nullptr);
+			m_commandPool = VK_NULL_HANDLE;
 		}
 	}
 
-	std::vector<CommandBuffer> CommandPool::allocateCommandBuffer(VkCommandBufferLevel level, uint32_t count) const {
+	bool CommandPool::allocateCommandBuffer(VkCommandBufferLevel level, CommandBuffer& commandBuffer) const {
 		VkCommandBufferAllocateInfo cmdBufferAllocateInfo = {
 			VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, // VkStructureType              sType
 			nullptr,                                        // const void*                  pNext
 			m_commandPool,                                  // VkCommandPool                commandPool
 			level,                                          // VkCommandBufferLevel         level
-			count                                           // uint32_t                     bufferCount
+			1                                               // uint32_t                     bufferCount
 		};
 
-		std::vector<VkCommandBuffer> vkBuffers(count, VK_NULL_HANDLE);
-		VkResult result{ m_device->vkAllocateCommandBuffers((*m_device)(), &cmdBufferAllocateInfo, &vkBuffers[0]) };
+		VkCommandBuffer vkBuffer = VK_NULL_HANDLE;
+		VkResult result{ m_device->vkAllocateCommandBuffers((*m_device)(), &cmdBufferAllocateInfo, &vkBuffer) };
 		if (result != VK_SUCCESS) {
 			std::cerr << "Error: Could not allocate command buffers, " << toString(result) << std::endl;
-			return std::vector<CommandBuffer>{};
+			return false;
 		}
 
-		std::vector<CommandBuffer> buffers;
-		for (auto vkBuffer : vkBuffers) {
-			buffers.push_back(CommandBuffer{ this, vkBuffer });
-		}
+		commandBuffer = CommandBuffer( this, vkBuffer );
 
-		return buffers;
+		return true;
 	}
 
 	bool CommandPool::reset() const {

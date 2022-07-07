@@ -35,6 +35,7 @@ namespace Nth {
 	void Pipeline::destroy() {
 		if (m_pipeline != VK_NULL_HANDLE) {
 			m_device->vkDestroyPipeline((*m_device)(), m_pipeline, nullptr);
+			m_pipeline = VK_NULL_HANDLE;
 		}
 	}
 

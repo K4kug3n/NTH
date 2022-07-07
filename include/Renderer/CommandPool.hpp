@@ -21,7 +21,7 @@ namespace Nth {
 		bool create(Device const& device, uint32_t index, VkCommandPoolCreateFlags flags);
 		void destroy();
 
-		std::vector<CommandBuffer> allocateCommandBuffer(VkCommandBufferLevel level, uint32_t count) const;
+		bool allocateCommandBuffer(VkCommandBufferLevel level, CommandBuffer& commandBuffer) const;
 		bool reset() const;
 
 		Device const* getDevice() const;

@@ -27,9 +27,16 @@
 
 namespace Nth {
 
+	// TODO: Move out
 	struct VertexData {
 		float   x, y, z, w;
 		float   r, g, b, a;
+	};
+
+	// TODO: Move out
+	struct BufferParameters {
+		Buffer buffer;
+		DeviceMemory memory;
 	};
 
 	class RenderWindow : public Window {
@@ -51,8 +58,6 @@ namespace Nth {
 	private:
 		bool createSwapchain();
 		bool createSemaphores();
-		bool createFences();
-		bool createCommandBuffers();
 		bool createRenderPass();
 		bool createPipeline();
 		bool createVertexBuffer();
@@ -66,9 +71,10 @@ namespace Nth {
 		VkSurfaceTransformFlagBitsKHR getSwapchainTransform(VkSurfaceCapabilitiesKHR const& capabilities) const;
 		VkPresentModeKHR getSwapchainPresentMode(std::vector<VkPresentModeKHR> const& presentModes) const;
 		ShaderModule createShaderModule(std::string const& filename) const;
-		PipelineLayout createPipelineLayout();
-		bool allocateBufferMemory(Buffer const& buffer, DeviceMemory& memory);
-		bool prepareFrame(CommandBuffer& commandbuffer, SwapchainImage const& imageParameters, Framebuffer& framebuffer);
+		PipelineLayout createPipelineLayout() const;
+		bool allocateBufferMemory(Buffer const& buffer, VkMemoryPropertyFlagBits memoryProperty, DeviceMemory& memory) const;
+		bool createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size, BufferParameters& bufferParams) const;
+		bool prepareFrame(CommandBuffer& commandbuffer, SwapchainImage const& imageParameters, Framebuffer& framebuffer) const;
 		bool createFramebuffer(Framebuffer& framebuffer, ImageView const& imageView) const ;
 
 		VulkanInstance& m_vulkanInstance;
@@ -79,8 +85,9 @@ namespace Nth {
 		CommandPool m_graphicCommandPool;
 		RenderPass m_renderPass;
 		Pipeline m_graphicPipeline;
-		Buffer m_vertexBuffer;
-		DeviceMemory m_deviceMemory;
+		//Buffer m_vertexBuffer;
+		//DeviceMemory m_deviceMemory;
+		BufferParameters m_vertexBuffer;
 		std::vector<RenderingResource> m_renderingResources;
 
 		Vector2ui m_swapchainSize;

@@ -260,33 +260,6 @@ namespace Nth {
 		return true;
 	}
 
-	bool RenderWindow::createFences() {
-		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			if (!m_renderingResources[i].fence.create(*m_vulkanInstance.getDevice(), VK_FENCE_CREATE_SIGNALED_BIT)) {
-				std::cerr << "Could not create a fence!" << std::endl;
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	bool RenderWindow::createCommandBuffers() {
-		if (!m_graphicCommandPool.create(*m_vulkanInstance.getDevice(), m_presentQueue.index(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT)) {
-			std::cerr << "Could not create a command pool!" << std::endl;
-			return false;
-		}
-
-		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			if (!m_graphicCommandPool.allocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, m_renderingResources[i].commandBuffer)) {
-				std::cerr << "Can't allocate command buffer" << std::endl;
-				return false;
-			}
-		}
-
-		return true;
-	}
-
 	bool RenderWindow::createRenderPass() {
 		VkAttachmentDescription attachmentDescriptions[] = {
 			{
@@ -397,7 +370,7 @@ namespace Nth {
 			}
 		};
 
-		std::vector<VkVertexInputBindingDescription> vertex_binding_descriptions = {
+		std::vector<VkVertexInputBindingDescription> vertexBindingDescriptions = {
 			{
 				0,                                                          // uint32_t                                       binding
 				sizeof(VertexData),                                         // uint32_t                                       stride
@@ -405,16 +378,16 @@ namespace Nth {
 			}
 		};
 
-		std::vector<VkVertexInputAttributeDescription> vertex_attribute_descriptions = {
+		std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions = {
 			{
 				0,                                                          // uint32_t                                       location
-				vertex_binding_descriptions[0].binding,                     // uint32_t                                       binding
+				vertexBindingDescriptions[0].binding,                       // uint32_t                                       binding
 				VK_FORMAT_R32G32B32A32_SFLOAT,                              // VkFormat                                       format
 				offsetof(struct VertexData, x)                              // uint32_t                                       offset
 			},
 			{
 				1,                                                          // uint32_t                                       location
-				vertex_binding_descriptions[0].binding,                     // uint32_t                                       binding
+				vertexBindingDescriptions[0].binding,                       // uint32_t                                       binding
 				VK_FORMAT_R32G32B32A32_SFLOAT,                              // VkFormat                                       format
 				offsetof(struct VertexData, r)                              // uint32_t                                       offset
 			}
@@ -424,10 +397,10 @@ namespace Nth {
 			VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,    // VkStructureType                                sType
 			nullptr,                                                      // const void                                    *pNext
 			0,                                                            // VkPipelineVertexInputStateCreateFlags          flags
-			static_cast<uint32_t>(vertex_binding_descriptions.size()),    // uint32_t                                       vertexBindingDescriptionCount
-			vertex_binding_descriptions.data(),                           // const VkVertexInputBindingDescription         *pVertexBindingDescriptions
-			static_cast<uint32_t>(vertex_attribute_descriptions.size()),  // uint32_t                                       vertexAttributeDescriptionCount
-			vertex_attribute_descriptions.data()                          // const VkVertexInputAttributeDescription       *pVertexAttributeDescriptions
+			static_cast<uint32_t>(vertexBindingDescriptions.size()),    // uint32_t                                       vertexBindingDescriptionCount
+			vertexBindingDescriptions.data(),                           // const VkVertexInputBindingDescription         *pVertexBindingDescriptions
+			static_cast<uint32_t>(vertexAttributeDescriptions.size()),  // uint32_t                                       vertexAttributeDescriptionCount
+			vertexAttributeDescriptions.data()                          // const VkVertexInputAttributeDescription       *pVertexAttributeDescriptions
 		};
 
 		VkPipelineInputAssemblyStateCreateInfo input_assembly_state_create_info = {
@@ -548,7 +521,7 @@ namespace Nth {
 	}
 
 	bool RenderWindow::createVertexBuffer() {
-		VertexData vertex_data[] = {
+		VertexData vertexData[] = {
 			{
 				-0.7f, -0.7f, 0.0f, 1.0f,
 				1.0f, 0.0f, 0.0f, 0.0f
@@ -567,72 +540,67 @@ namespace Nth {
 			}
 		};
 
-		VkBufferCreateInfo bufferCreateInfo = {
-			VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,             // VkStructureType        sType
-			nullptr,                                          // const void            *pNext
-			0,                                                // VkBufferCreateFlags    flags
-			sizeof(vertex_data),                              // VkDeviceSize           size
-			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,                // VkBufferUsageFlags     usage
-			VK_SHARING_MODE_EXCLUSIVE,                        // VkSharingMode          sharingMode
-			0,                                                // uint32_t               queueFamilyIndexCount
-			nullptr                                           // const uint32_t        *pQueueFamilyIndices
-		};
-
-
-		if (!m_vertexBuffer.create(*m_vulkanInstance.getDevice(), bufferCreateInfo)) {
-			std::cerr << "Could not create a vertex buffer !" << std::endl;
+		if (!createBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, sizeof(vertexData), m_vertexBuffer)) {
+			std::cout << "Could not create a vertex buffer!" << std::endl;
 			return false;
 		}
 
-		if (!allocateBufferMemory(m_vertexBuffer, m_deviceMemory)) {
-			std::cerr << "Could not allocate memory for a vertex buffer!" << std::endl;
-			return false;
-		}
-
-		if (!m_vertexBuffer.bindBufferMemory(m_deviceMemory)) {
-			std::cerr << "Could not bind memory for a vertex buffer !" << std::endl;
-			return false;
-		}
-
-		if (!m_deviceMemory.map(0, m_vertexBuffer.getSize(), 0)) {
+		if (!m_vertexBuffer.memory.map(0, m_vertexBuffer.buffer.getSize(), 0)) {
 			std::cout << "Could not map memory and upload data to a vertex buffer!" << std::endl;
 			return false;
 		}
 
-		void* vertex_buffer_memory_pointer = m_deviceMemory.getMappedPointer();
+		void* vertex_buffer_memory_pointer = m_vertexBuffer.memory.getMappedPointer();
 
-		memcpy(vertex_buffer_memory_pointer, vertex_data, m_vertexBuffer.getSize());
+		memcpy(vertex_buffer_memory_pointer, vertexData, m_vertexBuffer.buffer.getSize());
 
 		VkMappedMemoryRange flush_range = {
 			VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,            // VkStructureType        sType
 			nullptr,                                          // const void            *pNext
-			m_deviceMemory(),                                 // VkDeviceMemory         memory
+			m_vertexBuffer.memory(),                          // VkDeviceMemory         memory
 			0,                                                // VkDeviceSize           offset
 			VK_WHOLE_SIZE                                     // VkDeviceSize           size
 		};
 
-		if (!m_deviceMemory.flushMappedMemory(0, VK_WHOLE_SIZE)) {
+		if (!m_vertexBuffer.memory.flushMappedMemory(0, VK_WHOLE_SIZE)) {
 			std::cerr << "Can't flush memory" << std::endl;
 			return false;
 		}
 
-		m_deviceMemory.unmap();
+		m_vertexBuffer.memory.unmap();
 
 		return true;
 
 	}
 
 	bool RenderWindow::createRenderingResources() {
-		if (!createCommandBuffers()) {
+		if (!m_graphicCommandPool.create(*m_vulkanInstance.getDevice(), m_presentQueue.index(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT)) {
+			std::cerr << "Could not create a command pool!" << std::endl;
 			return false;
 		}
 
-		if (!createSemaphores()) {
-			return false;
-		}
+		std::shared_ptr<Device>& device = m_vulkanInstance.getDevice();
 
-		if (!createFences()) {
-			return false;
+		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
+			if (!m_graphicCommandPool.allocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, m_renderingResources[i].commandBuffer)) {
+				std::cerr << "Can't allocate command buffer" << std::endl;
+				return false;
+			}
+
+			if (!m_renderingResources[i].imageAvailableSemaphore.create(*device)) {
+				std::cerr << "Error: Can't create image available semaphore" << std::endl;
+				return false;
+			}
+
+			if (!m_renderingResources[i].finishedRenderingSemaphore.create(*device)) {
+				std::cerr << "Error: Can't create rendering finished semaphore" << std::endl;
+				return false;
+			}
+
+			if (!m_renderingResources[i].fence.create(*m_vulkanInstance.getDevice(), VK_FENCE_CREATE_SIGNALED_BIT)) {
+				std::cerr << "Could not create a fence!" << std::endl;
+				return false;
+			}
 		}
 
 		return true;
@@ -759,7 +727,7 @@ namespace Nth {
 		return shader;
 	}
 
-	PipelineLayout RenderWindow::createPipelineLayout() {
+	PipelineLayout RenderWindow::createPipelineLayout() const {
 		PipelineLayout layout;
 		if (!layout.create(*m_vulkanInstance.getDevice(), 0, 0, nullptr, 0, nullptr)) {
 			std::cerr << "Error: Could not create pipeline layout !" << std::endl;
@@ -770,13 +738,13 @@ namespace Nth {
 
 	}
 
-	bool RenderWindow::allocateBufferMemory(Buffer const& buffer, DeviceMemory& memory) {
+	bool RenderWindow::allocateBufferMemory(Buffer const& buffer, VkMemoryPropertyFlagBits memoryProperty, DeviceMemory& memory) const {
 		VkMemoryRequirements bufferMemoryRequirements = buffer.getMemoryRequirements();;
 		VkPhysicalDeviceMemoryProperties memoryProperties = m_vulkanInstance.getDevice()->getPhysicalDevice().getMemoryProperties();
 
 		for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i) {
 			if ((bufferMemoryRequirements.memoryTypeBits & (1 << i)) &&
-				(memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
+				(memoryProperties.memoryTypes[i].propertyFlags & memoryProperty) == memoryProperty) {
 
 				VkMemoryAllocateInfo memoryAllocateInfo = {
 					VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,     // VkStructureType                        sType
@@ -793,7 +761,38 @@ namespace Nth {
 		return false;
 	}
 
-	bool RenderWindow::prepareFrame(CommandBuffer& commandbuffer, SwapchainImage const& imageParameters, Framebuffer& framebuffer) {
+	bool RenderWindow::createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size,  BufferParameters& bufferParams) const {
+		VkBufferCreateInfo bufferCreateInfo = {
+			VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,             // VkStructureType                sType
+			nullptr,                                          // const void                    *pNext
+			0,                                                // VkBufferCreateFlags            flags
+			size,                                             // VkDeviceSize                   size
+			usage,                                            // VkBufferUsageFlags             usage
+			VK_SHARING_MODE_EXCLUSIVE,                        // VkSharingMode                  sharingMode
+			0,                                                // uint32_t                       queueFamilyIndexCount
+			nullptr                                           // const uint32_t                *pQueueFamilyIndices
+		};
+
+		if (!bufferParams.buffer.create(*m_vulkanInstance.getDevice(), bufferCreateInfo)) {
+			std::cerr << "Could not create buffer!" << std::endl;
+			return false;
+		}
+
+		if (!allocateBufferMemory(bufferParams.buffer, memoryProperty, bufferParams.memory)) {
+			std::cerr << "Could not allocate memory for a buffer!" << std::endl;
+			return false;
+		}
+
+		if (!bufferParams.buffer.bindBufferMemory(bufferParams.memory)) {
+			std::cerr << "Could not bind memory to a buffer!" << std::endl;
+			return false;
+		}
+
+		return true;
+
+	}
+
+	bool RenderWindow::prepareFrame(CommandBuffer& commandbuffer, SwapchainImage const& imageParameters, Framebuffer& framebuffer) const {
 		framebuffer.destroy();
 		if (!createFramebuffer(framebuffer, imageParameters.view)) {
 			return false;
@@ -884,7 +883,7 @@ namespace Nth {
 		commandbuffer.setScissor(scissor);
 
 		VkDeviceSize offset = 0;
-		commandbuffer.bindVertexBuffer(m_vertexBuffer(), offset);
+		commandbuffer.bindVertexBuffer(m_vertexBuffer.buffer(), offset);
 
 		commandbuffer.draw(4, 1, 0, 0);
 

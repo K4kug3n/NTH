@@ -69,6 +69,11 @@ namespace Nth {
 			return false;
 		}
 
+		if (!createRenderingResources()) {
+			std::cerr << "Can't create rendering resource" << std::endl;
+			return false;
+		}
+
 		if (!createRenderPass()) {
 			std::cerr << "Error: Can't create renderpass" << std::endl;
 			return false;
@@ -84,8 +89,13 @@ namespace Nth {
 			return false;
 		}
 
-		if (!createRenderingResources()) {
-			std::cerr << "Can't create rendering resource" << std::endl;
+		if (!createStagingBuffer()) {
+			std::cerr << "Can't create staging buffer" << std::endl;
+			return false;
+		}
+
+		if (!copyVertexData()) {
+			std::cerr << "Can't copy vertex data" << std::endl;
 			return false;
 		}
 
@@ -521,53 +531,22 @@ namespace Nth {
 	}
 
 	bool RenderWindow::createVertexBuffer() {
-		VertexData vertexData[] = {
-			{
-				-0.7f, -0.7f, 0.0f, 1.0f,
-				1.0f, 0.0f, 0.0f, 0.0f
-			},
-			{
-				-0.7f, 0.7f, 0.0f, 1.0f,
-				0.0f, 1.0f, 0.0f, 0.0f
-			},
-			{
-				0.7f, -0.7f, 0.0f, 1.0f,
-				0.0f, 0.0f, 1.0f, 0.0f
-			},
-			{
-				0.7f, 0.7f, 0.0f, 1.0f,
-				0.3f, 0.3f, 0.3f, 0.0f
-			}
-		};
+		std::vector<float> const& vertexData = getVertexData();
 
-		if (!createBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, sizeof(vertexData), m_vertexBuffer)) {
-			std::cout << "Could not create a vertex buffer!" << std::endl;
+		if (!createBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, static_cast<uint32_t>(vertexData.size() * sizeof(vertexData[0])), m_vertexBuffer)) {
+			std::cerr << "Could not create a vertex buffer!" << std::endl;
 			return false;
 		}
 
-		if (!m_vertexBuffer.memory.map(0, m_vertexBuffer.buffer.getSize(), 0)) {
-			std::cout << "Could not map memory and upload data to a vertex buffer!" << std::endl;
+		return true;
+
+	}
+
+	bool RenderWindow::createStagingBuffer() {
+		if (!createBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 4000, m_stagingBuffer)) {
+			std::cerr << "Could not staging buffer!" << std::endl;
 			return false;
 		}
-
-		void* vertex_buffer_memory_pointer = m_vertexBuffer.memory.getMappedPointer();
-
-		memcpy(vertex_buffer_memory_pointer, vertexData, m_vertexBuffer.buffer.getSize());
-
-		VkMappedMemoryRange flush_range = {
-			VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,            // VkStructureType        sType
-			nullptr,                                          // const void            *pNext
-			m_vertexBuffer.memory(),                          // VkDeviceMemory         memory
-			0,                                                // VkDeviceSize           offset
-			VK_WHOLE_SIZE                                     // VkDeviceSize           size
-		};
-
-		if (!m_vertexBuffer.memory.flushMappedMemory(0, VK_WHOLE_SIZE)) {
-			std::cerr << "Can't flush memory" << std::endl;
-			return false;
-		}
-
-		m_vertexBuffer.memory.unmap();
 
 		return true;
 
@@ -604,6 +583,78 @@ namespace Nth {
 		}
 
 		return true;
+	}
+
+	bool RenderWindow::copyVertexData() {
+		std::vector<float> const& vertexData = getVertexData();
+
+		if (!m_stagingBuffer.memory.map(0, m_vertexBuffer.buffer.getSize(), 0)) {
+			std::cerr << "Could not map memory and upload data to a staging buffer!" << std::endl;
+			return false;
+		}
+		void* stagingBufferMemoryPointer = m_stagingBuffer.memory.getMappedPointer();
+
+		memcpy(stagingBufferMemoryPointer, &vertexData[0], m_vertexBuffer.buffer.getSize());
+
+		m_stagingBuffer.memory.flushMappedMemory(0, m_vertexBuffer.buffer.getSize());
+
+		m_stagingBuffer.memory.unmap();
+
+		// Prepare command buffer to copy data from staging buffer to a vertex buffer
+		VkCommandBufferBeginInfo commandBufferBeginInfo = {
+			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,      // VkStructureType                        sType
+			nullptr,                                          // const void                            *pNext
+			VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,      // VkCommandBufferUsageFlags              flags
+			nullptr                                           // const VkCommandBufferInheritanceInfo  *pInheritanceInfo
+		};
+
+		CommandBuffer& commandBuffer = m_renderingResources[0].commandBuffer;
+
+		commandBuffer.begin(commandBufferBeginInfo);
+
+		VkBufferCopy bufferCopyInfo = {
+			0,                                                // VkDeviceSize                           srcOffset
+			0,                                                // VkDeviceSize                           dstOffset
+			m_vertexBuffer.buffer.getSize()                   // VkDeviceSize                           size
+		};
+		commandBuffer.copyBuffer(m_stagingBuffer.buffer(), m_vertexBuffer.buffer(), bufferCopyInfo);
+
+		VkBufferMemoryBarrier bufferMemoryBarrier = {
+			VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,          // VkStructureType                        sType;
+			nullptr,                                          // const void                            *pNext
+			VK_ACCESS_MEMORY_WRITE_BIT,                       // VkAccessFlags                          srcAccessMask
+			VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,              // VkAccessFlags                          dstAccessMask
+			VK_QUEUE_FAMILY_IGNORED,                          // uint32_t                               srcQueueFamilyIndex
+			VK_QUEUE_FAMILY_IGNORED,                          // uint32_t                               dstQueueFamilyIndex
+			m_vertexBuffer.buffer(),                          // VkBuffer                               buffer
+			0,                                                // VkDeviceSize                           offset
+			VK_WHOLE_SIZE                                     // VkDeviceSize                           size
+		};
+		commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr, 1, &bufferMemoryBarrier, 0, nullptr);
+
+		commandBuffer.end();
+
+		// Submit command buffer and copy data from staging buffer to a vertex buffer
+		VkSubmitInfo submitInfo = {
+			VK_STRUCTURE_TYPE_SUBMIT_INFO,                    // VkStructureType                        sType
+			nullptr,                                          // const void                            *pNext
+			0,                                                // uint32_t                               waitSemaphoreCount
+			nullptr,                                          // const VkSemaphore                     *pWaitSemaphores
+			nullptr,                                          // const VkPipelineStageFlags            *pWaitDstStageMask;
+			1,                                                // uint32_t                               commandBufferCount
+			&commandBuffer(),                                 // const VkCommandBuffer                 *pCommandBuffers
+			0,                                                // uint32_t                               signalSemaphoreCount
+			nullptr                                           // const VkSemaphore                     *pSignalSemaphores
+		};
+
+		if (!m_graphicsQueue.submit(submitInfo, VK_NULL_HANDLE)) {
+			return false;
+		}
+
+		m_vulkanInstance.getDevice()->waitIdle();
+
+		return true;
+
 	}
 
 	void RenderWindow::onWindowSizeChanged() {
@@ -927,6 +978,24 @@ namespace Nth {
 		};
 
 		return framebuffer.create(*m_vulkanInstance.getDevice(), framebufferCreateInfo);
+	}
+
+	std::vector<float> const& RenderWindow::getVertexData() const {
+		static const std::vector<float> vertexData = {
+			-0.7f, -0.7f, 0.0f, 1.0f,
+			1.0f, 0.0f, 0.0f, 0.0f,
+			//
+			-0.7f, 0.7f, 0.0f, 1.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			//
+			0.7f, -0.7f, 0.0f, 1.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			//
+			0.7f, 0.7f, 0.0f, 1.0f,
+			0.3f, 0.3f, 0.3f, 0.0f
+		};
+
+		return vertexData;
 	}
 
 }

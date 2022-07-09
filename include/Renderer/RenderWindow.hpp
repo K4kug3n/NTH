@@ -61,7 +61,9 @@ namespace Nth {
 		bool createRenderPass();
 		bool createPipeline();
 		bool createVertexBuffer();
+		bool createStagingBuffer();
 		bool createRenderingResources();
+		bool copyVertexData();
 		void onWindowSizeChanged();
 
 		VkSurfaceFormatKHR getSwapchainFormat(std::vector<VkSurfaceFormatKHR> const& surfaceFormats) const;
@@ -75,7 +77,8 @@ namespace Nth {
 		bool allocateBufferMemory(Buffer const& buffer, VkMemoryPropertyFlagBits memoryProperty, DeviceMemory& memory) const;
 		bool createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size, BufferParameters& bufferParams) const;
 		bool prepareFrame(CommandBuffer& commandbuffer, SwapchainImage const& imageParameters, Framebuffer& framebuffer) const;
-		bool createFramebuffer(Framebuffer& framebuffer, ImageView const& imageView) const ;
+		bool createFramebuffer(Framebuffer& framebuffer, ImageView const& imageView) const;
+		std::vector<float> const& getVertexData() const;
 
 		VulkanInstance& m_vulkanInstance;
 		Surface m_surface;
@@ -85,9 +88,8 @@ namespace Nth {
 		CommandPool m_graphicCommandPool;
 		RenderPass m_renderPass;
 		Pipeline m_graphicPipeline;
-		//Buffer m_vertexBuffer;
-		//DeviceMemory m_deviceMemory;
 		BufferParameters m_vertexBuffer;
+		BufferParameters m_stagingBuffer;
 		std::vector<RenderingResource> m_renderingResources;
 
 		Vector2ui m_swapchainSize;

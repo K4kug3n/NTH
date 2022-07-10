@@ -1,7 +1,5 @@
-#pragma once
-
-#ifndef NTH_VIDEOMODE_HPP
-#define NTH_VIDEOMODE_HPP
+#ifndef NTH_WINDOW_VIDEOMODE_HPP
+#define NTH_WINDOW_VIDEOMODE_HPP
 
 #include <vector>
 

@@ -1,7 +1,5 @@
-#pragma once
-
-#ifndef NTH_WINDOW_HPP
-#define NTH_WINDOW_HPP
+#ifndef NTH_WINDOW_WINDOW_HPP
+#define NTH_WINDOW_WINDOW_HPP
 
 #include "Window/VideoMode.hpp"
 #include "Window/WindowEvent.hpp"

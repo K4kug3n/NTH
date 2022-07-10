@@ -1,7 +1,5 @@
-#pragma once
-
-#ifndef NTH_MATRIX4_HPP
-#define NTH_MATRIX4_HPP
+#ifndef NTH_MATH_MATRIX4_HPP
+#define NTH_MATH_MATRIX4_HPP
 
 #include <string>
 

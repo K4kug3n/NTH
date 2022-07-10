@@ -1,6 +1,8 @@
 #include "Renderer/RenderingResource.hpp"
 
 namespace Nth {
-	RenderingResource::RenderingResource() {
+	namespace Vk {
+		RenderingResource::RenderingResource() {
+		}
 	}
 }

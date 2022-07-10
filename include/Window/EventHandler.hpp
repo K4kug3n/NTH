@@ -1,7 +1,5 @@
-#pragma once
-
-#ifndef NTH_EVENTHANDLER_HPP
-#define NTH_EVENTHANDLER_HPP
+#ifndef NTH_WINDOW_EVENTHANDLER_HPP
+#define NTH_WINDOW_EVENTHANDLER_HPP
 
 #include "Util/Signal.hpp"
 #include "Window/WindowEvent.hpp"

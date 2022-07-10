@@ -1,7 +1,5 @@
-#pragma once
-
-#ifndef NTH_VULKANINSTANCE_HPP
-#define NTH_VULKANINSTANCE_HPP
+#ifndef NTH_RENDERER_VK_VULKANINSTANCE_HPP
+#define NTH_RENDERER_VK_VULKANINSTANCE_HPP
 
 #include "Renderer/Instance.hpp"
 #include "Renderer/Device.hpp"
@@ -13,36 +11,37 @@
 #include <memory>
 
 namespace Nth {
+	namespace Vk {
+		class Surface;
 
-	class Surface;
-	
-	class VulkanInstance {
-	public:
-		VulkanInstance();
-		VulkanInstance(VulkanInstance const&) = delete;
-		VulkanInstance(VulkanInstance&&) = delete;
-		~VulkanInstance();
+		class VulkanInstance {
+		public:
+			VulkanInstance();
+			VulkanInstance(VulkanInstance const&) = delete;
+			VulkanInstance(VulkanInstance&&) = delete;
+			~VulkanInstance();
 
-		static bool isInitialized();
+			static bool isInitialized();
 
-		std::shared_ptr<Device> createDevice(Surface& surface);
+			std::shared_ptr<Device> createDevice(Surface& surface);
 
-		Instance& getInstance();
-		std::shared_ptr<Device>& getDevice();
-		
-		VulkanInstance& operator=(VulkanInstance const&) = delete;
-		VulkanInstance& operator=(VulkanInstance&&) = delete;
+			Instance& getInstance();
+			std::shared_ptr<Device>& getDevice();
 
-		static VulkanInstance* instance();
+			VulkanInstance& operator=(VulkanInstance const&) = delete;
+			VulkanInstance& operator=(VulkanInstance&&) = delete;
 
-	private:
-		bool checkPhysicalDeviceProperties(PhysicalDevice& physicalDevice, Surface& surface, uint32_t& graphicsQueueFamilyIndex, uint32_t& presentQueueFamilyIndex);
+			static VulkanInstance* instance();
 
-		Instance m_instance;
-		std::shared_ptr<Device> m_device;
+		private:
+			bool checkPhysicalDeviceProperties(PhysicalDevice& physicalDevice, Surface& surface, uint32_t& graphicsQueueFamilyIndex, uint32_t& presentQueueFamilyIndex);
 
-		static VulkanInstance* m_classInstance;
-	};
+			Instance m_instance;
+			std::shared_ptr<Device> m_device;
+
+			static VulkanInstance* m_classInstance;
+		};
+	}
 }
 
 #endif

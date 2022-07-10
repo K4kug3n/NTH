@@ -1,7 +1,5 @@
-#pragma once
-
-#ifndef NTH_STRING_HPP
-#define NTH_STRING_HPP
+#ifndef NTH_UTIL_STRING_HPP
+#define NTH_UTIL_STRING_HPP
 
 #include <string>
 

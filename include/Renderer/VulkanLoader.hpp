@@ -1,7 +1,5 @@
-#pragma once
-
-#ifndef NTH_LOADER_HPP
-#define NTH_LOADER_HPP
+#ifndef NTH_RENDERER_VK_LOADER_HPP
+#define NTH_RENDERER_VK_LOADER_HPP
 
 #include <string>
 #include <vector>
@@ -24,28 +22,29 @@
 #endif
 
 namespace Nth {
+	namespace Vk {
+		class VulkanLoader {
+		public:
+			VulkanLoader() = delete;
+			~VulkanLoader() = delete;
 
-	class VulkanLoader {
-	public:
-		VulkanLoader() = delete;
-		~VulkanLoader() = delete;
+			static bool initialize();
+			static void unitialize();
 
-		static bool initialize();
-		static void unitialize();
+			static std::vector<VkLayerProperties> enumerateLayerProperties();
+			static std::vector<VkExtensionProperties> enumerateExtensionProperties(char const* layerName = nullptr);
 
-		static std::vector<VkLayerProperties> enumerateLayerProperties();
-		static std::vector<VkExtensionProperties> enumerateExtensionProperties(char const* layerName = nullptr);
+			static PFN_vkVoidFunction getInstanceProcAddr(VkInstance const& instance, std::string const& name);
 
-		static PFN_vkVoidFunction getInstanceProcAddr(VkInstance const& instance, std::string const& name);
-		
-		#define NTH_GLOBAL_FUNCTION(fun) static PFN_##fun fun;
-		#define NTH_GLOBAL_FUNCTION_OPTIONAL(fun) NTH_GLOBAL_FUNCTION(fun)
-		#include "Renderer/GlobalFunctions.inl"
-	private:
-		static PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr;
+			#define NTH_RENDERER_VK_GLOBAL_FUNCTION(fun) static PFN_##fun fun;
+			#define NTH_RENDERER_VK_GLOBAL_FUNCTION_OPTIONAL(fun) NTH_RENDERER_VK_GLOBAL_FUNCTION(fun)
+			#include "Renderer/GlobalFunctions.inl"
+		private:
+			static PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr;
 
-		static Lib m_vulkan;
-	};
+			static Lib m_vulkan;
+		};
+	}
 }
 
 #endif

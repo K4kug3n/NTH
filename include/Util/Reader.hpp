@@ -1,7 +1,5 @@
-#pragma once
-
-#ifndef NTH_READER_HPP
-#define NTH_READER_HPP
+#ifndef NTH_UTIL_READER_HPP
+#define NTH_UTIL_READER_HPP
 
 #include <vector>
 #include <string>

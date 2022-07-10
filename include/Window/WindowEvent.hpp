@@ -1,7 +1,5 @@
-#pragma once
-
-#ifndef NTH_WINDOWEVENT_HPP
-#define NTH_WINDOWEVENT_HPP
+#ifndef NTH_WINDOW_WINDOWEVENT_HPP
+#define NTH_WINDOW_WINDOWEVENT_HPP
 
 #include <SDL2/SDL_events.h>
 

@@ -1,7 +1,5 @@
-#pragma once
-
-#ifndef NTH_DEVICE_HPP
-#define NTH_DEVICE_HPP
+#ifndef NTH_RENDERER_VK_DEVICE_HPP
+#define NTH_RENDERER_VK_DEVICE_HPP
 
 #include "Renderer/Instance.hpp"
 
@@ -13,50 +11,51 @@
 #include <string>
 
 namespace Nth {
+	namespace Vk {
+		class PhysicalDevice;
 
-	class PhysicalDevice;
+		class Device {
+		public:
+			Device(Instance const& instance);
+			Device(Device const&) = delete;
+			Device(Device&&) = delete;
+			~Device();
 
-	class Device {
-	public:
-		Device(Instance const& instance);
-		Device(Device const&) = delete;
-		Device(Device&&) = delete;
-		~Device();
+			bool create(PhysicalDevice physicalDevice, VkDeviceCreateInfo const& infos, uint32_t presentQueueFamilyIndex, uint32_t graphicQueueFamilyIndex);
 
-		bool create(PhysicalDevice physicalDevice, VkDeviceCreateInfo const& infos, uint32_t presentQueueFamilyIndex, uint32_t graphicQueueFamilyIndex);
+			bool isValid() const;
+			bool isLoadedExtension(std::string const& name) const;
+			bool isLoadedLayer(std::string const& name) const;
 
-		bool isValid() const;
-		bool isLoadedExtension(std::string const& name) const;
-		bool isLoadedLayer(std::string const& name) const;
+			PhysicalDevice const& getPhysicalDevice() const;
+			VmaAllocator getAllocator() const;
+			uint32_t getPresentQueueFamilyIndex() const;
+			uint32_t getGraphicQueueFamilyIndex() const;
 
-		PhysicalDevice const& getPhysicalDevice() const;
-		VmaAllocator getAllocator() const;
-		uint32_t getPresentQueueFamilyIndex() const;
-		uint32_t getGraphicQueueFamilyIndex() const;
+			void waitIdle() const;
 
-		void waitIdle() const;
+			#define NTH_RENDERER_VK_DEVICE_FUNCTION(fun) PFN_##fun fun;
+			#include "Renderer/DeviceFunctions.inl"
 
-		#define NTH_DEVICE_FUNCTION(fun) PFN_##fun fun;
-		#include "Renderer/DeviceFunctions.inl"
+			VkDevice const& operator()() const;
 
-		VkDevice const& operator()() const;
+			Device& operator=(Device const&) = delete;
+			Device& operator=(Device&&) = delete;
 
-		Device& operator=(Device const&) = delete;
-		Device& operator=(Device&&) = delete;
+		private:
+			PFN_vkVoidFunction loadDeviceFunction(const char* name);
 
-	private:
-		PFN_vkVoidFunction loadDeviceFunction(const char* name);
+			VkDevice m_device;
+			std::unique_ptr<PhysicalDevice> m_physicalDevice;
+			uint32_t m_presentQueueFamilyIndex;
+			uint32_t m_graphicQueueFamilyIndex;
+			Instance const& m_instance;
+			VmaAllocator m_allocator;
 
-		VkDevice m_device;
-		std::unique_ptr<PhysicalDevice> m_physicalDevice;
-		uint32_t m_presentQueueFamilyIndex;
-		uint32_t m_graphicQueueFamilyIndex;
-		Instance const& m_instance;
-		VmaAllocator m_allocator;
-
-		std::unordered_set<std::string> m_extensions;
-		std::unordered_set<std::string> m_layers;
-	};
+			std::unordered_set<std::string> m_extensions;
+			std::unordered_set<std::string> m_layers;
+		};
+	}
 }
 
 #endif

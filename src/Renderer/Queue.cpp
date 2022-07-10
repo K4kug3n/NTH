@@ -5,34 +5,36 @@
 #include <iostream>
 
 namespace Nth {
-	bool Queue::create(Device const& device, uint32_t index) {
-		device.vkGetDeviceQueue(device(), index, 0, &m_queue);
+	namespace Vk {
+		bool Queue::create(Device const& device, uint32_t index) {
+			device.vkGetDeviceQueue(device(), index, 0, &m_queue);
 
-		m_index = index;
-		m_device = &device;
+			m_index = index;
+			m_device = &device;
 
-		return true;
-	}
-
-	bool Queue::submit(VkSubmitInfo const& infos, VkFence fence) const {
-		VkResult result{ m_device->vkQueueSubmit(m_queue, 1, &infos, fence) };
-		if (result != VK_SUCCESS) {
-			std::cerr << "Error: Can't submit to queue" << std::endl;
-			return false;
+			return true;
 		}
 
-		return true;
-	}
+		bool Queue::submit(VkSubmitInfo const& infos, VkFence fence) const {
+			VkResult result{ m_device->vkQueueSubmit(m_queue, 1, &infos, fence) };
+			if (result != VK_SUCCESS) {
+				std::cerr << "Error: Can't submit to queue" << std::endl;
+				return false;
+			}
 
-	VkResult Queue::present(VkPresentInfoKHR const& infos) const {
-		return m_device->vkQueuePresentKHR(m_queue, &infos);
-	}
+			return true;
+		}
 
-	uint32_t Queue::index() const {
-		return m_index;
-	}
+		VkResult Queue::present(VkPresentInfoKHR const& infos) const {
+			return m_device->vkQueuePresentKHR(m_queue, &infos);
+		}
 
-	VkQueue const& Queue::operator()() const {
-		return m_queue;
+		uint32_t Queue::index() const {
+			return m_index;
+		}
+
+		VkQueue const& Queue::operator()() const {
+			return m_queue;
+		}
 	}
 }

@@ -28,14 +28,14 @@ namespace Nth{
 		return m_pixels;
 	}
 
-	Image Image::loadFromFile(std::string const& filename, PixelChannel desiredChannel) {
+	std::shared_ptr<Image> Image::loadFromFile(std::string const& filename, PixelChannel desiredChannel) {
 		int width, height, channels;
 
 		stbi_uc* pixels = stbi_load(filename.c_str(), &width, &height, &channels, static_cast<int>(desiredChannel));
 
 		if (!pixels) {
 			std::cout << "Failed to load texture file " << filename << std::endl;
-			return Image();
+			return std::make_shared<Image>();
 		}
 
 		std::vector<unsigned char> data = {};
@@ -43,7 +43,7 @@ namespace Nth{
 
 		stbi_image_free(pixels);
 
-		return Image(width, height, channels, data);
+		return std::make_shared<Image>(width, height, channels, data);
 	}
 }
 

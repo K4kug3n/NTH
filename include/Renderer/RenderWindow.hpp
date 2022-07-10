@@ -1,7 +1,5 @@
-#pragma once
-
-#ifndef NTH_RENDERWINDOW_HPP
-#define NTH_RENDERWINDOW_HPP
+#ifndef NTH_RENDERER_RENDERWINDOW_HPP
+#define NTH_RENDERER_RENDERWINDOW_HPP
 
 #include "Window/Window.hpp"
 
@@ -26,6 +24,7 @@
 #include <vector>
 
 namespace Nth {
+	using namespace Vk;
 
 	class Image;
 

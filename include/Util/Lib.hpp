@@ -1,7 +1,5 @@
-#pragma once
-
-#ifndef NTH_LIB_HPP
-#define NTH_LIB_HPP
+#ifndef NTH_UTIL_LIB_HPP
+#define NTH_UTIL_LIB_HPP
 
 #include <filesystem>
 

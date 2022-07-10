@@ -1,7 +1,5 @@
-#pragma once
-
-#ifndef NTH_SIGNAL_HPP
-#define NTH_SIGNAL_HPP
+#ifndef NTH_UTIL_SIGNAL_HPP
+#define NTH_UTIL_SIGNAL_HPP
 
 #include <functional>
 #include <memory>

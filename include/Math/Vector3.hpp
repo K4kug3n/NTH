@@ -1,7 +1,5 @@
-#pragma once
-
-#ifndef NTH_VECTOR3_HPP
-#define NTH_VECTOR3_HPP
+#ifndef NTH_MATH_VECTOR3_HPP
+#define NTH_MATH_VECTOR3_HPP
 
 #include <string>
 

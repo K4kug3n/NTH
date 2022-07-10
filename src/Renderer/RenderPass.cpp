@@ -6,34 +6,36 @@
 #include <iostream>
 
 namespace Nth {
-	RenderPass::RenderPass() :
-		m_renderPass(VK_NULL_HANDLE), 
-		m_device(nullptr) {}
+	namespace Vk {
+		RenderPass::RenderPass() :
+			m_renderPass(VK_NULL_HANDLE),
+			m_device(nullptr) {}
 
-	RenderPass::~RenderPass() {
-		destroy();
-	}
-
-	bool RenderPass::create(Device const& device, VkRenderPassCreateInfo const& infos) {
-		VkResult result{ device.vkCreateRenderPass(device(), &infos, nullptr, &m_renderPass) };
-		if (result != VK_SUCCESS) {
-			std::cerr << "Error: Can't create renderpass, " << toString(result) << std::endl;
-			return false;
+		RenderPass::~RenderPass() {
+			destroy();
 		}
 
-		m_device = &device;
+		bool RenderPass::create(Device const& device, VkRenderPassCreateInfo const& infos) {
+			VkResult result{ device.vkCreateRenderPass(device(), &infos, nullptr, &m_renderPass) };
+			if (result != VK_SUCCESS) {
+				std::cerr << "Error: Can't create renderpass, " << toString(result) << std::endl;
+				return false;
+			}
 
-		return true;
-	}
+			m_device = &device;
 
-	void RenderPass::destroy() {
-		if (m_renderPass != VK_NULL_HANDLE) {
-			m_device->vkDestroyRenderPass((*m_device)(), m_renderPass, nullptr);
-			m_renderPass = VK_NULL_HANDLE;
+			return true;
 		}
-	}
 
-	VkRenderPass const& RenderPass::operator()() const {
-		return m_renderPass;
-	}
+		void RenderPass::destroy() {
+			if (m_renderPass != VK_NULL_HANDLE) {
+				m_device->vkDestroyRenderPass((*m_device)(), m_renderPass, nullptr);
+				m_renderPass = VK_NULL_HANDLE;
+			}
+		}
+
+		VkRenderPass const& RenderPass::operator()() const {
+			return m_renderPass;
+		}
+	}	
 }

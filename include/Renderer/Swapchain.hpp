@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef NTH_SWAPCHAIN_HPP
-#define NTH_SWAPCHAIN_HPP
+#ifndef NTH_RENDERER_VK_SWAPCHAIN_HPP
+#define NTH_RENDERER_VK_SWAPCHAIN_HPP
 
 #include "Renderer/ImageView.hpp"
 
@@ -10,43 +10,45 @@
 #include <vector>
 
 namespace Nth {
-	class Device;
-	class Semaphore;
+	namespace Vk {
+		class Device;
+		class Semaphore;
 
-	struct SwapchainImage {
-		VkImage image;
-		ImageView view;
-	};
+		struct SwapchainImage {
+			VkImage image;
+			ImageView view;
+		};
 
-	class Swapchain {
-	public:
-		Swapchain();
-		Swapchain(Swapchain const&) = delete;
-		Swapchain(Swapchain&& object) noexcept;
-		~Swapchain();
+		class Swapchain {
+		public:
+			Swapchain();
+			Swapchain(Swapchain const&) = delete;
+			Swapchain(Swapchain&& object) noexcept;
+			~Swapchain();
 
-		VkResult aquireNextImage(VkSemaphore const& semaphore, VkFence const& fence, uint32_t & imageIndex);
+			VkResult aquireNextImage(VkSemaphore const& semaphore, VkFence const& fence, uint32_t& imageIndex);
 
-		bool create(Device const& device, VkSwapchainCreateInfoKHR const& infos);
-		void destroy();
+			bool create(Device const& device, VkSwapchainCreateInfoKHR const& infos);
+			void destroy();
 
-		VkFormat getFormat() const;
-		uint32_t getImageCount() const;
-		std::vector<SwapchainImage> const& getImages() const;
+			VkFormat getFormat() const;
+			uint32_t getImageCount() const;
+			std::vector<SwapchainImage> const& getImages() const;
 
-		VkSwapchainKHR operator()() const;
+			VkSwapchainKHR operator()() const;
 
-		Swapchain& operator=(Swapchain const&) = delete;
-		Swapchain& operator=(Swapchain&& object) noexcept;
-		
-	private:
-		VkSwapchainKHR m_swapchain;
-		VkFormat m_format;
+			Swapchain& operator=(Swapchain const&) = delete;
+			Swapchain& operator=(Swapchain&& object) noexcept;
 
-		std::vector<SwapchainImage> m_images;
+		private:
+			VkSwapchainKHR m_swapchain;
+			VkFormat m_format;
 
-		Device const* m_device;
-	};
+			std::vector<SwapchainImage> m_images;
+
+			Device const* m_device;
+		};
+	}
 }
 
 #endif

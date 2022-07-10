@@ -1,8 +1,9 @@
 #include "Renderer/VkUtil.hpp"
 
 namespace Nth {
-	std::string toString(VkResult const& result){
-		switch (result) {
+	namespace Vk {
+		std::string toString(VkResult const& result) {
+			switch (result) {
 			case VkResult::VK_SUCCESS:
 				return "No error";
 
@@ -26,6 +27,7 @@ namespace Nth {
 
 			default:
 				return "Unmanaged error";
+			}
 		}
-	}
+	}	
 }

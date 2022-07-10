@@ -1,10 +1,9 @@
-#pragma once
-
-#ifndef NTH_IMAGE_HPP
-#define NTH_IMAGE_HPP
+#ifndef NTH_UTIL_IMAGE_HPP
+#define NTH_UTIL_IMAGE_HPP
 
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace Nth {
 	enum class PixelChannel {
@@ -28,7 +27,7 @@ namespace Nth {
 		unsigned int channels() const;
 		std::vector<unsigned char> const& pixels() const;
 
-		static Image loadFromFile(std::string const& filename, PixelChannel desiredChannel = PixelChannel::Unknow);
+		static std::shared_ptr<Image> loadFromFile(std::string const& filename, PixelChannel desiredChannel = PixelChannel::Unknow);
 
 		Image& operator=(Image const&) = default;
 		Image& operator=(Image&&) = default;

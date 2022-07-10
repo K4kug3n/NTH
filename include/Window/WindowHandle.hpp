@@ -1,7 +1,5 @@
-#pragma once
-
-#ifndef NTH_WINDOWHANDLE_HPP
-#define NTH_WINDOWHANDLE_HPP
+#ifndef NTH_WINDOW_WINDOWHANDLE_HPP
+#define NTH_WINDOW_WINDOWHANDLE_HPP
 
 namespace Nth {
 	enum class WindowProtocol {

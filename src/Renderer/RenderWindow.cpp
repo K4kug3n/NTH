@@ -2,6 +2,7 @@
 
 #include "Renderer/ImageView.hpp"
 #include "Renderer/PhysicalDevice.hpp"
+#include "Renderer/Image.hpp"
 
 #include "Util/Reader.hpp"
 
@@ -657,6 +658,29 @@ namespace Nth {
 
 	}
 
+	bool RenderWindow::createTexture() {
+		if (!m_image.image.bindImageMemory(m_image.memory)) {
+			return false;
+		}
+
+
+		return false;
+	}
+
+	bool RenderWindow::copyTextureData(char* textureData, uint32_t dataSize, uint32_t width, uint32_t height) {
+		if (!m_stagingBuffer.memory.map(0, dataSize, 0)) {
+			std::cerr << "Could not map memory and upload texture data to a staging buffer!" << std::endl;
+			return false;
+		}
+		void* stagingBufferMemoryPointer = m_stagingBuffer.memory.getMappedPointer();
+
+		memcpy(stagingBufferMemoryPointer, textureData, dataSize);
+	
+		m_stagingBuffer.memory.flushMappedMemory(0, dataSize);
+
+		m_stagingBuffer.memory.unmap();
+	}
+
 	void RenderWindow::onWindowSizeChanged() {
 		m_vulkanInstance.getDevice()->waitIdle();
 
@@ -996,6 +1020,83 @@ namespace Nth {
 		};
 
 		return vertexData;
+	}
+
+	bool RenderWindow::createImage(uint32_t width, uint32_t height, Image& image) const {
+		VkImageCreateInfo imageCreateInfo = {
+			VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,  // VkStructureType        sType;
+			nullptr,                              // const void            *pNext
+			0,                                    // VkImageCreateFlags     flags
+			VK_IMAGE_TYPE_2D,                     // VkImageType            imageType
+			VK_FORMAT_R8G8B8A8_UNORM,             // VkFormat               format
+			{                                     // VkExtent3D             extent
+				width,                                // uint32_t               width
+				height,                               // uint32_t               height
+				1                                     // uint32_t               depth
+			},
+			1,                                    // uint32_t               mipLevels
+			1,                                    // uint32_t               arrayLayers
+			VK_SAMPLE_COUNT_1_BIT,                // VkSampleCountFlagBits  samples
+			VK_IMAGE_TILING_OPTIMAL,              // VkImageTiling          tiling
+			VK_IMAGE_USAGE_TRANSFER_DST_BIT |     // VkImageUsageFlags      usage
+			VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_SHARING_MODE_EXCLUSIVE,            // VkSharingMode          sharingMode
+			0,                                    // uint32_t               queueFamilyIndexCount
+			nullptr,                              // const uint32_t        *pQueueFamilyIndices
+			VK_IMAGE_LAYOUT_UNDEFINED             // VkImageLayout          initialLayout
+		};
+
+		return image.create(*m_vulkanInstance.getDevice(), imageCreateInfo);
+	}
+
+	bool RenderWindow::allocateImageMemory(Image const& image, VkMemoryPropertyFlagBits property, DeviceMemory& memory) const {
+		VkMemoryRequirements imageMemoryRequirements = image.getImageMemoryRequirements();
+
+		VkPhysicalDeviceMemoryProperties memoryProperties = m_vulkanInstance.getDevice()->getPhysicalDevice().getMemoryProperties();
+
+		for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i) {
+			if ((imageMemoryRequirements.memoryTypeBits & (1 << i)) &&
+				(memoryProperties.memoryTypes[i].propertyFlags & property)) {
+
+				VkMemoryAllocateInfo memoryAllocateInfo = {
+					VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,     // VkStructureType                        sType
+					nullptr,                                    // const void                            *pNext
+					imageMemoryRequirements.size,               // VkDeviceSize                           allocationSize
+					i                                           // uint32_t                               memoryTypeIndex
+				};
+
+				if (memory.create(*m_vulkanInstance.getDevice(), memoryAllocateInfo)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	bool RenderWindow::createImageView(ImageParameters& imageParameters) const {
+		VkImageViewCreateInfo imageViewCreateInfo = {
+			VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, // VkStructureType          sType
+			nullptr,                                  // const void              *pNext
+			0,                                        // VkImageViewCreateFlags   flags
+			imageParameters.image(),                  // VkImage                  image
+			VK_IMAGE_VIEW_TYPE_2D,                    // VkImageViewType          viewType
+			VK_FORMAT_R8G8B8A8_UNORM,                 // VkFormat                 format
+			{                                         // VkComponentMapping       components
+				VK_COMPONENT_SWIZZLE_IDENTITY,            // VkComponentSwizzle       r
+				VK_COMPONENT_SWIZZLE_IDENTITY,            // VkComponentSwizzle       g
+				VK_COMPONENT_SWIZZLE_IDENTITY,            // VkComponentSwizzle       b
+				VK_COMPONENT_SWIZZLE_IDENTITY             // VkComponentSwizzle       a
+			},
+			{                                         // VkImageSubresourceRange  subresourceRange
+				VK_IMAGE_ASPECT_COLOR_BIT,                // VkImageAspectFlags       aspectMask
+				0,                                        // uint32_t                 baseMipLevel
+				1,                                        // uint32_t                 levelCount
+				0,                                        // uint32_t                 baseArrayLayer
+				1                                         // uint32_t                 layerCount
+			}
+		};
+
+		return imageParameters.view.create(*m_vulkanInstance.getDevice(), imageViewCreateInfo);
 	}
 
 }

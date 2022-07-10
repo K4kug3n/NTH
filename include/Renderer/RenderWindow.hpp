@@ -27,6 +27,8 @@
 
 namespace Nth {
 
+	class Image;
+
 	// TODO: Move out
 	struct VertexData {
 		float   x, y, z, w;
@@ -37,6 +39,14 @@ namespace Nth {
 	struct BufferParameters {
 		Buffer buffer;
 		DeviceMemory memory;
+	};
+
+	// TODO: Move out
+	struct ImageParameters {
+		Image image;
+		ImageView view;
+		DeviceMemory memory;
+		//Sampler sampler;
 	};
 
 	class RenderWindow : public Window {
@@ -64,6 +74,8 @@ namespace Nth {
 		bool createStagingBuffer();
 		bool createRenderingResources();
 		bool copyVertexData();
+		bool createTexture();
+		bool copyTextureData(char* textureData, uint32_t dataSize, uint32_t width, uint32_t height);
 		void onWindowSizeChanged();
 
 		VkSurfaceFormatKHR getSwapchainFormat(std::vector<VkSurfaceFormatKHR> const& surfaceFormats) const;
@@ -79,6 +91,9 @@ namespace Nth {
 		bool prepareFrame(CommandBuffer& commandbuffer, SwapchainImage const& imageParameters, Framebuffer& framebuffer) const;
 		bool createFramebuffer(Framebuffer& framebuffer, ImageView const& imageView) const;
 		std::vector<float> const& getVertexData() const;
+		bool createImage(uint32_t width, uint32_t height, Image& image) const;
+		bool allocateImageMemory(Image const& image, VkMemoryPropertyFlagBits property, DeviceMemory& memory) const;
+		bool createImageView(ImageParameters& imageParameters) const;
 
 		VulkanInstance& m_vulkanInstance;
 		Surface m_surface;
@@ -90,6 +105,7 @@ namespace Nth {
 		Pipeline m_graphicPipeline;
 		BufferParameters m_vertexBuffer;
 		BufferParameters m_stagingBuffer;
+		ImageParameters m_image;
 		std::vector<RenderingResource> m_renderingResources;
 
 		Vector2ui m_swapchainSize;

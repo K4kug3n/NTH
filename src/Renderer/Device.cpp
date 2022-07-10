@@ -60,26 +60,6 @@ namespace Nth {
 			return false;
 		}
 
-		/*VmaVulkanFunctions vulkanFunctions = {
-			m_instance.vkGetPhysicalDeviceProperties,
-			m_instance.vkGetPhysicalDeviceMemoryProperties,
-			vkAllocateMemory,
-			vkFreeMemory,
-			vkMapMemory,
-			vkUnmapMemory,
-			vkFlushMappedMemoryRanges,
-			vkInvalidateMappedMemoryRanges,
-			vkBindBufferMemory,
-			vkBindImageMemory,
-			vkGetBufferMemoryRequirements,
-			vkGetImageMemoryRequirements,
-			vkCreateBuffer,
-			vkDestroyBuffer,
-			vkCreateImage,
-			vkDestroyImage,
-			vkCmdCopyBuffer
-		};*/
-
 		VmaVulkanFunctions vulkanFunctions{};
 		vulkanFunctions.vkGetPhysicalDeviceProperties = m_instance.vkGetPhysicalDeviceProperties;
 		vulkanFunctions.vkGetPhysicalDeviceMemoryProperties = m_instance.vkGetPhysicalDeviceMemoryProperties;

@@ -2,7 +2,6 @@
 
 #include "Renderer/ImageView.hpp"
 #include "Renderer/PhysicalDevice.hpp"
-#include "Renderer/Image.hpp"
 
 #include "Util/Reader.hpp"
 
@@ -1022,7 +1021,7 @@ namespace Nth {
 		return vertexData;
 	}
 
-	bool RenderWindow::createImage(uint32_t width, uint32_t height, Image& image) const {
+	bool RenderWindow::createImage(uint32_t width, uint32_t height, Vk::Image& image) const {
 		VkImageCreateInfo imageCreateInfo = {
 			VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,  // VkStructureType        sType;
 			nullptr,                              // const void            *pNext
@@ -1049,7 +1048,7 @@ namespace Nth {
 		return image.create(*m_vulkanInstance.getDevice(), imageCreateInfo);
 	}
 
-	bool RenderWindow::allocateImageMemory(Image const& image, VkMemoryPropertyFlagBits property, DeviceMemory& memory) const {
+	bool RenderWindow::allocateImageMemory(Vk::Image const& image, VkMemoryPropertyFlagBits property, DeviceMemory& memory) const {
 		VkMemoryRequirements imageMemoryRequirements = image.getImageMemoryRequirements();
 
 		VkPhysicalDeviceMemoryProperties memoryProperties = m_vulkanInstance.getDevice()->getPhysicalDevice().getMemoryProperties();

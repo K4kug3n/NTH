@@ -18,6 +18,7 @@
 #include "Renderer/Buffer.hpp"
 #include "Renderer/DeviceMemory.hpp"
 #include "Renderer/RenderingResource.hpp"
+#include "Renderer/Image.hpp"
 
 #include "Math/Vector2.hpp"
 
@@ -25,8 +26,6 @@
 
 namespace Nth {
 	using namespace Vk;
-
-	class Image;
 
 	// TODO: Move out
 	struct VertexData {
@@ -90,8 +89,8 @@ namespace Nth {
 		bool prepareFrame(CommandBuffer& commandbuffer, SwapchainImage const& imageParameters, Framebuffer& framebuffer) const;
 		bool createFramebuffer(Framebuffer& framebuffer, ImageView const& imageView) const;
 		std::vector<float> const& getVertexData() const;
-		bool createImage(uint32_t width, uint32_t height, Image& image) const;
-		bool allocateImageMemory(Image const& image, VkMemoryPropertyFlagBits property, DeviceMemory& memory) const;
+		bool createImage(uint32_t width, uint32_t height, Vk::Image& image) const;
+		bool allocateImageMemory(Vk::Image const& image, VkMemoryPropertyFlagBits property, DeviceMemory& memory) const;
 		bool createImageView(ImageParameters& imageParameters) const;
 
 		VulkanInstance& m_vulkanInstance;

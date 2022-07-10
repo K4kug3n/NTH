@@ -5,6 +5,7 @@
 #include "Renderer/VkUtil.hpp"
 
 #include <iostream>
+#include <cassert>
 
 namespace Nth {
 	namespace Vk {

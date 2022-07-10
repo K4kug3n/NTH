@@ -6,10 +6,12 @@
 #include <vulkan/vulkan.h>
 
 namespace Nth {
+	
+	struct WindowHandle;
+
 	namespace Vk {
 		class PhysicalDevice;
-		struct WindowHandle;
-
+	
 		class Surface {
 		public:
 			Surface(Instance const& instance);

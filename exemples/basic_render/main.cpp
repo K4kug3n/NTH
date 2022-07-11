@@ -4,7 +4,7 @@
 #include <iostream>
 
 int main() {
-	Nth::VulkanInstance instance{};
+	Nth::Vk::VulkanInstance instance{};
 
 	Nth::Window::initialize();
 

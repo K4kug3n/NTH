@@ -44,7 +44,7 @@ namespace Nth {
 		}
 
 		bool Image::bindImageMemory(DeviceMemory const& memory) {
-			assert(m_device == nullptr);
+			assert(m_device != nullptr);
 
 			VkResult result{ m_device->vkBindImageMemory((*m_device)(), m_image, memory(), 0) };
 			if (result != VK_SUCCESS) {
@@ -56,7 +56,7 @@ namespace Nth {
 		}
 
 		VkMemoryRequirements Image::getImageMemoryRequirements() const {
-			assert(m_device == nullptr);
+			assert(m_device != nullptr);
 
 			VkMemoryRequirements imageMemoryRequirements;
 			m_device->vkGetImageMemoryRequirements((*m_device)(), m_image, &imageMemoryRequirements);

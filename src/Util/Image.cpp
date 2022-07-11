@@ -35,7 +35,7 @@ namespace Nth{
 
 		if (!pixels) {
 			std::cout << "Failed to load texture file " << filename << std::endl;
-			return std::make_shared<Image>();
+			return nullptr;
 		}
 
 		std::vector<unsigned char> data = {};

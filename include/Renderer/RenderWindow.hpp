@@ -32,7 +32,7 @@ namespace Nth {
 	// TODO: Move out
 	struct VertexData {
 		float   x, y, z, w;
-		float   r, g, b, a;
+		float   u, v;
 	};
 
 	// TODO: Move out
@@ -74,7 +74,6 @@ namespace Nth {
 
 	private:
 		bool createSwapchain();
-		bool createSemaphores();
 		bool createRenderPass();
 		bool createPipeline();
 		bool createVertexBuffer();

@@ -71,12 +71,12 @@ namespace Nth {
 		}
 
 		if (!createRenderingResources()) {
-			std::cerr << "Can't create rendering resource" << std::endl;
+			std::cerr << "Can't create rendering ressources" << std::endl;
 			return false;
 		}
 
 		if (!createStagingBuffer()) {
-			std::cerr << "Can't create staging buffer" << std::endl;
+			std::cerr << "Can't create stagging buffer" << std::endl;
 			return false;
 		}
 
@@ -86,27 +86,27 @@ namespace Nth {
 		}
 
 		if (!createDescriptorSetLayout()) {
-			std::cerr << "Error: Can't create descriptor set layout" << std::endl;
+			std::cerr << "Can't create descriptor set layout" << std::endl;
 			return false;
 		}
 
 		if (!createDescriptorPool()) {
-			std::cerr << "Error: Can't create descriptor pool" << std::endl;
+			std::cerr << "Can't create descriptor pool" << std::endl;
 			return false;
 		}
 
 		if (!allocateDescriptorSet()) {
-			std::cerr << "Error: Can't create descriptor set" << std::endl;
+			std::cerr << "Can't allocate descriptor set" << std::endl;
 			return false;
 		}
 
 		if (!updateDescriptorSet()) {
-			std::cerr << "Error: Can't update descriptor set" << std::endl;
+			std::cerr << "Can't update descriptor set" << std::endl;
 			return false;
 		}
 
 		if (!createRenderPass()) {
-			std::cerr << "Error: Can't create renderpass" << std::endl;
+			std::cerr << "Can't create render pass" << std::endl;
 			return false;
 		}
 
@@ -202,7 +202,6 @@ namespace Nth {
 		}
 
 		return true;
-
 	}
 
 	bool RenderWindow::createSwapchain() {
@@ -269,24 +268,6 @@ namespace Nth {
 
 		m_swapchain = std::move(newSwapchain);
 		m_swapchainSize = size();
-
-		return true;
-	}
-
-	bool RenderWindow::createSemaphores() {
-		std::shared_ptr<Vk::Device>& device = m_vulkanInstance.getDevice();
-		
-		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			if (!m_renderingResources[i].imageAvailableSemaphore.create(*device)) {
-				std::cerr << "Error: Can't create image available semaphore" << std::endl;
-				return false;
-			}
-
-			if (!m_renderingResources[i].finishedRenderingSemaphore.create(*device)) {
-				std::cerr << "Error: Can't create rendering finished semaphore" << std::endl;
-				return false;
-			}
-		}
 
 		return true;
 	}
@@ -414,13 +395,13 @@ namespace Nth {
 				0,                                                          // uint32_t                                       location
 				vertexBindingDescriptions[0].binding,                       // uint32_t                                       binding
 				VK_FORMAT_R32G32B32A32_SFLOAT,                              // VkFormat                                       format
-				offsetof(struct VertexData, x)                              // uint32_t                                       offset
+				0                                                           // uint32_t                                       offset
 			},
 			{
 				1,                                                          // uint32_t                                       location
 				vertexBindingDescriptions[0].binding,                       // uint32_t                                       binding
-				VK_FORMAT_R32G32B32A32_SFLOAT,                              // VkFormat                                       format
-				offsetof(struct VertexData, r)                              // uint32_t                                       offset
+				VK_FORMAT_R32G32_SFLOAT,                                    // VkFormat                                       format
+				4 * sizeof(float)                                           // uint32_t                                       offset
 			}
 		};
 
@@ -687,8 +668,8 @@ namespace Nth {
 		if (!image) {
 			return false;
 		}
-
-		std::vector<unsigned char> pixels = image->pixels();
+		
+		std::vector<char> pixels = image->pixels();
 
 		if (!createImage(image->width(), image->height(), m_image.image)) {
 			return false;
@@ -710,7 +691,7 @@ namespace Nth {
 			return false;
 		}
 
-		if (!copyTextureData(reinterpret_cast<char*>(pixels.data()), pixels.size(), image->width(), image->height())) {
+		if (!copyTextureData(pixels.data(), pixels.size(), image->width(), image->height())) {
 			return false;
 		}
 
@@ -918,20 +899,20 @@ namespace Nth {
 	void RenderWindow::onWindowSizeChanged() {
 		m_vulkanInstance.getDevice()->waitIdle();
 
-		m_graphicPipeline.destroy();
-		m_renderPass.destroy();
+		//m_graphicPipeline.destroy();
+		//m_renderPass.destroy();
 
 		if (!createSwapchain()) {
 			std::cerr << "Error: Can't re-create swapchain" << std::endl;
 		}
 
-		if (!createRenderPass()) {
-			std::cerr << "Error: Can't re-create renderpass" << std::endl;
-		}
+		//if (!createRenderPass()) {
+		//	std::cerr << "Error: Can't re-create renderpass" << std::endl;
+		//}
 
-		if (!createPipeline()) {
-			std::cerr << "Can't re-create pipeline" << std::endl;
-		}
+		//if (!createPipeline()) {
+		//	std::cerr << "Can't re-create pipeline" << std::endl;
+		//}
 	}
 
 	VkSurfaceFormatKHR RenderWindow::getSwapchainFormat(std::vector<VkSurfaceFormatKHR> const& surfaceFormats) const {
@@ -1244,16 +1225,16 @@ namespace Nth {
 	std::vector<float> const& RenderWindow::getVertexData() const {
 		static const std::vector<float> vertexData = {
 			-0.7f, -0.7f, 0.0f, 1.0f,
-			1.0f, 0.0f, 0.0f, 0.0f,
+			-0.1f, -0.1f,
 			//
 			-0.7f, 0.7f, 0.0f, 1.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
+			-0.1f, 1.1f,
 			//
 			0.7f, -0.7f, 0.0f, 1.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
+			1.1f, -0.1f,
 			//
 			0.7f, 0.7f, 0.0f, 1.0f,
-			0.3f, 0.3f, 0.3f, 0.0f
+			1.1f, 1.1f,
 		};
 
 		return vertexData;

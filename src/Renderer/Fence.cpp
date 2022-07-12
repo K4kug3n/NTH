@@ -4,6 +4,7 @@
 #include "Renderer/VkUtil.hpp"
 
 #include <iostream>
+#include <cassert>
 
 namespace Nth {
 	namespace Vk {
@@ -43,6 +44,7 @@ namespace Nth {
 		}
 
 		bool Fence::wait(uint64_t timeout) const {
+			assert(m_device != nullptr);
 			VkResult result{ m_device->vkWaitForFences((*m_device)(), 1, &m_fence, VK_FALSE, timeout) };
 			if (result != VK_SUCCESS) {
 				std::cerr << "Error: Waiting fence take too long, " << toString(result) << std::endl;

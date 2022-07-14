@@ -86,6 +86,7 @@ namespace Nth {
 		bool createDescriptorPool();
 		bool allocateDescriptorSet();
 		bool updateDescriptorSet();
+		bool createUniformBuffer();
 		void onWindowSizeChanged();
 
 		VkSurfaceFormatKHR getSwapchainFormat(std::vector<VkSurfaceFormatKHR> const& surfaceFormats) const;
@@ -105,6 +106,8 @@ namespace Nth {
 		bool allocateImageMemory(Vk::Image const& image, VkMemoryPropertyFlagBits property, Vk::DeviceMemory& memory) const;
 		bool createImageView(ImageParameters& imageParameters) const;
 		bool createSampler(Vk::Sampler& sampler) const;
+		bool copyUniformBufferData();
+		std::array<float, 16> getUniformBufferData() const;
 
 		Vk::VulkanInstance& m_vulkanInstance;
 		Vk::Surface m_surface;
@@ -117,6 +120,7 @@ namespace Nth {
 		Vk::PipelineLayout m_pipelineLayout;
 		BufferParameters m_vertexBuffer;
 		BufferParameters m_stagingBuffer;
+		BufferParameters m_uniformBuffer;
 		ImageParameters m_image;
 		DescriptorSetParameters m_descriptor;
 		std::vector<Vk::RenderingResource> m_renderingResources;

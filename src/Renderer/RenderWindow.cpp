@@ -7,8 +7,33 @@
 #include "Util/Image.hpp"
 
 #include <iostream>
+#include <array>
 
 namespace Nth {
+	std::array<float, 16> GetOrthographicProjectionMatrix(float const left_plane, float const right_plane, float const top_plane, float const bottom_plane, float const near_plane, float const far_plane) {
+		return {
+		  2.0f / (right_plane - left_plane),
+		  0.0f,
+		  0.0f,
+		  0.0f,
+
+		  0.0f,
+		  2.0f / (bottom_plane - top_plane),
+		  0.0f,
+		  0.0f,
+
+		  0.0f,
+		  0.0f,
+		  1.0f / (near_plane - far_plane),
+		  0.0f,
+
+		  -(right_plane + left_plane) / (right_plane - left_plane),
+		  -(bottom_plane + top_plane) / (bottom_plane - top_plane),
+		  near_plane / (near_plane - far_plane),
+		  1.0f
+		};
+	}
+
 	RenderWindow::RenderWindow(Vk::VulkanInstance& vulkanInstance) :
 		m_vulkanInstance(vulkanInstance),
 		m_surface(vulkanInstance.getInstance()),
@@ -82,6 +107,11 @@ namespace Nth {
 
 		if (!createTexture()) {
 			std::cerr << "Can't create texture" << std::endl;
+			return false;
+		}
+
+		if (!createUniformBuffer()) {
+			std::cerr << "Can't create uniform buffer" << std::endl;
 			return false;
 		}
 
@@ -807,23 +837,32 @@ namespace Nth {
 	}
 
 	bool RenderWindow::createDescriptorSetLayout() {
-		VkDescriptorSetLayoutBinding layout_binding = {
-			0,                                          // uint32_t             binding
-			VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  // VkDescriptorType     descriptorType
-			1,                                          // uint32_t             descriptorCount
-			VK_SHADER_STAGE_FRAGMENT_BIT,               // VkShaderStageFlags   stageFlags
-			nullptr                                     // const VkSampler     *pImmutableSamplers
+		std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {
+			{
+				0,                                          // uint32_t             binding
+				VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  // VkDescriptorType     descriptorType
+				1,                                          // uint32_t             descriptorCount
+				VK_SHADER_STAGE_FRAGMENT_BIT,               // VkShaderStageFlags   stageFlags
+				nullptr                                     // const VkSampler     *pImmutableSamplers
+			},
+			{
+				1,                                         // uint32_t           binding
+				VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         // VkDescriptorType   descriptorType
+				1,                                         // uint32_t           descriptorCount
+				VK_SHADER_STAGE_VERTEX_BIT,                // VkShaderStageFlags stageFlags
+				nullptr                                    // const VkSampler *pImmutableSamplers
+			}
 		};
 
-		VkDescriptorSetLayoutCreateInfo descriptor_set_layout_create_info = {
+		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
 			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,  // VkStructureType                      sType
 			nullptr,                                              // const void                          *pNext
 			0,                                                    // VkDescriptorSetLayoutCreateFlags     flags
-			1,                                                    // uint32_t                             bindingCount
-			&layout_binding                                       // const VkDescriptorSetLayoutBinding  *pBindings
+			static_cast<uint32_t>(layoutBindings.size()),         // uint32_t                             bindingCount
+			layoutBindings.data()                                 // const VkDescriptorSetLayoutBinding  *pBindings
 		};
 
-		if (!m_descriptor.layout.create(*m_vulkanInstance.getDevice(), descriptor_set_layout_create_info)) {
+		if (!m_descriptor.layout.create(*m_vulkanInstance.getDevice(), descriptorSetLayoutCreateInfo)) {
 			std::cerr << "Could not create descriptor set layout!" << std::endl;
 			return false;
 		}
@@ -832,18 +871,24 @@ namespace Nth {
 	}
 
 	bool RenderWindow::createDescriptorPool() {
-		VkDescriptorPoolSize poolSize = {
-			VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,      // VkDescriptorType               type
-			1                                               // uint32_t                       descriptorCount
-		};
+		std::vector<VkDescriptorPoolSize> poolSize = {
+		{
+			VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,   // VkDescriptorType               type
+			1                                            // uint32_t                       descriptorCount
+		},
+		{
+			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,           // VkDescriptorType  type
+			1                                            // uint32_t          descriptorCount
+		}
+	};
 
 		VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = {
 			VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,  // VkStructureType                sType
 			nullptr,                                        // const void                    *pNext
 			0,                                              // VkDescriptorPoolCreateFlags    flags
 			1,                                              // uint32_t                       maxSets
-			1,                                              // uint32_t                       poolSizeCount
-			&poolSize                                      // const VkDescriptorPoolSize    *pPoolSizes
+			static_cast<uint32_t>(poolSize.size()),         // uint32_t                       poolSizeCount
+			poolSize.data()                                 // const VkDescriptorPoolSize    *pPoolSizes
 		};
 
 		if (!m_descriptor.pool.create(*m_vulkanInstance.getDevice(), descriptorPoolCreateInfo)) {
@@ -878,20 +923,53 @@ namespace Nth {
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL    // VkImageLayout                  imageLayout
 		};
 
-		VkWriteDescriptorSet descriptor_writes = {
-			VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
-			nullptr,                                    // const void                    *pNext
-			m_descriptor.descriptor(),                  // VkDescriptorSet                dstSet
-			0,                                          // uint32_t                       dstBinding
-			0,                                          // uint32_t                       dstArrayElement
-			1,                                          // uint32_t                       descriptorCount
-			VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  // VkDescriptorType               descriptorType
-			&imageInfo,                                 // const VkDescriptorImageInfo   *pImageInfo
-			nullptr,                                    // const VkDescriptorBufferInfo  *pBufferInfo
-			nullptr                                     // const VkBufferView            *pTexelBufferView
+		VkDescriptorBufferInfo bufferInfo = {
+			m_uniformBuffer.buffer(),                // VkBuffer         buffer
+			0,                                       // VkDeviceSize     offset
+			m_uniformBuffer.buffer.getSize()         // VkDeviceSize     range
 		};
 
-		m_descriptor.descriptor.update(descriptor_writes);
+		std::vector<VkWriteDescriptorSet> descriptorWrites = {
+			{
+				VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
+				nullptr,                                    // const void                    *pNext
+				m_descriptor.descriptor(),                  // VkDescriptorSet                dstSet
+				0,                                          // uint32_t                       dstBinding
+				0,                                          // uint32_t                       dstArrayElement
+				1,                                          // uint32_t                       descriptorCount
+				VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  // VkDescriptorType               descriptorType
+				&imageInfo,                                 // const VkDescriptorImageInfo   *pImageInfo
+				nullptr,                                    // const VkDescriptorBufferInfo  *pBufferInfo
+				nullptr                                     // const VkBufferView            *pTexelBufferView
+			},
+			{
+				VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,    // VkStructureType     sType
+				nullptr,                                   // const void         *pNext
+				m_descriptor.descriptor(),                 // VkDescriptorSet     dstSet
+				1,                                         // uint32_t            dstBinding
+				0,                                         // uint32_t            dstArrayElement
+				1,                                         // uint32_t            descriptorCount
+				VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         // VkDescriptorType    descriptorType
+				nullptr,                                   // const VkDescriptorImageInfo  *pImageInfo
+				&bufferInfo,                               // const VkDescriptorBufferInfo *pBufferInfo
+				nullptr                                    // const VkBufferView *pTexelBufferView
+			}
+		};
+
+		m_descriptor.descriptor.update(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data());
+
+		return true;
+	}
+
+	bool RenderWindow::createUniformBuffer() {
+		if (!createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 16 * sizeof(float), m_uniformBuffer)) {
+			std::cerr << "Could not create uniform buffer!" << std::endl;
+			return false;
+		}
+
+		if (!copyUniformBufferData()) {
+			return false;
+		}
 
 		return true;
 	}
@@ -899,20 +977,14 @@ namespace Nth {
 	void RenderWindow::onWindowSizeChanged() {
 		m_vulkanInstance.getDevice()->waitIdle();
 
-		//m_graphicPipeline.destroy();
-		//m_renderPass.destroy();
-
 		if (!createSwapchain()) {
 			std::cerr << "Error: Can't re-create swapchain" << std::endl;
 		}
 
-		//if (!createRenderPass()) {
-		//	std::cerr << "Error: Can't re-create renderpass" << std::endl;
-		//}
+		if (!copyUniformBufferData()) {
+			std::cerr << "Error: Can't re-copy uniform data" << std::endl;
+		}
 
-		//if (!createPipeline()) {
-		//	std::cerr << "Can't re-create pipeline" << std::endl;
-		//}
 	}
 
 	VkSurfaceFormatKHR RenderWindow::getSwapchainFormat(std::vector<VkSurfaceFormatKHR> const& surfaceFormats) const {
@@ -1079,7 +1151,6 @@ namespace Nth {
 		}
 
 		return true;
-
 	}
 
 	bool RenderWindow::prepareFrame(Vk::CommandBuffer& commandbuffer, Vk::SwapchainImage const& imageParameters, Vk::Framebuffer& framebuffer) const {
@@ -1224,16 +1295,16 @@ namespace Nth {
 
 	std::vector<float> const& RenderWindow::getVertexData() const {
 		static const std::vector<float> vertexData = {
-			-0.7f, -0.7f, 0.0f, 1.0f,
+			-170.0f, -170.0f, 0.0f, 1.0f,
 			-0.1f, -0.1f,
 			//
-			-0.7f, 0.7f, 0.0f, 1.0f,
+			-170.0f, 170.0f, 0.0f, 1.0f,
 			-0.1f, 1.1f,
 			//
-			0.7f, -0.7f, 0.0f, 1.0f,
+			170.0f, -170.0f, 0.0f, 1.0f,
 			1.1f, -0.1f,
 			//
-			0.7f, 0.7f, 0.0f, 1.0f,
+			170.0f, 170.0f, 0.0f, 1.0f,
 			1.1f, 1.1f,
 		};
 
@@ -1340,5 +1411,84 @@ namespace Nth {
 		};
 
 		return sampler.create(*m_vulkanInstance.getDevice(), samplerCreateInfo);
+	}
+
+	bool RenderWindow::copyUniformBufferData() {
+		const std::array<float, 16> uniformData = getUniformBufferData();
+
+		if (!m_stagingBuffer.memory.map(0, m_uniformBuffer.buffer.getSize(), 0)) {
+			std::cerr << "Could not map memory and upload data to a staging buffer!" << std::endl;
+			return false;
+		}
+
+		void* stagingBufferMemoryPointer = m_stagingBuffer.memory.getMappedPointer();
+
+		memcpy(stagingBufferMemoryPointer, uniformData.data(), m_uniformBuffer.buffer.getSize());
+
+		m_stagingBuffer.memory.flushMappedMemory(0, m_uniformBuffer.buffer.getSize());
+
+		m_stagingBuffer.memory.unmap();
+
+		// Prepare command buffer to copy data from staging buffer to a uniform buffer
+		Vk::CommandBuffer& commandBuffer = m_renderingResources[0].commandBuffer;
+
+		VkCommandBufferBeginInfo commandBufferBeginInfo = {
+			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, // VkStructureType              sType
+			nullptr,                                     // const void                  *pNext
+			VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, // VkCommandBufferUsageFlags    flags
+			nullptr                                      // const VkCommandBufferInheritanceInfo  *pInheritanceInfo
+		};
+
+		commandBuffer.begin(commandBufferBeginInfo);
+
+		VkBufferCopy bufferCopyInfo = {
+			0,                                // VkDeviceSize       srcOffset
+			0,                                // VkDeviceSize       dstOffset
+			m_uniformBuffer.buffer.getSize()  // VkDeviceSize       size
+		};
+		commandBuffer.copyBuffer(m_stagingBuffer.buffer(), m_uniformBuffer.buffer(), bufferCopyInfo);
+
+		VkBufferMemoryBarrier buffer_memory_barrier = {
+			VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, // VkStructureType    sType;
+			nullptr,                          // const void        *pNext
+			VK_ACCESS_TRANSFER_WRITE_BIT,     // VkAccessFlags      srcAccessMask
+			VK_ACCESS_UNIFORM_READ_BIT,       // VkAccessFlags      dstAccessMask
+			VK_QUEUE_FAMILY_IGNORED,          // uint32_t           srcQueueFamilyIndex
+			VK_QUEUE_FAMILY_IGNORED,          // uint32_t           dstQueueFamilyIndex
+			m_uniformBuffer.buffer(),         // VkBuffer           buffer
+			0,                                // VkDeviceSize       offset
+			VK_WHOLE_SIZE                     // VkDeviceSize       size
+		};
+		commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr, 1, &buffer_memory_barrier, 0, nullptr);
+
+		commandBuffer.end();
+
+		// Submit command buffer and copy data from staging buffer to a vertex buffer
+		VkSubmitInfo submitInfo = {
+			VK_STRUCTURE_TYPE_SUBMIT_INFO,    // VkStructureType    sType
+			nullptr,                          // const void        *pNext
+			0,                                // uint32_t           waitSemaphoreCount
+			nullptr,                          // const VkSemaphore *pWaitSemaphores
+			nullptr,                          // const VkPipelineStageFlags *pWaitDstStageMask;
+			1,                                // uint32_t           commandBufferCount
+			&commandBuffer(),                 // const VkCommandBuffer *pCommandBuffers
+			0,                                // uint32_t           signalSemaphoreCount
+			nullptr                           // const VkSemaphore *pSignalSemaphores
+		};
+
+		if (!m_graphicsQueue.submit(submitInfo, VK_NULL_HANDLE)) {
+			return false;
+		}
+
+		m_vulkanInstance.getDevice()->waitIdle();
+		
+		return true;
+	}
+
+	std::array<float, 16> RenderWindow::getUniformBufferData() const {
+		float half_width = static_cast<float>(m_swapchainSize.x) * 0.5f;
+		float half_height = static_cast<float>(m_swapchainSize.y) * 0.5f;
+
+		return GetOrthographicProjectionMatrix(-half_width, half_width, -half_height, half_height, -1.0f, 1.0f);
 	}
 }

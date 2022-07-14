@@ -34,10 +34,10 @@ namespace Nth {
 			return true;
 		}
 
-		void DescriptorSet::update(VkWriteDescriptorSet const& setWrite) {
+		void DescriptorSet::update(uint32_t nbSetWrite, VkWriteDescriptorSet const* setWrites) {
 			assert(m_device != nullptr);
 
-			m_device->vkUpdateDescriptorSets((*m_device)(), 1, &setWrite, 0, nullptr);
+			m_device->vkUpdateDescriptorSets((*m_device)(), nbSetWrite, setWrites, 0, nullptr);
 		}		
 
 		bool DescriptorSet::isValid() {

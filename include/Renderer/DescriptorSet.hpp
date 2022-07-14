@@ -18,7 +18,7 @@ namespace Nth {
 
 			bool allocate(Device const& device, VkDescriptorSetAllocateInfo const& info);
 			
-			void update(VkWriteDescriptorSet const& setWrite);
+			void update(uint32_t nbSetWrite, VkWriteDescriptorSet const* setWrites);
 
 			bool isValid();
 

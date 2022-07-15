@@ -247,6 +247,16 @@ namespace Nth{
 	}
 
 	template<typename T>
+	inline std::array<float, 16> Matrix4<T>::toArray() const {
+		return std::array<float, 16>{
+			a11, a12, a13, a14,
+			a21, a22, a23, a24,
+			a31, a31, a33, a34,
+			a41, a42, a43, a44
+		};
+	}
+
+	template<typename T>
 	std::string Matrix4<T>::toString() const {
 		std::stringstream stream;
 
@@ -290,6 +300,31 @@ namespace Nth{
 			static_cast<T>(0.0),                         static_cast<T>(0.0),         -(farClipping + nearClipping) / (farClipping - nearClipping),                     -static_cast<T>(1.0),
 			static_cast<T>(0.0),                         static_cast<T>(0.0),         -(static_cast<T>(2) * farClipping * nearClipping) / (farClipping - nearClipping),  static_cast<T>(0.0),
 		};
+	}
+
+	template<typename T>
+	inline Matrix4<T> Matrix4<T>::Orthographic(float leftPlane, float rightPlane, float topPlane, float bottomPlane, float nearPlane, float farPlane) {
+		return Matrix4(
+			2.0f / (rightPlane - leftPlane),
+			0.0f,
+			0.0f,
+			0.0f,
+
+			0.0f,
+			2.0f / (bottomPlane - topPlane),
+			0.0f,
+			0.0f,
+
+			0.0f,
+			0.0f,
+			1.0f / (nearPlane - farPlane),
+			0.0f,
+
+			-(rightPlane + leftPlane) / (rightPlane - leftPlane),
+			-(bottomPlane + topPlane) / (bottomPlane - topPlane),
+			nearPlane / (nearPlane - farPlane),
+			1.0f
+		);
 	}
 
 	template<typename T>

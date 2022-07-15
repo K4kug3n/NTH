@@ -40,6 +40,7 @@ namespace Nth {
 		Matrix4& operator=(Matrix4 const&) = default;
 		Matrix4& operator=(Matrix4&&) = default;
 
+		std::array<float, 16> toArray() const;
 		std::string toString() const;
 
 		T	a11, a12, a13, a14,
@@ -50,6 +51,7 @@ namespace Nth {
 		static Matrix4 Identity();
 		static Matrix4 Translation(Vector3<T> const& translation);
 		static Matrix4 Perspective(float fov, float aspectRatio, float nearClipping, float farClipping);
+		static Matrix4 Orthographic(float leftPlane, float rightPlane, float topPlane, float bottomPlane, float nearPlane, float farPlane);
 		static Matrix4 Rotation(float angle, Vector3<T> axis);
 		static Matrix4 Scale(Vector3<T> const& scale);
 	};

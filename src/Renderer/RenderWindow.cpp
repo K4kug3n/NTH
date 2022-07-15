@@ -6,34 +6,12 @@
 #include "Util/Reader.hpp"
 #include "Util/Image.hpp"
 
+#include "Math/Matrix4.hpp"
+
 #include <iostream>
 #include <array>
 
 namespace Nth {
-	std::array<float, 16> GetOrthographicProjectionMatrix(float const left_plane, float const right_plane, float const top_plane, float const bottom_plane, float const near_plane, float const far_plane) {
-		return {
-		  2.0f / (right_plane - left_plane),
-		  0.0f,
-		  0.0f,
-		  0.0f,
-
-		  0.0f,
-		  2.0f / (bottom_plane - top_plane),
-		  0.0f,
-		  0.0f,
-
-		  0.0f,
-		  0.0f,
-		  1.0f / (near_plane - far_plane),
-		  0.0f,
-
-		  -(right_plane + left_plane) / (right_plane - left_plane),
-		  -(bottom_plane + top_plane) / (bottom_plane - top_plane),
-		  near_plane / (near_plane - far_plane),
-		  1.0f
-		};
-	}
-
 	RenderWindow::RenderWindow(Vk::VulkanInstance& vulkanInstance) :
 		m_vulkanInstance(vulkanInstance),
 		m_surface(vulkanInstance.getInstance()),
@@ -1489,6 +1467,6 @@ namespace Nth {
 		float half_width = static_cast<float>(m_swapchainSize.x) * 0.5f;
 		float half_height = static_cast<float>(m_swapchainSize.y) * 0.5f;
 
-		return GetOrthographicProjectionMatrix(-half_width, half_width, -half_height, half_height, -1.0f, 1.0f);
+		return Matrix4f::Orthographic(-half_width, half_width, -half_height, half_height, -1.0f, 1.0f).toArray();
 	}
 }

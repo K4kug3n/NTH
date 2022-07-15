@@ -23,18 +23,13 @@
 #include "Renderer/DescriptorPool.hpp"
 #include "Renderer/DescriptorSet.hpp"
 #include "Renderer/DescriptorSetLayout.hpp"
+#include "Renderer/Vertex.hpp"
 
 #include "Math/Vector2.hpp"
 
 #include <vector>
 
 namespace Nth {
-	// TODO: Move out
-	struct VertexData {
-		float   x, y, z, w;
-		float   u, v;
-	};
-
 	// TODO: Move out
 	struct BufferParameters {
 		Vk::Buffer buffer;

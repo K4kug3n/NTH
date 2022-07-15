@@ -370,60 +370,38 @@ namespace Nth {
 		std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos = {
 			// Vertex shader
 			{
-			  VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,        // VkStructureType                                sType
-			  nullptr,                                                    // const void                                    *pNext
-			  0,                                                          // VkPipelineShaderStageCreateFlags               flags
-			  VK_SHADER_STAGE_VERTEX_BIT,                                 // VkShaderStageFlagBits                          stage
-			  vertexShaderModule(),                                       // VkShaderModule                                 module
-			  "main",                                                     // const char                                    *pName
-			  nullptr                                                     // const VkSpecializationInfo                    *pSpecializationInfo
+				VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,        // VkStructureType                                sType
+				nullptr,                                                    // const void                                    *pNext
+				0,                                                          // VkPipelineShaderStageCreateFlags               flags
+				VK_SHADER_STAGE_VERTEX_BIT,                                 // VkShaderStageFlagBits                          stage
+				vertexShaderModule(),                                       // VkShaderModule                                 module
+				"main",                                                     // const char                                    *pName
+				nullptr                                                     // const VkSpecializationInfo                    *pSpecializationInfo
 			},
 			// Fragment shader
 			{
-			  VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,        // VkStructureType                                sType
-			  nullptr,                                                    // const void                                    *pNext
-			  0,                                                          // VkPipelineShaderStageCreateFlags               flags
-			  VK_SHADER_STAGE_FRAGMENT_BIT,                               // VkShaderStageFlagBits                          stage
-			  fragmentShaderModule(),                                     // VkShaderModule                                 module
-			  "main",                                                     // const char                                    *pName
-			  nullptr                                                     // const VkSpecializationInfo                    *pSpecializationInfo
+				VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,        // VkStructureType                                sType
+				nullptr,                                                    // const void                                    *pNext
+				0,                                                          // VkPipelineShaderStageCreateFlags               flags
+				VK_SHADER_STAGE_FRAGMENT_BIT,                               // VkShaderStageFlagBits                          stage
+				fragmentShaderModule(),                                     // VkShaderModule                                 module
+				"main",                                                     // const char                                    *pName
+				nullptr                                                     // const VkSpecializationInfo                    *pSpecializationInfo
 			}
 		};
 
-		std::vector<VkVertexInputBindingDescription> vertexBindingDescriptions = {
-			{
-				0,                                                          // uint32_t                                       binding
-				sizeof(VertexData),                                         // uint32_t                                       stride
-				VK_VERTEX_INPUT_RATE_VERTEX                                 // VkVertexInputRate                              inputRate
-			}
-		};
-
-		std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions = {
-			{
-				0,                                                          // uint32_t                                       location
-				vertexBindingDescriptions[0].binding,                       // uint32_t                                       binding
-				VK_FORMAT_R32G32B32A32_SFLOAT,                              // VkFormat                                       format
-				0                                                           // uint32_t                                       offset
-			},
-			{
-				1,                                                          // uint32_t                                       location
-				vertexBindingDescriptions[0].binding,                       // uint32_t                                       binding
-				VK_FORMAT_R32G32_SFLOAT,                                    // VkFormat                                       format
-				4 * sizeof(float)                                           // uint32_t                                       offset
-			}
-		};
-
+		VertexInputDescription vertexInputDescription = Vertex::getVertexDescription();
 		VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info = {
-			VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,    // VkStructureType                                sType
-			nullptr,                                                      // const void                                    *pNext
-			0,                                                            // VkPipelineVertexInputStateCreateFlags          flags
-			static_cast<uint32_t>(vertexBindingDescriptions.size()),    // uint32_t                                       vertexBindingDescriptionCount
-			vertexBindingDescriptions.data(),                           // const VkVertexInputBindingDescription         *pVertexBindingDescriptions
-			static_cast<uint32_t>(vertexAttributeDescriptions.size()),  // uint32_t                                       vertexAttributeDescriptionCount
-			vertexAttributeDescriptions.data()                          // const VkVertexInputAttributeDescription       *pVertexAttributeDescriptions
+			VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,       // VkStructureType                                sType
+			nullptr,                                                         // const void                                    *pNext
+			0,                                                               // VkPipelineVertexInputStateCreateFlags          flags
+			static_cast<uint32_t>(vertexInputDescription.bindings.size()),   // uint32_t                                       vertexBindingDescriptionCount
+			vertexInputDescription.bindings.data(),                          // const VkVertexInputBindingDescription         *pVertexBindingDescriptions
+			static_cast<uint32_t>(vertexInputDescription.attributes.size()), // uint32_t                                       vertexAttributeDescriptionCount
+			vertexInputDescription.attributes.data()                         // const VkVertexInputAttributeDescription       *pVertexAttributeDescriptions
 		};
 
-		VkPipelineInputAssemblyStateCreateInfo input_assembly_state_create_info = {
+		VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo = {
 			VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,  // VkStructureType                                sType
 			nullptr,                                                      // const void                                    *pNext
 			0,                                                            // VkPipelineInputAssemblyStateCreateFlags        flags
@@ -431,7 +409,7 @@ namespace Nth {
 			VK_FALSE                                                      // VkBool32                                       primitiveRestartEnable
 		};
 
-		VkPipelineViewportStateCreateInfo viewport_state_create_info = {
+		VkPipelineViewportStateCreateInfo viewportStateCreateInfo = {
 			VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,        // VkStructureType                                sType
 			nullptr,                                                      // const void                                    *pNext
 			0,                                                            // VkPipelineViewportStateCreateFlags             flags
@@ -441,7 +419,7 @@ namespace Nth {
 			nullptr                                                       // const VkRect2D                                *pScissors
 		};
 
-		VkPipelineRasterizationStateCreateInfo rasterization_state_create_info = {
+		VkPipelineRasterizationStateCreateInfo rasterizationStateCreateInfo = {
 			VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,   // VkStructureType                                sType
 			nullptr,                                                      // const void                                    *pNext
 			0,                                                            // VkPipelineRasterizationStateCreateFlags        flags
@@ -457,7 +435,7 @@ namespace Nth {
 			1.0f                                                          // float                                          lineWidth
 		};
 
-		VkPipelineMultisampleStateCreateInfo multisample_state_create_info = {
+		VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo = {
 			VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,     // VkStructureType                                sType
 			nullptr,                                                      // const void                                    *pNext
 			0,                                                            // VkPipelineMultisampleStateCreateFlags          flags
@@ -469,7 +447,7 @@ namespace Nth {
 			VK_FALSE                                                      // VkBool32                                       alphaToOneEnable
 		};
 
-		VkPipelineColorBlendAttachmentState color_blend_attachment_state = {
+		VkPipelineColorBlendAttachmentState colorBlendAttachmentState = {
 			VK_FALSE,                                                     // VkBool32                                       blendEnable
 			VK_BLEND_FACTOR_ONE,                                          // VkBlendFactor                                  srcColorBlendFactor
 			VK_BLEND_FACTOR_ZERO,                                         // VkBlendFactor                                  dstColorBlendFactor
@@ -488,7 +466,7 @@ namespace Nth {
 			VK_FALSE,                                                     // VkBool32                                       logicOpEnable
 			VK_LOGIC_OP_COPY,                                             // VkLogicOp                                      logicOp
 			1,                                                            // uint32_t                                       attachmentCount
-			&color_blend_attachment_state,                                // const VkPipelineColorBlendAttachmentState     *pAttachments
+			&colorBlendAttachmentState,                                   // const VkPipelineColorBlendAttachmentState     *pAttachments
 			{ 0.0f, 0.0f, 0.0f, 0.0f }                                    // float                                          blendConstants[4]
 		};
 
@@ -511,25 +489,25 @@ namespace Nth {
 		}
 
 		VkGraphicsPipelineCreateInfo pipelineCreateInfo = {
-			VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,              // VkStructureType                                sType
-			nullptr,                                                      // const void                                    *pNext
-			0,                                                            // VkPipelineCreateFlags                          flags
-			static_cast<uint32_t>(shaderStageCreateInfos.size()),         // uint32_t                                       stageCount
-			shaderStageCreateInfos.data(),                                // const VkPipelineShaderStageCreateInfo         *pStages
-			&vertex_input_state_create_info,                              // const VkPipelineVertexInputStateCreateInfo    *pVertexInputState;
-			&input_assembly_state_create_info,                            // const VkPipelineInputAssemblyStateCreateInfo  *pInputAssemblyState
-			nullptr,                                                      // const VkPipelineTessellationStateCreateInfo   *pTessellationState
-			&viewport_state_create_info,                                  // const VkPipelineViewportStateCreateInfo       *pViewportState
-			&rasterization_state_create_info,                             // const VkPipelineRasterizationStateCreateInfo  *pRasterizationState
-			&multisample_state_create_info,                               // const VkPipelineMultisampleStateCreateInfo    *pMultisampleState
-			nullptr,                                                      // const VkPipelineDepthStencilStateCreateInfo   *pDepthStencilState
-			&color_blend_state_create_info,                               // const VkPipelineColorBlendStateCreateInfo     *pColorBlendState
-			&dynamic_state_create_info,                                   // const VkPipelineDynamicStateCreateInfo        *pDynamicState
-			m_pipelineLayout(),                                           // VkPipelineLayout                               layout
-			m_renderPass(),                                               // VkRenderPass                                   renderPass
-			0,                                                            // uint32_t                                       subpass
-			VK_NULL_HANDLE,                                               // VkPipeline                                     basePipelineHandle
-			-1                                                            // int32_t                                        basePipelineIndex
+			VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,       // VkStructureType                                sType
+			nullptr,                                               // const void                                    *pNext
+			0,                                                     // VkPipelineCreateFlags                          flags
+			static_cast<uint32_t>(shaderStageCreateInfos.size()),  // uint32_t                                       stageCount
+			shaderStageCreateInfos.data(),                         // const VkPipelineShaderStageCreateInfo         *pStages
+			&vertex_input_state_create_info,                       // const VkPipelineVertexInputStateCreateInfo    *pVertexInputState;
+			&inputAssemblyStateCreateInfo,                         // const VkPipelineInputAssemblyStateCreateInfo  *pInputAssemblyState
+			nullptr,                                               // const VkPipelineTessellationStateCreateInfo   *pTessellationState
+			&viewportStateCreateInfo,                              // const VkPipelineViewportStateCreateInfo       *pViewportState
+			&rasterizationStateCreateInfo,                         // const VkPipelineRasterizationStateCreateInfo  *pRasterizationState
+			&multisampleStateCreateInfo,                           // const VkPipelineMultisampleStateCreateInfo    *pMultisampleState
+			nullptr,                                               // const VkPipelineDepthStencilStateCreateInfo   *pDepthStencilState
+			&color_blend_state_create_info,                        // const VkPipelineColorBlendStateCreateInfo     *pColorBlendState
+			&dynamic_state_create_info,                            // const VkPipelineDynamicStateCreateInfo        *pDynamicState
+			m_pipelineLayout(),                                    // VkPipelineLayout                               layout
+			m_renderPass(),                                        // VkRenderPass                                   renderPass
+			0,                                                     // uint32_t                                       subpass
+			VK_NULL_HANDLE,                                        // VkPipeline                                     basePipelineHandle
+			-1                                                     // int32_t                                        basePipelineIndex
 		};
 
 		if (!m_graphicPipeline.createGraphics(*m_vulkanInstance.getDevice(), VK_NULL_HANDLE, pipelineCreateInfo)) {

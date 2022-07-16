@@ -30,6 +30,7 @@
 *.exe
 *.out
 *.app
+*.bat
 
 # xmake folders
 .xmake/*

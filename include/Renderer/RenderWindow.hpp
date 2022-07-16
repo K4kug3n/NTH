@@ -72,9 +72,11 @@ namespace Nth {
 		bool createRenderPass();
 		bool createPipeline();
 		bool createVertexBuffer();
+		bool createIndicesBuffer();
 		bool createStagingBuffer();
 		bool createRenderingResources();
 		bool copyVertexData();
+		bool copyIndicesData();
 		bool createTexture();
 		bool copyTextureData(char const* textureData, uint32_t dataSize, uint32_t width, uint32_t height);
 		bool createDescriptorSetLayout();
@@ -96,7 +98,8 @@ namespace Nth {
 		bool createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size, BufferParameters& bufferParams) const;
 		bool prepareFrame(Vk::CommandBuffer& commandbuffer, Vk::SwapchainImage const& imageParameters, Vk::Framebuffer& framebuffer) const;
 		bool createFramebuffer(Vk::Framebuffer& framebuffer, Vk::ImageView const& imageView) const;
-		std::vector<float> const& getVertexData() const;
+		std::vector<Vertex> const& getVertexData() const;
+		std::vector<uint16_t> getIndicesData() const;
 		bool createImage(uint32_t width, uint32_t height, Vk::Image& image) const;
 		bool allocateImageMemory(Vk::Image const& image, VkMemoryPropertyFlagBits property, Vk::DeviceMemory& memory) const;
 		bool createImageView(ImageParameters& imageParameters) const;
@@ -114,6 +117,7 @@ namespace Nth {
 		Vk::Pipeline m_graphicPipeline;
 		Vk::PipelineLayout m_pipelineLayout;
 		BufferParameters m_vertexBuffer;
+		BufferParameters m_indexBuffer;
 		BufferParameters m_stagingBuffer;
 		BufferParameters m_uniformBuffer;
 		ImageParameters m_image;

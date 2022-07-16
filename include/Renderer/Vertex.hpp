@@ -16,6 +16,7 @@ namespace Nth {
 
 	struct Vertex {
 		float x, y, z, w;
+		float r, g, b;
 		float u, v;
 
 		static VertexInputDescription getVertexDescription();

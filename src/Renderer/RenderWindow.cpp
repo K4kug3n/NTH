@@ -128,6 +128,11 @@ namespace Nth {
 			return false;
 		}
 
+		if (!createIndicesBuffer()) {
+			std::cerr << "Can't create indices buffer" << std::endl;
+			return false;
+		}
+
 		return true;
 	}
 
@@ -519,7 +524,7 @@ namespace Nth {
 	}
 
 	bool RenderWindow::createVertexBuffer() {
-		std::vector<float> const& vertexData = getVertexData();
+		std::vector<Vertex> const& vertexData = getVertexData();
 
 		if (!createBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, static_cast<uint32_t>(vertexData.size() * sizeof(vertexData[0])), m_vertexBuffer)) {
 			std::cerr << "Could not create a vertex buffer!" << std::endl;
@@ -528,6 +533,22 @@ namespace Nth {
 
 		if (!copyVertexData()) {
 			std::cerr << "Could not copy vertex data" << std::endl;
+			return false;
+		}
+
+		return true;
+	}
+
+	bool RenderWindow::createIndicesBuffer() {
+		std::vector<uint16_t> indices = getIndicesData();
+		VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+		if (!createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, bufferSize, m_indexBuffer)) {
+			std::cerr << "Can't create index buffer" << std::endl;
+			return false;
+		}
+
+		if (!copyIndicesData()) {
+			std::cerr << "Can't copy index data" << std::endl;
 			return false;
 		}
 
@@ -578,7 +599,7 @@ namespace Nth {
 	}
 
 	bool RenderWindow::copyVertexData() {
-		std::vector<float> const& vertexData = getVertexData();
+		std::vector<Vertex> const& vertexData = getVertexData();
 
 		if (!m_stagingBuffer.memory.map(0, m_vertexBuffer.buffer.getSize(), 0)) {
 			std::cerr << "Could not map memory and upload data to a staging buffer!" << std::endl;
@@ -647,6 +668,77 @@ namespace Nth {
 
 		return true;
 
+	}
+
+	bool RenderWindow::copyIndicesData() {
+		std::vector<uint16_t> indices = getIndicesData();
+
+		if (!m_stagingBuffer.memory.map(0, m_indexBuffer.buffer.getSize(), 0)) {
+			std::cerr << "Could not map memory and upload data to a staging buffer!" << std::endl;
+			return false;
+		}
+		void* stagingBufferMemoryPointer = m_stagingBuffer.memory.getMappedPointer();
+
+		memcpy(stagingBufferMemoryPointer, indices.data(), m_indexBuffer.buffer.getSize());
+
+		m_stagingBuffer.memory.flushMappedMemory(0, m_indexBuffer.buffer.getSize());
+
+		m_stagingBuffer.memory.unmap();
+
+		// Prepare command buffer to copy data from staging buffer to a vertex buffer
+		VkCommandBufferBeginInfo commandBufferBeginInfo = {
+			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,      // VkStructureType                        sType
+			nullptr,                                          // const void                            *pNext
+			VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,      // VkCommandBufferUsageFlags              flags
+			nullptr                                           // const VkCommandBufferInheritanceInfo  *pInheritanceInfo
+		};
+
+		Vk::CommandBuffer& commandBuffer = m_renderingResources[0].commandBuffer;
+
+		commandBuffer.begin(commandBufferBeginInfo);
+
+		VkBufferCopy bufferCopyInfo = {
+			0,                                                // VkDeviceSize                           srcOffset
+			0,                                                // VkDeviceSize                           dstOffset
+			m_indexBuffer.buffer.getSize()                   // VkDeviceSize                           size
+		};
+		commandBuffer.copyBuffer(m_stagingBuffer.buffer(), m_indexBuffer.buffer(), bufferCopyInfo);
+
+		VkBufferMemoryBarrier bufferMemoryBarrier = {
+			VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,          // VkStructureType                        sType;
+			nullptr,                                          // const void                            *pNext
+			VK_ACCESS_MEMORY_WRITE_BIT,                       // VkAccessFlags                          srcAccessMask
+			VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,              // VkAccessFlags                          dstAccessMask
+			VK_QUEUE_FAMILY_IGNORED,                          // uint32_t                               srcQueueFamilyIndex
+			VK_QUEUE_FAMILY_IGNORED,                          // uint32_t                               dstQueueFamilyIndex
+			m_indexBuffer.buffer(),                         // VkBuffer                               buffer
+			0,                                                // VkDeviceSize                           offset
+			VK_WHOLE_SIZE                                     // VkDeviceSize                           size
+		};
+		commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr, 1, &bufferMemoryBarrier, 0, nullptr);
+
+		commandBuffer.end();
+
+		// Submit command buffer and copy data from staging buffer to a vertex buffer
+		VkSubmitInfo submitInfo = {
+			VK_STRUCTURE_TYPE_SUBMIT_INFO,                    // VkStructureType                        sType
+			nullptr,                                          // const void                            *pNext
+			0,                                                // uint32_t                               waitSemaphoreCount
+			nullptr,                                          // const VkSemaphore                     *pWaitSemaphores
+			nullptr,                                          // const VkPipelineStageFlags            *pWaitDstStageMask;
+			1,                                                // uint32_t                               commandBufferCount
+			&commandBuffer(),                                 // const VkCommandBuffer                 *pCommandBuffers
+			0,                                                // uint32_t                               signalSemaphoreCount
+			nullptr                                           // const VkSemaphore                     *pSignalSemaphores
+		};
+
+		if (!m_graphicsQueue.submit(submitInfo, VK_NULL_HANDLE)) {
+			return false;
+		}
+
+		m_vulkanInstance.getDevice()->waitIdle();
+
+		return true;
 	}
 
 	bool RenderWindow::createTexture() {
@@ -1202,10 +1294,13 @@ namespace Nth {
 		VkDeviceSize offset = 0;
 		commandbuffer.bindVertexBuffer(m_vertexBuffer.buffer(), offset);
 
+		commandbuffer.bindIndexBuffer(m_indexBuffer.buffer(), 0, VK_INDEX_TYPE_UINT16);
+
 		VkDescriptorSet vkDescriptorSet = m_descriptor.descriptor();
 		commandbuffer.bindDescriptorSets(m_pipelineLayout(), 0, 1, &vkDescriptorSet, 0, nullptr);
 
-		commandbuffer.draw(4, 1, 0, 0);
+		//commandbuffer.draw(getVertexData().size(), 1, 0, 0);
+		commandbuffer.drawIndexed(static_cast<uint32_t>(getIndicesData().size()), 1, 0, 0, 0);
 
 		commandbuffer.endRenderPass();
 
@@ -1249,22 +1344,40 @@ namespace Nth {
 		return framebuffer.create(*m_vulkanInstance.getDevice(), framebufferCreateInfo);
 	}
 
-	std::vector<float> const& RenderWindow::getVertexData() const {
-		static const std::vector<float> vertexData = {
-			-170.0f, -170.0f, 0.0f, 1.0f,
-			-0.1f, -0.1f,
+	std::vector<Vertex> const& RenderWindow::getVertexData() const {
+		static const std::vector<Vertex> vertexData = {
+			{
+				-170.0f, -170.0f, 0.0f, 1.0f,
+				1.f, 0.f, 0.f,
+				-0.1f, -0.1f
+			},
 			//
-			-170.0f, 170.0f, 0.0f, 1.0f,
-			-0.1f, 1.1f,
+			{
+				-170.0f, 170.0f, 0.0f, 1.0f,
+				0.f, 1.f, 0.f,
+				-0.1f, 1.1f
+			},
 			//
-			170.0f, -170.0f, 0.0f, 1.0f,
-			1.1f, -0.1f,
+			{
+				170.0f, -170.0f, 0.0f, 1.0f,
+				0.f, 0.f, 1.f,
+				1.1f, -0.1f
+			},
 			//
-			170.0f, 170.0f, 0.0f, 1.0f,
-			1.1f, 1.1f,
+			{
+				170.0f, 170.0f, 0.0f, 1.0f,
+				0.33f, 0.33f, 0.33f,
+				1.1f, 1.1f
+			},
 		};
 
 		return vertexData;
+	}
+
+	std::vector<uint16_t> RenderWindow::getIndicesData() const {
+		return std::vector<uint16_t> {
+			0, 1, 2, 1, 3, 2
+		};
 	}
 
 	bool RenderWindow::createImage(uint32_t width, uint32_t height, Vk::Image& image) const {

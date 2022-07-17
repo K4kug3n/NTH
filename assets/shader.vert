@@ -1,8 +1,10 @@
 #version 450
 
-layout(set=0, binding=1) uniform u_UniformBuffer {
-  mat4 u_ProjectionMatrix;
-};
+layout(set=0, binding=1) uniform UniformBufferObject {
+  mat4 model;
+  mat4 view;
+  mat4 proj;
+} ubo;
 
 layout(location = 0) in vec4 i_Position;
 layout(location = 1) in vec3 i_Color;
@@ -17,6 +19,7 @@ out gl_PerVertex
 layout(location = 0) out vec3 v_Color;
 
 void main() {
-  gl_Position = u_ProjectionMatrix * i_Position;
+  gl_Position = ubo.proj * ubo.view * ubo.model * i_Position;
   v_Color = i_Color;
+  //v_Texcoord = i_Texcoord;
 }

@@ -1558,6 +1558,8 @@ namespace Nth {
 		float half_height = static_cast<float>(m_swapchainSize.y) * 0.5f;
 
 		return UniformBufferObject{
+			glm::mat4(),
+			glm::mat4(),
 			glm::ortho(-half_width, half_width, -half_height, half_height)
 		};
 	}

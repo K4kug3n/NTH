@@ -9,7 +9,6 @@
 #include "Math/Matrix4.hpp"
 
 #include <iostream>
-#include <array>
 
 namespace Nth {
 	RenderWindow::RenderWindow(Vk::VulkanInstance& vulkanInstance) :
@@ -769,7 +768,7 @@ namespace Nth {
 			return false;
 		}
 
-		if (!copyTextureData(pixels.data(), pixels.size(), image->width(), image->height())) {
+		if (!copyTextureData(pixels.data(), static_cast<uint32_t>(pixels.size()), image->width(), image->height())) {
 			return false;
 		}
 
@@ -1010,7 +1009,7 @@ namespace Nth {
 	}
 
 	bool RenderWindow::createUniformBuffer() {
-		if (!createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 16 * sizeof(float), m_uniformBuffer)) {
+		if (!createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sizeof(UniformBufferObject), m_uniformBuffer)) {
 			std::cerr << "Could not create uniform buffer!" << std::endl;
 			return false;
 		}
@@ -1483,7 +1482,7 @@ namespace Nth {
 	}
 
 	bool RenderWindow::copyUniformBufferData() {
-		const std::array<float, 16> uniformData = getUniformBufferData();
+		const UniformBufferObject uniformData = getUniformBufferData();
 
 		if (!m_stagingBuffer.memory.map(0, m_uniformBuffer.buffer.getSize(), 0)) {
 			std::cerr << "Could not map memory and upload data to a staging buffer!" << std::endl;
@@ -1492,7 +1491,7 @@ namespace Nth {
 
 		void* stagingBufferMemoryPointer = m_stagingBuffer.memory.getMappedPointer();
 
-		memcpy(stagingBufferMemoryPointer, uniformData.data(), m_uniformBuffer.buffer.getSize());
+		memcpy(stagingBufferMemoryPointer, &uniformData, m_uniformBuffer.buffer.getSize());
 
 		m_stagingBuffer.memory.flushMappedMemory(0, m_uniformBuffer.buffer.getSize());
 
@@ -1554,10 +1553,12 @@ namespace Nth {
 		return true;
 	}
 
-	std::array<float, 16> RenderWindow::getUniformBufferData() const {
+	UniformBufferObject RenderWindow::getUniformBufferData() const {
 		float half_width = static_cast<float>(m_swapchainSize.x) * 0.5f;
 		float half_height = static_cast<float>(m_swapchainSize.y) * 0.5f;
 
-		return Matrix4f::Orthographic(-half_width, half_width, -half_height, half_height, -1.0f, 1.0f).toArray();
+		return UniformBufferObject{
+			glm::ortho(-half_width, half_width, -half_height, half_height)
+		};
 	}
 }

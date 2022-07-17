@@ -20,7 +20,7 @@ namespace Nth {
 		}
 
 		bool Surface::create(WindowHandle const& infos) {
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
+		#if defined(VK_USE_PLATFORM_WIN32_KHR)
 
 			if (infos.protocol != WindowProtocol::Windows) {
 				std::cerr << "Error : System detected by Vulkan and for Window management are different" << std::endl;
@@ -43,7 +43,7 @@ namespace Nth {
 
 			return true;
 
-#elif defined(VK_USE_PLATFORM_XLIB_KHR)
+		#elif defined(VK_USE_PLATFORM_XLIB_KHR)
 			if (infos.protocol != WindowProtocol::X11) {
 				std::cerr << "Error : System detected by Vulkan and for Window management are different" << std::endl;
 				return false;
@@ -64,9 +64,9 @@ namespace Nth {
 			}
 
 			return true;
-#endif
-
+		#else
 			return false;
+		#endif
 		}
 
 		bool Surface::getPhysicalDeviceSurfaceSupport(PhysicalDevice const& device, uint32_t queueFamilyIndex, bool& supported) const {

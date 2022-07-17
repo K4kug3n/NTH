@@ -27,7 +27,12 @@
 
 #include "Math/Vector2.hpp"
 
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <vector>
+#include <array>
 
 namespace Nth {
 	// TODO: Move out
@@ -49,6 +54,12 @@ namespace Nth {
 		Vk::DescriptorPool pool;
 		Vk::DescriptorSet descriptor;
 		Vk::DescriptorSetLayout layout;
+	};
+
+	// TODO: Move out
+	struct UniformBufferObject {
+		//std::array<float, 16> proj;
+		glm::mat4 proj;
 	};
 
 	class RenderWindow : public Window {
@@ -105,7 +116,7 @@ namespace Nth {
 		bool createImageView(ImageParameters& imageParameters) const;
 		bool createSampler(Vk::Sampler& sampler) const;
 		bool copyUniformBufferData();
-		std::array<float, 16> getUniformBufferData() const;
+		UniformBufferObject getUniformBufferData() const;
 
 		Vk::VulkanInstance& m_vulkanInstance;
 		Vk::Surface m_surface;

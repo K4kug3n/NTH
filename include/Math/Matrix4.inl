@@ -292,7 +292,7 @@ namespace Nth{
 	Matrix4<T> Matrix4<T>::Perspective(float fov, float aspectRatio, float nearClipping, float farClipping) {
 		fov /= static_cast<T>(2.0);
 
-		T const scale{ fov.tan() };
+		T const scale{ std::tan(fov) };
 
 		return Matrix4<T>{
 			static_cast<T>(1.0) / (aspectRatio * scale), static_cast<T>(0.0),         static_cast<T>(0.0),                                                              static_cast<T>(0.0),

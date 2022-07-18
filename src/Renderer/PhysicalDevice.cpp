@@ -32,6 +32,14 @@ namespace Nth {
 			return memoryPropeties;
 		}
 
+		VkFormatProperties PhysicalDevice::getFormatProperties(VkFormat format) const {
+			VkFormatProperties props;
+
+			m_instance.vkGetPhysicalDeviceFormatProperties(m_physicalDevice, format, &props);
+
+			return props;
+		}
+
 		std::vector<VkQueueFamilyProperties> PhysicalDevice::getQueueFamilyProperties() const {
 			uint32_t count{ 0 };
 			m_instance.vkGetPhysicalDeviceQueueFamilyProperties(m_physicalDevice, &count, nullptr);

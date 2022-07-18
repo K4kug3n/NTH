@@ -1345,29 +1345,15 @@ namespace Nth {
 
 	std::vector<Vertex> const& RenderWindow::getVertexData() const {
 		static const std::vector<Vertex> vertexData = {
-			{
-				-170.0f, -170.0f, 0.0f, 1.0f,
-				1.f, 0.f, 0.f,
-				-0.1f, -0.1f
-			},
-			//
-			{
-				-170.0f, 170.0f, 0.0f, 1.0f,
-				0.f, 1.f, 0.f,
-				-0.1f, 1.1f
-			},
-			//
-			{
-				170.0f, -170.0f, 0.0f, 1.0f,
-				0.f, 0.f, 1.f,
-				1.1f, -0.1f
-			},
-			//
-			{
-				170.0f, 170.0f, 0.0f, 1.0f,
-				0.33f, 0.33f, 0.33f,
-				1.1f, 1.1f
-			},
+			{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+			{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+			{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+			{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+			{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+			{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+			{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+			{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
 		};
 
 		return vertexData;
@@ -1375,7 +1361,8 @@ namespace Nth {
 
 	std::vector<uint16_t> RenderWindow::getIndicesData() const {
 		return std::vector<uint16_t> {
-			0, 1, 2, 1, 3, 2
+			0, 1, 2, 3, 0, 2,
+			4, 5, 6, 7, 4, 6
 		};
 	}
 
@@ -1430,7 +1417,7 @@ namespace Nth {
 		return false;
 	}
 
-	bool RenderWindow::createImageView(ImageParameters& imageParameters) const {
+	bool RenderWindow::createImageView(TextureParameters& imageParameters) const {
 		VkImageViewCreateInfo imageViewCreateInfo = {
 			VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, // VkStructureType          sType
 			nullptr,                                  // const void              *pNext
@@ -1554,13 +1541,13 @@ namespace Nth {
 	}
 
 	UniformBufferObject RenderWindow::getUniformBufferData() const {
-		float half_width = static_cast<float>(m_swapchainSize.x) * 0.5f;
-		float half_height = static_cast<float>(m_swapchainSize.y) * 0.5f;
+		UniformBufferObject ubo {};
 
-		return UniformBufferObject{
-			glm::mat4(),
-			glm::mat4(),
-			glm::ortho(-half_width, half_width, -half_height, half_height)
-		};
+		ubo.model = glm::mat4(1.f);
+		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(m_swapchainSize.x) / static_cast<float>(m_swapchainSize.y), 0.1f, 10.0f);
+		ubo.proj[1][1] *= -1;
+
+		return ubo;
 	}
 }

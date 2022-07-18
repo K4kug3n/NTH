@@ -28,6 +28,7 @@
 #include "Math/Vector2.hpp"
 
 #define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -42,7 +43,7 @@ namespace Nth {
 	};
 
 	// TODO: Move out
-	struct ImageParameters {
+	struct TextureParameters {
 		Vk::Image image;
 		Vk::ImageView view;
 		Vk::DeviceMemory memory;
@@ -115,7 +116,7 @@ namespace Nth {
 		std::vector<uint16_t> getIndicesData() const;
 		bool createImage(uint32_t width, uint32_t height, Vk::Image& image) const;
 		bool allocateImageMemory(Vk::Image const& image, VkMemoryPropertyFlagBits property, Vk::DeviceMemory& memory) const;
-		bool createImageView(ImageParameters& imageParameters) const;
+		bool createImageView(TextureParameters& imageParameters) const;
 		bool createSampler(Vk::Sampler& sampler) const;
 		bool copyUniformBufferData();
 		UniformBufferObject getUniformBufferData() const;
@@ -133,7 +134,7 @@ namespace Nth {
 		BufferParameters m_indexBuffer;
 		BufferParameters m_stagingBuffer;
 		BufferParameters m_uniformBuffer;
-		ImageParameters m_image;
+		TextureParameters m_image;
 		DescriptorSetParameters m_descriptor;
 		std::vector<Vk::RenderingResource> m_renderingResources;
 

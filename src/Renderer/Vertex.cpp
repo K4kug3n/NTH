@@ -14,20 +14,20 @@ namespace Nth {
 		VkVertexInputAttributeDescription positionAttribute = {};
 		positionAttribute.binding = 0;
 		positionAttribute.location = 0;
-		positionAttribute.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		positionAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
 		positionAttribute.offset = 0;
 
 		VkVertexInputAttributeDescription colorAttribute = {};
 		colorAttribute.binding = 0;
 		colorAttribute.location = 1;
 		colorAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
-		colorAttribute.offset = sizeof(float) * 4;
+		colorAttribute.offset = offsetof(Vertex, color);
 		
 		VkVertexInputAttributeDescription textureAttribute = {};
 		textureAttribute.binding = 0;
 		textureAttribute.location = 2;
 		textureAttribute.format = VK_FORMAT_R32G32_SFLOAT;
-		textureAttribute.offset = sizeof(float) * 7;
+		textureAttribute.offset = offsetof(Vertex, texturePos);
 
 		description.attributes.push_back(positionAttribute);
 		description.attributes.push_back(colorAttribute);

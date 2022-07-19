@@ -21,6 +21,7 @@ namespace Nth {
 			VkPhysicalDeviceProperties getProperties() const;
 			VkPhysicalDeviceFeatures getFeatures() const;
 			VkPhysicalDeviceMemoryProperties getMemoryProperties() const;
+			VkFormatProperties getFormatProperties(VkFormat format) const;
 			std::vector<VkQueueFamilyProperties> getQueueFamilyProperties() const;
 			std::vector<VkExtensionProperties> getExtensionsProperties(const char* layerName = nullptr) const;
 

@@ -87,6 +87,11 @@ namespace Nth {
 			return false;
 		}
 
+		if (!createDepthRessource()) {
+			std::cerr << "Can't create depth ressource" << std::endl;
+			return false;
+		}
+
 		if (!createUniformBuffer()) {
 			std::cerr << "Can't create uniform buffer" << std::endl;
 			return false;
@@ -285,7 +290,7 @@ namespace Nth {
 	}
 
 	bool RenderWindow::createRenderPass() {
-		VkAttachmentDescription attachmentDescriptions[] = {
+		std::vector<VkAttachmentDescription> attachmentDescriptions = {
 			{
 				0,                                   // VkAttachmentDescriptionFlags   flags
 				m_swapchain.getFormat(),             // VkFormat                       format
@@ -296,14 +301,28 @@ namespace Nth {
 				VK_ATTACHMENT_STORE_OP_DONT_CARE,    // VkAttachmentStoreOp            stencilStoreOp
 				VK_IMAGE_LAYOUT_UNDEFINED,           // VkImageLayout                  initialLayout;
 				VK_IMAGE_LAYOUT_PRESENT_SRC_KHR      // VkImageLayout                  finalLayout
+			},
+			{
+				0,                                                // VkAttachmentDescriptionFlags   flags
+				findDepthFormat(),                                // VkFormat                       format
+				VK_SAMPLE_COUNT_1_BIT,                            // VkSampleCountFlagBits          samples
+				VK_ATTACHMENT_LOAD_OP_CLEAR,                      // VkAttachmentLoadOp             loadOp
+				VK_ATTACHMENT_STORE_OP_DONT_CARE,                 // VkAttachmentStoreOp            storeOp
+				VK_ATTACHMENT_LOAD_OP_DONT_CARE,                  // VkAttachmentLoadOp             stencilLoadOp
+				VK_ATTACHMENT_STORE_OP_DONT_CARE,                 // VkAttachmentStoreOp            stencilStoreOp
+				VK_IMAGE_LAYOUT_UNDEFINED,                        // VkImageLayout                  initialLayout;
+				VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL  // VkImageLayout                  finalLayout
 			}
 		};
 
-		VkAttachmentReference colorAttachmentReferences[] = {
-			{
-				0,                                          // uint32_t                       attachment
-				VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL    // VkImageLayout                  layout
-			}
+		VkAttachmentReference colorAttachmentReferences = {
+			0,                                          // uint32_t                       attachment
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL    // VkImageLayout                  layout
+		};
+
+		VkAttachmentReference depthAttachmentRef = {
+			1,                                               // uint32_t                       attachment
+			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL // VkImageLayout                  layout
 		};
 
 		VkSubpassDescription subpassDescriptions[] = {
@@ -313,9 +332,9 @@ namespace Nth {
 				0,                                          // uint32_t                       inputAttachmentCount
 				nullptr,                                    // const VkAttachmentReference   *pInputAttachments
 				1,                                          // uint32_t                       colorAttachmentCount
-				colorAttachmentReferences,                  // const VkAttachmentReference   *pColorAttachments
+				&colorAttachmentReferences,                 // const VkAttachmentReference   *pColorAttachments
 				nullptr,                                    // const VkAttachmentReference   *pResolveAttachments
-				nullptr,                                    // const VkAttachmentReference   *pDepthStencilAttachment
+				&depthAttachmentRef,                        // const VkAttachmentReference   *pDepthStencilAttachment
 				0,                                          // uint32_t                       preserveAttachmentCount
 				nullptr                                     // const uint32_t*                pPreserveAttachments
 			}
@@ -332,6 +351,15 @@ namespace Nth {
 				VK_DEPENDENCY_BY_REGION_BIT                     // VkDependencyFlags              dependencyFlags
 			},
 			{
+				VK_SUBPASS_EXTERNAL,                                                                     // uint32_t                       srcSubpass
+				0,                                                                                       // uint32_t                       dstSubpass
+				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,  // VkPipelineStageFlags           srcStageMask
+				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,  // VkPipelineStageFlags           dstStageMask
+				0,                                                                                       // VkAccessFlags                  srcAccessMask
+				VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,                                            // VkAccessFlags                  dstAccessMask
+				VK_DEPENDENCY_BY_REGION_BIT                                                              // VkDependencyFlags              dependencyFlags
+			},
+			{
 				0,                                              // uint32_t                       srcSubpass
 				VK_SUBPASS_EXTERNAL,                            // uint32_t                       dstSubpass
 				VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,  // VkPipelineStageFlags           srcStageMask
@@ -346,8 +374,8 @@ namespace Nth {
 			VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,    // VkStructureType                sType
 			nullptr,                                      // const void                    *pNext
 			0,                                            // VkRenderPassCreateFlags        flags
-			1,                                            // uint32_t                       attachmentCount
-			attachmentDescriptions,                       // const VkAttachmentDescription *pAttachments
+			attachmentDescriptions.size(),                // uint32_t                       attachmentCount
+			attachmentDescriptions.data(),                // const VkAttachmentDescription *pAttachments
 			1,                                            // uint32_t                       subpassCount
 			subpassDescriptions,                          // const VkSubpassDescription    *pSubpasses
 			static_cast<uint32_t>(dependencies.size()),   // uint32_t                       dependencyCount
@@ -492,6 +520,18 @@ namespace Nth {
 			return false;
 		}
 
+		VkPipelineDepthStencilStateCreateInfo depthStencil{};
+		depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		depthStencil.depthTestEnable = VK_TRUE;
+		depthStencil.depthWriteEnable = VK_TRUE;
+		depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+		depthStencil.depthBoundsTestEnable = VK_FALSE;
+		depthStencil.minDepthBounds = 0.0f; // Optional
+		depthStencil.maxDepthBounds = 1.0f; // Optional
+		depthStencil.stencilTestEnable = VK_FALSE;
+		depthStencil.front = {}; // Optional
+		depthStencil.back = {}; // Optional
+
 		VkGraphicsPipelineCreateInfo pipelineCreateInfo = {
 			VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,       // VkStructureType                                sType
 			nullptr,                                               // const void                                    *pNext
@@ -504,7 +544,7 @@ namespace Nth {
 			&viewportStateCreateInfo,                              // const VkPipelineViewportStateCreateInfo       *pViewportState
 			&rasterizationStateCreateInfo,                         // const VkPipelineRasterizationStateCreateInfo  *pRasterizationState
 			&multisampleStateCreateInfo,                           // const VkPipelineMultisampleStateCreateInfo    *pMultisampleState
-			nullptr,                                               // const VkPipelineDepthStencilStateCreateInfo   *pDepthStencilState
+			&depthStencil,                                         // const VkPipelineDepthStencilStateCreateInfo   *pDepthStencilState
 			&color_blend_state_create_info,                        // const VkPipelineColorBlendStateCreateInfo     *pColorBlendState
 			&dynamic_state_create_info,                            // const VkPipelineDynamicStateCreateInfo        *pDynamicState
 			m_pipelineLayout(),                                    // VkPipelineLayout                               layout
@@ -748,19 +788,19 @@ namespace Nth {
 		
 		std::vector<char> pixels = image->pixels();
 
-		if (!createImage(image->width(), image->height(), m_image.image)) {
+		if (!createImage(
+			image->width(),
+			image->height(),
+			VK_FORMAT_R8G8B8A8_UNORM,
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			m_image.image,
+			m_image.memory)) {
 			return false;
 		}
 
-		if (!allocateImageMemory(m_image.image, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_image.memory)) {
-			return false;
-		}
-
-		if (!m_image.image.bindImageMemory(m_image.memory)) {
-			return false;
-		}
-
-		if (!createImageView(m_image)) {
+		if (!createImageView(m_image.view, m_image.image, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT)) {
 			return false;
 		}
 
@@ -1021,6 +1061,33 @@ namespace Nth {
 		return true;
 	}
 
+	bool RenderWindow::createDepthRessource() {
+		ImageParameters newDepth;
+
+		VkFormat depthFormat = findDepthFormat();
+
+		if (!createImage(
+			m_swapchainSize.x, 
+			m_swapchainSize.y, 
+			depthFormat, 
+			VK_IMAGE_TILING_OPTIMAL, 
+			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+			newDepth.image,
+			newDepth.memory)) {
+			std::cerr << "Can't create depth image" << std::endl;
+			return false;
+		}
+
+		if (!createImageView(newDepth.view, newDepth.image, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT)) {
+			return false;
+		}
+
+		m_depth = std::move(newDepth);
+
+		return true;
+	}
+
 	void RenderWindow::onWindowSizeChanged() {
 		m_vulkanInstance.getDevice()->waitIdle();
 
@@ -1030,6 +1097,10 @@ namespace Nth {
 
 		if (!copyUniformBufferData()) {
 			std::cerr << "Error: Can't re-copy uniform data" << std::endl;
+		}
+
+		if (!createDepthRessource()) {
+			std::cerr << "Error: Can't re-create depth ressource" << std::endl;
 		}
 
 	}
@@ -1202,7 +1273,7 @@ namespace Nth {
 
 	bool RenderWindow::prepareFrame(Vk::CommandBuffer& commandbuffer, Vk::SwapchainImage const& imageParameters, Vk::Framebuffer& framebuffer) const {
 		framebuffer.destroy();
-		if (!createFramebuffer(framebuffer, imageParameters.view)) {
+		if (!createFramebuffer(framebuffer, imageParameters)) {
 			return false;
 		}
 
@@ -1234,15 +1305,15 @@ namespace Nth {
 				m_presentQueue.index(),                           // uint32_t                               srcQueueFamilyIndex
 				m_graphicsQueue.index(),                          // uint32_t                               dstQueueFamilyIndex
 				imageParameters.image,                            // VkImage                                image
-				imageSubresourceRange                           // VkImageSubresourceRange                subresourceRange
+				imageSubresourceRange                             // VkImageSubresourceRange                subresourceRange
 			};
 
 			commandbuffer.pipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrierFromPresentToDraw);
 		}
 
-		VkClearValue clearValue = {
-		  { 1.0f, 0.8f, 0.4f, 0.0f },                         // VkClearColorValue                      color
-		};
+		std::vector<VkClearValue> clearValues(2);
+		clearValues[0].color = { 1.0f, 0.8f, 0.4f, 0.0f };
+		clearValues[1].depthStencil = { 1.0f, 0 };
 
 		VkRenderPassBeginInfo renderPassBeginInfo = {
 			VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,           // VkStructureType                        sType
@@ -1259,8 +1330,8 @@ namespace Nth {
 					m_swapchainSize.y
 				}
 			},
-			1,                                                  // uint32_t                               clearValueCount
-			&clearValue                                        // const VkClearValue                    *pClearValues
+			static_cast<uint32_t>(clearValues.size()),         // uint32_t                               clearValueCount
+			clearValues.data()                                 // const VkClearValue                    *pClearValues
 		};
 
 		commandbuffer.beginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -1327,14 +1398,19 @@ namespace Nth {
 		return true;
 	}
 
-	bool RenderWindow::createFramebuffer(Vk::Framebuffer& framebuffer, Vk::ImageView const& imageView) const {
+	bool RenderWindow::createFramebuffer(Vk::Framebuffer& framebuffer, Vk::SwapchainImage const& swapchainImage) const {
+		std::vector<VkImageView> attachements{
+			swapchainImage.view(),
+			m_depth.view()
+		};
+
 		VkFramebufferCreateInfo framebufferCreateInfo = {
 		VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,  // VkStructureType                sType
 			nullptr,                                    // const void                    *pNext
 			0,                                          // VkFramebufferCreateFlags       flags
 			m_renderPass(),                             // VkRenderPass                   renderPass
-			1,                                          // uint32_t                       attachmentCount
-			&imageView(),                               // const VkImageView             *pAttachments
+			static_cast<uint32_t>(attachements.size()), // uint32_t                       attachmentCount
+			attachements.data(),                        // const VkImageView             *pAttachments
 			m_swapchainSize.x,                          // uint32_t                       width
 			m_swapchainSize.y,                          // uint32_t                       height
 			1                                           // uint32_t                       layers
@@ -1366,13 +1442,25 @@ namespace Nth {
 		};
 	}
 
-	bool RenderWindow::createImage(uint32_t width, uint32_t height, Vk::Image& image) const {
+	uint32_t RenderWindow::findMemoryType(uint32_t memoryTypeBit, VkMemoryPropertyFlags properties) const {
+		VkPhysicalDeviceMemoryProperties memProperties = m_vulkanInstance.getDevice()->getPhysicalDevice().getMemoryProperties();
+
+		for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+			if ((memoryTypeBit & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+				return i;
+			}
+		}
+
+		throw std::runtime_error("Canno't find suitable memory type!");
+	}
+
+	bool RenderWindow::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, Vk::Image& image, Vk::DeviceMemory& memory) const {
 		VkImageCreateInfo imageCreateInfo = {
 			VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,  // VkStructureType        sType;
 			nullptr,                              // const void            *pNext
 			0,                                    // VkImageCreateFlags     flags
 			VK_IMAGE_TYPE_2D,                     // VkImageType            imageType
-			VK_FORMAT_R8G8B8A8_UNORM,             // VkFormat               format
+			format,                               // VkFormat               format
 			{                                     // VkExtent3D             extent
 				width,                                // uint32_t               width
 				height,                               // uint32_t               height
@@ -1381,50 +1469,44 @@ namespace Nth {
 			1,                                    // uint32_t               mipLevels
 			1,                                    // uint32_t               arrayLayers
 			VK_SAMPLE_COUNT_1_BIT,                // VkSampleCountFlagBits  samples
-			VK_IMAGE_TILING_OPTIMAL,              // VkImageTiling          tiling
-			VK_IMAGE_USAGE_TRANSFER_DST_BIT |     // VkImageUsageFlags      usage
-			VK_IMAGE_USAGE_SAMPLED_BIT,
+			tiling,                               // VkImageTiling          tiling
+			usage,                                // VkImageUsageFlags      usage
 			VK_SHARING_MODE_EXCLUSIVE,            // VkSharingMode          sharingMode
 			0,                                    // uint32_t               queueFamilyIndexCount
 			nullptr,                              // const uint32_t        *pQueueFamilyIndices
 			VK_IMAGE_LAYOUT_UNDEFINED             // VkImageLayout          initialLayout
 		};
 
-		return image.create(*m_vulkanInstance.getDevice(), imageCreateInfo);
-	}
-
-	bool RenderWindow::allocateImageMemory(Vk::Image const& image, VkMemoryPropertyFlagBits property, Vk::DeviceMemory& memory) const {
-		VkMemoryRequirements imageMemoryRequirements = image.getImageMemoryRequirements();
-
-		VkPhysicalDeviceMemoryProperties memoryProperties = m_vulkanInstance.getDevice()->getPhysicalDevice().getMemoryProperties();
-
-		for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i) {
-			if ((imageMemoryRequirements.memoryTypeBits & (1 << i)) &&
-				(memoryProperties.memoryTypes[i].propertyFlags & property)) {
-
-				VkMemoryAllocateInfo memoryAllocateInfo = {
-					VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,     // VkStructureType                        sType
-					nullptr,                                    // const void                            *pNext
-					imageMemoryRequirements.size,               // VkDeviceSize                           allocationSize
-					i                                           // uint32_t                               memoryTypeIndex
-				};
-
-				if (memory.create(*m_vulkanInstance.getDevice(), memoryAllocateInfo)) {
-					return true;
-				}
-			}
+		if (!image.create(*m_vulkanInstance.getDevice(), imageCreateInfo)) {
+			return false;
 		}
-		return false;
+
+		VkMemoryRequirements memRequirements = image.getImageMemoryRequirements();
+
+		VkMemoryAllocateInfo memoryAllocateInfo = {
+			VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,                    // VkStructureType                        sType
+			nullptr,                                                   // const void                            *pNext
+			memRequirements.size,                                      // VkDeviceSize                           allocationSize
+			findMemoryType(memRequirements.memoryTypeBits, properties) // uint32_t                               memoryTypeIndex
+		};
+
+		if (!memory.create(*m_vulkanInstance.getDevice(), memoryAllocateInfo)) {
+			return false;
+		}
+
+		image.bindImageMemory(memory);
+
+		return true;
 	}
 
-	bool RenderWindow::createImageView(TextureParameters& imageParameters) const {
+	bool RenderWindow::createImageView(Vk::ImageView& view, Vk::Image const& image, VkFormat format, VkImageAspectFlags aspectFlags) const {
 		VkImageViewCreateInfo imageViewCreateInfo = {
 			VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, // VkStructureType          sType
 			nullptr,                                  // const void              *pNext
 			0,                                        // VkImageViewCreateFlags   flags
-			imageParameters.image(),                  // VkImage                  image
+			image(),                                  // VkImage                  image
 			VK_IMAGE_VIEW_TYPE_2D,                    // VkImageViewType          viewType
-			VK_FORMAT_R8G8B8A8_UNORM,                 // VkFormat                 format
+			format,                                   // VkFormat                 format
 			{                                         // VkComponentMapping       components
 				VK_COMPONENT_SWIZZLE_IDENTITY,            // VkComponentSwizzle       r
 				VK_COMPONENT_SWIZZLE_IDENTITY,            // VkComponentSwizzle       g
@@ -1432,7 +1514,7 @@ namespace Nth {
 				VK_COMPONENT_SWIZZLE_IDENTITY             // VkComponentSwizzle       a
 			},
 			{                                         // VkImageSubresourceRange  subresourceRange
-				VK_IMAGE_ASPECT_COLOR_BIT,                // VkImageAspectFlags       aspectMask
+				aspectFlags,                              // VkImageAspectFlags       aspectMask
 				0,                                        // uint32_t                 baseMipLevel
 				1,                                        // uint32_t                 levelCount
 				0,                                        // uint32_t                 baseArrayLayer
@@ -1440,7 +1522,7 @@ namespace Nth {
 			}
 		};
 
-		return imageParameters.view.create(*m_vulkanInstance.getDevice(), imageViewCreateInfo);
+		return view.create(*m_vulkanInstance.getDevice(), imageViewCreateInfo);
 	}
 
 	bool RenderWindow::createSampler(Vk::Sampler& sampler) const {
@@ -1549,5 +1631,34 @@ namespace Nth {
 		ubo.proj[1][1] *= -1;
 
 		return ubo;
+	}
+
+	VkFormat RenderWindow::findSupportedFormat(std::vector<VkFormat> const& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const {
+		Vk::PhysicalDevice const& physicalDevice = m_vulkanInstance.getDevice()->getPhysicalDevice();
+		
+		for (VkFormat format : candidates) {
+			VkFormatProperties props = physicalDevice.getFormatProperties(format);
+			
+			if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+				return format;
+			}
+			else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+				return format;
+			}
+		}
+
+		throw std::runtime_error("Canno't find supported format!");
+	}
+
+	VkFormat RenderWindow::findDepthFormat() const {
+		return findSupportedFormat(
+			{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+		);
+	}
+
+	bool RenderWindow::hasStencilComponent(VkFormat format) const {
+		return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 	}
 }

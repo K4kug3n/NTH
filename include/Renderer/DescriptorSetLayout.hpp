@@ -17,6 +17,7 @@ namespace Nth {
 			~DescriptorSetLayout();
 
 			bool create(Device const& device, VkDescriptorSetLayoutCreateInfo const& descriptorSetLayoutInfo);
+			void destroy();
 
 			VkDescriptorSetLayout const& operator()() const;
 

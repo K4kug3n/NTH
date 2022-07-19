@@ -45,6 +45,8 @@ namespace Nth {
 		}
 
 		Pipeline& Pipeline::operator=(Pipeline&& object) noexcept {
+			destroy();
+
 			m_pipeline = object.m_pipeline;
 			m_device = object.m_device;
 

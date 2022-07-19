@@ -14,9 +14,7 @@ namespace Nth {
 		}
 
 		DeviceMemory::~DeviceMemory() {
-			if (m_deviceMemory != VK_NULL_HANDLE) {
-				m_device->vkFreeMemory((*m_device)(), m_deviceMemory, nullptr);
-			}
+			destroy();
 		}
 
 		bool DeviceMemory::create(Device const& device, VkMemoryAllocateInfo const& infos) {
@@ -67,12 +65,31 @@ namespace Nth {
 			m_memoryPointer = nullptr;
 		}
 
+		void DeviceMemory::destroy() {
+			if (m_deviceMemory != VK_NULL_HANDLE) {
+				m_device->vkFreeMemory((*m_device)(), m_deviceMemory, nullptr);
+				m_deviceMemory = VK_NULL_HANDLE;
+			}
+		}
+
 		void* DeviceMemory::getMappedPointer() const {
 			return m_memoryPointer;
 		}
 
 		VkDeviceMemory DeviceMemory::operator()() const {
 			return m_deviceMemory;
+		}
+
+		DeviceMemory& DeviceMemory::operator=(DeviceMemory&& object) noexcept {
+			destroy();
+
+			m_deviceMemory = object.m_deviceMemory;
+			m_device = object.m_device;
+			m_memoryPointer = object.m_memoryPointer;
+
+			object.m_deviceMemory = VK_NULL_HANDLE;
+
+			return *this;
 		}
 	}
 }

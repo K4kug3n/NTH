@@ -19,9 +19,7 @@ namespace Nth {
 		}
 
 		DescriptorSetLayout::~DescriptorSetLayout() {
-			if (m_descriptorSetLayout != VK_NULL_HANDLE) {
-				m_device->vkDestroyDescriptorSetLayout((*m_device)(), m_descriptorSetLayout, nullptr);
-			}
+			destroy();
 		}
 
 		bool DescriptorSetLayout::create(Device const& device, VkDescriptorSetLayoutCreateInfo const& descriptorSetLayoutInfo) {
@@ -36,11 +34,20 @@ namespace Nth {
 			return true;
 		}
 
+		void DescriptorSetLayout::destroy() {
+			if (m_descriptorSetLayout != VK_NULL_HANDLE) {
+				m_device->vkDestroyDescriptorSetLayout((*m_device)(), m_descriptorSetLayout, nullptr);
+				m_descriptorSetLayout = VK_NULL_HANDLE;
+			}
+		}
+
 		VkDescriptorSetLayout const& DescriptorSetLayout::operator()() const {
 			return m_descriptorSetLayout;
 		}
 
 		DescriptorSetLayout& DescriptorSetLayout::operator=(DescriptorSetLayout&& object) noexcept {
+			destroy();
+
 			m_descriptorSetLayout = object.m_descriptorSetLayout;
 			m_device = object.m_device;
 

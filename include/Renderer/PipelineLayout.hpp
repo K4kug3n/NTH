@@ -17,6 +17,7 @@ namespace Nth {
 			~PipelineLayout();
 
 			bool create(Device const& device, VkPipelineLayoutCreateFlags flags, uint32_t descriptorCount, VkDescriptorSetLayout const* descriptotSetLayouts, uint32_t constantCount, VkPushConstantRange const* pushConstantRanges);
+			void destroy();
 
 			bool isValid();
 

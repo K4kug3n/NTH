@@ -67,5 +67,16 @@ namespace Nth {
 		VkImage const& Image::operator()() const {
 			return m_image;
 		}
+
+		Image& Image::operator=(Image&& object) noexcept {
+			destroy();
+
+			m_image = object.m_image;
+			m_device = object.m_device;
+
+			object.m_image = VK_NULL_HANDLE;
+
+			return *this;
+		}
 	}
 }

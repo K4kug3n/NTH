@@ -24,7 +24,7 @@ namespace Nth {
 			VkImage const& operator()() const;
 
 			Image& operator=(Image const&) = delete;
-			Image& operator=(Image&&) = delete;
+			Image& operator=(Image&& object) noexcept;
 
 		private:
 			VkImage m_image;

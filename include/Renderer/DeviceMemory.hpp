@@ -18,13 +18,14 @@ namespace Nth {
 			bool map(VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags);
 			bool flushMappedMemory(VkDeviceSize offset, VkDeviceSize size) const;
 			void unmap();
+			void destroy();
 
 			void* getMappedPointer() const;
 
 			VkDeviceMemory operator()() const;
 
 			DeviceMemory& operator=(DeviceMemory const&) = delete;
-			DeviceMemory& operator=(DeviceMemory&&) = delete;
+			DeviceMemory& operator=(DeviceMemory&& object) noexcept;
 
 		private:
 			VkDeviceMemory m_deviceMemory;

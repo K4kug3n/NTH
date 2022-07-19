@@ -46,6 +46,8 @@ namespace Nth {
 		}
 
 		ImageView& ImageView::operator=(ImageView&& object) noexcept {
+			destroy();
+
 			m_imageView = object.m_imageView;
 			m_device = object.m_device;
 

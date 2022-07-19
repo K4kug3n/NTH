@@ -19,9 +19,7 @@ namespace Nth {
 		}
 
 		PipelineLayout::~PipelineLayout() {
-			if (m_pipelineLayout != VK_NULL_HANDLE) {
-				m_device->vkDestroyPipelineLayout((*m_device)(), m_pipelineLayout, nullptr);
-			}
+			destroy();
 		}
 
 		bool PipelineLayout::create(Device const& device, VkPipelineLayoutCreateFlags flags, uint32_t descriptorCount, VkDescriptorSetLayout const* descriptotSetLayouts, uint32_t constantCount, VkPushConstantRange const* pushConstantRanges) {
@@ -46,6 +44,13 @@ namespace Nth {
 			return true;
 		}
 
+		void PipelineLayout::destroy() {
+			if (m_pipelineLayout != VK_NULL_HANDLE) {
+				m_device->vkDestroyPipelineLayout((*m_device)(), m_pipelineLayout, nullptr);
+				m_pipelineLayout = VK_NULL_HANDLE;
+			}
+		}
+
 		bool PipelineLayout::isValid() {
 			return m_pipelineLayout != VK_NULL_HANDLE;
 		}
@@ -55,6 +60,8 @@ namespace Nth {
 		}
 
 		PipelineLayout& PipelineLayout::operator=(PipelineLayout&& object) noexcept {
+			destroy();
+
 			m_pipelineLayout = object.m_pipelineLayout;
 			m_device = object.m_device;
 

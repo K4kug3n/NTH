@@ -51,6 +51,13 @@ namespace Nth {
 	};
 
 	// TODO: Move out
+	struct ImageParameters {
+		Vk::Image image;
+		Vk::ImageView view;
+		Vk::DeviceMemory memory;
+	};
+
+	// TODO: Move out
 	struct DescriptorSetParameters {
 		Vk::DescriptorPool pool;
 		Vk::DescriptorSet descriptor;
@@ -98,6 +105,7 @@ namespace Nth {
 		bool allocateDescriptorSet();
 		bool updateDescriptorSet();
 		bool createUniformBuffer();
+		bool createDepthRessource();
 		void onWindowSizeChanged();
 
 		VkSurfaceFormatKHR getSwapchainFormat(std::vector<VkSurfaceFormatKHR> const& surfaceFormats) const;
@@ -111,15 +119,20 @@ namespace Nth {
 		bool allocateBufferMemory(Vk::Buffer const& buffer, VkMemoryPropertyFlagBits memoryProperty, Vk::DeviceMemory& memory) const;
 		bool createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size, BufferParameters& bufferParams) const;
 		bool prepareFrame(Vk::CommandBuffer& commandbuffer, Vk::SwapchainImage const& imageParameters, Vk::Framebuffer& framebuffer) const;
-		bool createFramebuffer(Vk::Framebuffer& framebuffer, Vk::ImageView const& imageView) const;
+		bool createFramebuffer(Vk::Framebuffer& framebuffer, Vk::SwapchainImage const& swapchainImage) const;
 		std::vector<Vertex> const& getVertexData() const;
 		std::vector<uint16_t> getIndicesData() const;
-		bool createImage(uint32_t width, uint32_t height, Vk::Image& image) const;
-		bool allocateImageMemory(Vk::Image const& image, VkMemoryPropertyFlagBits property, Vk::DeviceMemory& memory) const;
-		bool createImageView(TextureParameters& imageParameters) const;
+		uint32_t findMemoryType(uint32_t memoryTypeBit, VkMemoryPropertyFlags properties) const;
+		bool createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, Vk::Image& image, Vk::DeviceMemory& memory) const;
+		bool createImageView(Vk::ImageView& view, Vk::Image const& image, VkFormat format, VkImageAspectFlags aspectFlags) const;
 		bool createSampler(Vk::Sampler& sampler) const;
 		bool copyUniformBufferData();
 		UniformBufferObject getUniformBufferData() const;
+
+		// Depth
+		VkFormat findSupportedFormat(std::vector<VkFormat> const& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
+		VkFormat findDepthFormat() const;
+		bool hasStencilComponent(VkFormat format) const;
 
 		Vk::VulkanInstance& m_vulkanInstance;
 		Vk::Surface m_surface;
@@ -135,6 +148,7 @@ namespace Nth {
 		BufferParameters m_stagingBuffer;
 		BufferParameters m_uniformBuffer;
 		TextureParameters m_image;
+		ImageParameters m_depth;
 		DescriptorSetParameters m_descriptor;
 		std::vector<Vk::RenderingResource> m_renderingResources;
 

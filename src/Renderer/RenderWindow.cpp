@@ -442,7 +442,7 @@ namespace Nth {
 			VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,  // VkStructureType                                sType
 			nullptr,                                                      // const void                                    *pNext
 			0,                                                            // VkPipelineInputAssemblyStateCreateFlags        flags
-			VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,                         // VkPrimitiveTopology                            topology
+			VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,                          // VkPrimitiveTopology                            topology
 			VK_FALSE                                                      // VkBool32                                       primitiveRestartEnable
 		};
 
@@ -568,24 +568,7 @@ namespace Nth {
 	}
 
 	bool RenderWindow::loadModel() {
-		//m_mesh = Mesh::fromOBJ("viking_room.obj");
-
-		m_mesh.vertices = {
-			{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-			{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-			{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-			{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-
-			{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-			{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-			{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-			{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-		};
-
-		m_mesh.indices = {
-			0, 1, 2, 3, 0, 2,
-			4, 5, 6, 7, 4, 6
-		};
+		m_mesh = Mesh::fromOBJ("viking_room.obj");
 
 		return true;
 	}

@@ -24,6 +24,7 @@
 #include "Renderer/DescriptorSet.hpp"
 #include "Renderer/DescriptorSetLayout.hpp"
 #include "Renderer/Vertex.hpp"
+#include "Renderer/Mesh.hpp"
 
 #include "Math/Vector2.hpp"
 
@@ -92,6 +93,7 @@ namespace Nth {
 		bool createSwapchain();
 		bool createRenderPass();
 		bool createPipeline();
+		bool loadModel();
 		bool createVertexBuffer();
 		bool createIndicesBuffer();
 		bool createStagingBuffer();
@@ -120,8 +122,6 @@ namespace Nth {
 		bool createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size, BufferParameters& bufferParams) const;
 		bool prepareFrame(Vk::CommandBuffer& commandbuffer, Vk::SwapchainImage const& imageParameters, Vk::Framebuffer& framebuffer) const;
 		bool createFramebuffer(Vk::Framebuffer& framebuffer, Vk::SwapchainImage const& swapchainImage) const;
-		std::vector<Vertex> const& getVertexData() const;
-		std::vector<uint16_t> getIndicesData() const;
 		uint32_t findMemoryType(uint32_t memoryTypeBit, VkMemoryPropertyFlags properties) const;
 		bool createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, Vk::Image& image, Vk::DeviceMemory& memory) const;
 		bool createImageView(Vk::ImageView& view, Vk::Image const& image, VkFormat format, VkImageAspectFlags aspectFlags) const;
@@ -143,6 +143,7 @@ namespace Nth {
 		Vk::RenderPass m_renderPass;
 		Vk::Pipeline m_graphicPipeline;
 		Vk::PipelineLayout m_pipelineLayout;
+		Mesh m_mesh;
 		BufferParameters m_vertexBuffer;
 		BufferParameters m_indexBuffer;
 		BufferParameters m_stagingBuffer;

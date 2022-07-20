@@ -127,6 +127,11 @@ namespace Nth {
 			return false;
 		}
 
+		if (!loadModel()) {
+			std::cerr << "Can't load model" << std::endl;
+			return false;
+		}
+
 		if (!createVertexBuffer()) {
 			std::cerr << "Can't create vertex buffer" << std::endl;
 			return false;
@@ -562,8 +567,31 @@ namespace Nth {
 		return true;
 	}
 
+	bool RenderWindow::loadModel() {
+		//m_mesh = Mesh::fromOBJ("viking_room.obj");
+
+		m_mesh.vertices = {
+			{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+			{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+			{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+			{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+			{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+			{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+			{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+			{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
+		};
+
+		m_mesh.indices = {
+			0, 1, 2, 3, 0, 2,
+			4, 5, 6, 7, 4, 6
+		};
+
+		return true;
+	}
+
 	bool RenderWindow::createVertexBuffer() {
-		std::vector<Vertex> const& vertexData = getVertexData();
+		std::vector<Vertex> const& vertexData = m_mesh.vertices;
 
 		if (!createBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, static_cast<uint32_t>(vertexData.size() * sizeof(vertexData[0])), m_vertexBuffer)) {
 			std::cerr << "Could not create a vertex buffer!" << std::endl;
@@ -579,7 +607,7 @@ namespace Nth {
 	}
 
 	bool RenderWindow::createIndicesBuffer() {
-		std::vector<uint16_t> indices = getIndicesData();
+		std::vector<uint32_t>& indices = m_mesh.indices;
 		VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 		if (!createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, bufferSize, m_indexBuffer)) {
 			std::cerr << "Can't create index buffer" << std::endl;
@@ -595,7 +623,7 @@ namespace Nth {
 	}
 
 	bool RenderWindow::createStagingBuffer() {
-		if (!createBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 1000000, m_stagingBuffer)) {
+		if (!createBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 5000000, m_stagingBuffer)) {
 			std::cerr << "Could not staging buffer!" << std::endl;
 			return false;
 		}
@@ -638,7 +666,7 @@ namespace Nth {
 	}
 
 	bool RenderWindow::copyVertexData() {
-		std::vector<Vertex> const& vertexData = getVertexData();
+		std::vector<Vertex> const& vertexData = m_mesh.vertices;
 
 		if (!m_stagingBuffer.memory.map(0, m_vertexBuffer.buffer.getSize(), 0)) {
 			std::cerr << "Could not map memory and upload data to a staging buffer!" << std::endl;
@@ -710,7 +738,7 @@ namespace Nth {
 	}
 
 	bool RenderWindow::copyIndicesData() {
-		std::vector<uint16_t> indices = getIndicesData();
+		std::vector<uint32_t>& indices = m_mesh.indices;
 
 		if (!m_stagingBuffer.memory.map(0, m_indexBuffer.buffer.getSize(), 0)) {
 			std::cerr << "Could not map memory and upload data to a staging buffer!" << std::endl;
@@ -781,7 +809,7 @@ namespace Nth {
 	}
 
 	bool RenderWindow::createTexture() {
-		std::shared_ptr<Image> image = Image::loadFromFile("texture.png", PixelChannel::Rgba);
+		std::shared_ptr<Image> image = Image::loadFromFile("viking_room.png", PixelChannel::Rgba);
 		if (!image) {
 			return false;
 		}
@@ -1364,13 +1392,13 @@ namespace Nth {
 		VkDeviceSize offset = 0;
 		commandbuffer.bindVertexBuffer(m_vertexBuffer.buffer(), offset);
 
-		commandbuffer.bindIndexBuffer(m_indexBuffer.buffer(), 0, VK_INDEX_TYPE_UINT16);
+		commandbuffer.bindIndexBuffer(m_indexBuffer.buffer(), 0, VK_INDEX_TYPE_UINT32);
 
 		VkDescriptorSet vkDescriptorSet = m_descriptor.descriptor();
 		commandbuffer.bindDescriptorSets(m_pipelineLayout(), 0, 1, &vkDescriptorSet, 0, nullptr);
 
 		//commandbuffer.draw(getVertexData().size(), 1, 0, 0);
-		commandbuffer.drawIndexed(static_cast<uint32_t>(getIndicesData().size()), 1, 0, 0, 0);
+		commandbuffer.drawIndexed(static_cast<uint32_t>(m_mesh.indices.size()), 1, 0, 0, 0);
 
 		commandbuffer.endRenderPass();
 
@@ -1417,29 +1445,6 @@ namespace Nth {
 		};
 
 		return framebuffer.create(*m_vulkanInstance.getDevice(), framebufferCreateInfo);
-	}
-
-	std::vector<Vertex> const& RenderWindow::getVertexData() const {
-		static const std::vector<Vertex> vertexData = {
-			{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-			{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-			{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-			{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-
-			{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-			{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-			{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-			{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-		};
-
-		return vertexData;
-	}
-
-	std::vector<uint16_t> RenderWindow::getIndicesData() const {
-		return std::vector<uint16_t> {
-			0, 1, 2, 3, 0, 2,
-			4, 5, 6, 7, 4, 6
-		};
 	}
 
 	uint32_t RenderWindow::findMemoryType(uint32_t memoryTypeBit, VkMemoryPropertyFlags properties) const {

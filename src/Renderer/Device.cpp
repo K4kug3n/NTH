@@ -19,8 +19,6 @@ namespace Nth {
 
 			#define NTH_RENDERER_VK_DEVICE_FUNCTION(fun) fun = nullptr;
 			#include "Renderer/DeviceFunctions.inl"
-
-			assert(m_instance() != VK_NULL_HANDLE);
 		}
 
 		Device::~Device() {
@@ -31,6 +29,8 @@ namespace Nth {
 		}
 
 		bool Device::create(PhysicalDevice physicalDevice, VkDeviceCreateInfo const& infos, uint32_t presentQueueFamilyIndex, uint32_t graphicQueueFamilyIndex) {
+			assert(m_instance.isValid());
+			
 			m_physicalDevice = std::make_unique<PhysicalDevice>(std::move(physicalDevice));
 			m_presentQueueFamilyIndex = presentQueueFamilyIndex;
 			m_graphicQueueFamilyIndex = graphicQueueFamilyIndex;
@@ -125,6 +125,7 @@ namespace Nth {
 		}
 
 		void Device::waitIdle() const {
+			assert(isValid());
 			vkDeviceWaitIdle(m_device);
 		}
 

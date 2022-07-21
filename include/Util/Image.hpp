@@ -27,7 +27,7 @@ namespace Nth {
 		unsigned int channels() const;
 		std::vector<char> const& pixels() const;
 
-		static std::shared_ptr<Image> loadFromFile(std::string const& filename, PixelChannel desiredChannel = PixelChannel::Unknow);
+		static Image loadFromFile(std::string const& filename, PixelChannel desiredChannel = PixelChannel::Unknow);
 
 		Image& operator=(Image const&) = default;
 		Image& operator=(Image&&) = default;

@@ -7,24 +7,27 @@
 #include "Renderer/Fence.hpp"
 
 namespace Nth {
-	namespace Vk {
-		class RenderingResource {
-		public:
-			RenderingResource();
-			RenderingResource(RenderingResource const&) = delete;
-			RenderingResource(RenderingResource&&) = delete;
-			~RenderingResource() = default;
+	class Vk::Device;
+	class Vk::CommandPool;
 
-			Framebuffer framebuffer;
-			CommandBuffer commandBuffer;
-			Semaphore imageAvailableSemaphore;
-			Semaphore finishedRenderingSemaphore;
-			Fence fence;
+	class RenderingResource {
+	public:
+		RenderingResource() = default;
+		RenderingResource(RenderingResource const&) = delete;
+		RenderingResource(RenderingResource&&) = delete;
+		~RenderingResource() = default;
 
-			RenderingResource& operator=(RenderingResource const&) = delete;
-			RenderingResource& operator=(RenderingResource&&) = delete;
-		};
-	}
+		bool create(Vk::Device const& device, Vk::CommandPool& pool);
+
+		Vk::Framebuffer framebuffer;
+		Vk::CommandBuffer commandBuffer;
+		Vk::Semaphore imageAvailableSemaphore;
+		Vk::Semaphore finishedRenderingSemaphore;
+		Vk::Fence fence;
+
+		RenderingResource& operator=(RenderingResource const&) = delete;
+		RenderingResource& operator=(RenderingResource&&) = delete;
+	};
 }
 
 #endif

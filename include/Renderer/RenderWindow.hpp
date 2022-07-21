@@ -151,7 +151,7 @@ namespace Nth {
 		TextureParameters m_image;
 		ImageParameters m_depth;
 		DescriptorSetParameters m_descriptor;
-		std::vector<Vk::RenderingResource> m_renderingResources;
+		std::vector<RenderingResource> m_renderingResources;
 
 		Vector2ui m_swapchainSize;
 		size_t m_resourceIndex;

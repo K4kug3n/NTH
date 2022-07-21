@@ -5,7 +5,6 @@
 #include <stb_image.h>
 
 #include <iostream>
-#include <memory>
 
 namespace Nth{
 	Image::Image(unsigned int width, unsigned int height, unsigned int channels, std::vector<char> const& pixels) :
@@ -30,31 +29,32 @@ namespace Nth{
 		return m_pixels;
 	}
 
-	std::shared_ptr<Image> Image::loadFromFile(std::string const& filename, PixelChannel desiredChannel) {
+	Image Image::loadFromFile(std::string const& filename, PixelChannel desiredChannel) {
 		std::vector<char> file_data = readBinaryFile(filename);
 		if (file_data.size() == 0) {
-			return std::make_shared<Image>();
+			return Image();
 		}
 
-		int tmp_width = 0;
-		int tmp_height = 0;
-		int tmp_components = 0;
-		unsigned char* image_data = stbi_load_from_memory(reinterpret_cast<unsigned char*>(&file_data[0]), static_cast<int>(file_data.size()), &tmp_width, &tmp_height, &tmp_components, static_cast<int>(desiredChannel));
-		if ((image_data == nullptr) ||
-			(tmp_width <= 0) ||
-			(tmp_height <= 0) ||
-			(tmp_components <= 0)) {
+		int width = 0;
+		int height = 0;
+		int components = 0;
+		unsigned char* imageData = stbi_load_from_memory(reinterpret_cast<unsigned char*>(&file_data[0]), static_cast<int>(file_data.size()), &width, &height, &components, static_cast<int>(desiredChannel));
+		if ((imageData == nullptr) ||
+			(width <= 0) ||
+			(height <= 0) ||
+			(components <= 0)) {
 			std::cout << "Could not read image data!" << std::endl;
-			return std::make_shared<Image>();
+			stbi_image_free(imageData);
+			return Image();
 		}
 
-		int size = (tmp_width) * (tmp_height) * (static_cast<int>(desiredChannel) <= 0 ? tmp_components : static_cast<int>(desiredChannel));
+		int size = (width) * (height) * (static_cast<int>(desiredChannel) <= 0 ? components : static_cast<int>(desiredChannel));
 
 		std::vector<char> output(size);
-		memcpy(&output[0], image_data, size);
+		memcpy(&output[0], imageData, size);
 
-		stbi_image_free(image_data);
-		return std::make_shared<Image>(tmp_width, tmp_height, static_cast<int>(desiredChannel), output);
+		stbi_image_free(imageData);
+		return Image{ static_cast<unsigned>(width), static_cast<unsigned>(height), static_cast<unsigned>(desiredChannel), output };
 	}
 }
 

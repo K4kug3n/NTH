@@ -23,10 +23,10 @@ namespace Nth {
 
 			static bool isInitialized();
 
-			std::shared_ptr<Device> createDevice(Surface& surface);
+			bool createDevice(Surface& surface);
 
 			Instance& getInstance();
-			std::shared_ptr<Device>& getDevice();
+			Device& getDevice();
 
 			VulkanInstance& operator=(VulkanInstance const&) = delete;
 			VulkanInstance& operator=(VulkanInstance&&) = delete;
@@ -37,7 +37,7 @@ namespace Nth {
 			bool checkPhysicalDeviceProperties(PhysicalDevice& physicalDevice, Surface& surface, uint32_t& graphicsQueueFamilyIndex, uint32_t& presentQueueFamilyIndex);
 
 			Instance m_instance;
-			std::shared_ptr<Device> m_device;
+			Device m_device;
 
 			static VulkanInstance* m_classInstance;
 		};

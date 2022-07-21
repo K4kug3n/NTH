@@ -14,7 +14,8 @@
 
 namespace Nth {
 	namespace Vk {
-		VulkanInstance::VulkanInstance() {
+		VulkanInstance::VulkanInstance() :
+			m_device(m_instance) {
 			if (isInitialized()) {
 				throw std::runtime_error("Can't create 2 instance of VulkanInstance");
 			}
@@ -36,22 +37,22 @@ namespace Nth {
 			}
 
 			std::vector<const char*> enabledLayer;
-#if !defined(NDEBUG)
+			#if !defined(NDEBUG)
 			if (availableLayer.count("VK_LAYER_KHRONOS_validation")) {
 				enabledLayer.push_back("VK_LAYER_KHRONOS_validation");
 			}
-#endif
+			#endif
 
 			std::vector<const char*> enabledExtensions;
-#ifdef VK_USE_PLATFORM_XCB_KHR
+			#ifdef VK_USE_PLATFORM_XCB_KHR
 			enabledExtensions.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
-#endif
-#ifdef VK_USE_PLATFORM_XLIB_KHR
+			#endif
+			#ifdef VK_USE_PLATFORM_XLIB_KHR
 			enabledExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
-#endif
-#		ifdef VK_USE_PLATFORM_WIN32_KHR
+			#endif
+			#ifdef VK_USE_PLATFORM_WIN32_KHR
 			enabledExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-#endif
+			#endif
 
 			enabledExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 
@@ -68,14 +69,14 @@ namespace Nth {
 			m_classInstance = nullptr;
 		}
 
-		std::shared_ptr<Device> VulkanInstance::createDevice(Surface& surface) {
+		bool VulkanInstance::createDevice(Surface& surface) {
 			uint32_t presentQueueFamilyIndex = UINT32_MAX;
 			uint32_t graphicsQueueFamilyIndex = UINT32_MAX;
 
 			std::vector<PhysicalDevice> physicalDevices = m_instance.enumeratePhysicalDevices();
 			if (physicalDevices.empty()) {
 				std::cerr << "Error: No physical device detected" << std::endl;
-				return {};
+				return false;
 			}
 
 			size_t selectedIndex{ physicalDevices.size() };
@@ -87,7 +88,7 @@ namespace Nth {
 
 			if (selectedIndex == physicalDevices.size()) {
 				std::cerr << "Error : Can't find physical with needed properties" << std::endl;
-				return {};
+				return false;
 			}
 
 			PhysicalDevice& physicalDevice{ physicalDevices[selectedIndex] };
@@ -102,7 +103,7 @@ namespace Nth {
 				graphicsQueueFamilyIndex,                    // uint32_t                     queueFamilyIndex
 				1,                                           // uint32_t                     queueCount
 				queuePriorities.data()                       // const float                 *pQueuePriorities
-				});
+			});
 
 			if (graphicsQueueFamilyIndex != presentQueueFamilyIndex) {
 				queueCreateInfos.push_back({
@@ -112,7 +113,7 @@ namespace Nth {
 					presentQueueFamilyIndex,                     // uint32_t                     queueFamilyIndex
 					1,                                           // uint32_t                     queueCount
 					queuePriorities.data()                       // const float                 *pQueuePriorities
-					});
+				});
 			}
 
 			std::vector<const char*> extensions = {
@@ -132,13 +133,12 @@ namespace Nth {
 				nullptr                                           // const VkPhysicalDeviceFeatures    *pEnabledFeatures
 			};
 
-			m_device = std::make_shared<Device>(m_instance);
-			if (!m_device->create(std::move(physicalDevice), deviceCreateInfo, presentQueueFamilyIndex, graphicsQueueFamilyIndex)) {
+			if (!m_device.create(std::move(physicalDevice), deviceCreateInfo, presentQueueFamilyIndex, graphicsQueueFamilyIndex)) {
 				std::cerr << "Error : Canno't create device" << std::endl;
-				return {};
+				return false;
 			}
 
-			return m_device;
+			return true;
 		}
 
 		bool VulkanInstance::isInitialized() {
@@ -149,7 +149,7 @@ namespace Nth {
 			return m_instance;
 		}
 
-		std::shared_ptr<Device>& VulkanInstance::getDevice() {
+		Device& VulkanInstance::getDevice() {
 			return m_device;
 		}
 

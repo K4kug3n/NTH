@@ -93,6 +93,11 @@ namespace Nth {
 			return false;
 		}
 
+		if (!createSSBO()) {
+			std::cerr << "Can't create ssbo" << std::endl;
+			return false;
+		}
+
 		if (!createUniformBuffer()) {
 			std::cerr << "Can't create uniform buffer" << std::endl;
 			return false;
@@ -949,18 +954,46 @@ namespace Nth {
 			return false;
 		}
 
+		// TODO: Clean this
+		std::vector<VkDescriptorSetLayoutBinding> layoutBindings2 = {
+			{
+				0,                                          // uint32_t             binding
+				VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ,         // VkDescriptorType     descriptorType
+				1,                                          // uint32_t             descriptorCount
+				VK_SHADER_STAGE_VERTEX_BIT,                 // VkShaderStageFlags   stageFlags
+				nullptr                                     // const VkSampler     *pImmutableSamplers
+			}
+		};
+
+		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo2 = {
+			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,  // VkStructureType                      sType
+			nullptr,                                              // const void                          *pNext
+			0,                                                    // VkDescriptorSetLayoutCreateFlags     flags
+			static_cast<uint32_t>(layoutBindings2.size()),        // uint32_t                             bindingCount
+			layoutBindings2.data()                                // const VkDescriptorSetLayoutBinding  *pBindings
+		};
+
+		if (!m_ssboDescriptor.layout.create(m_vulkanInstance.getDevice(), descriptorSetLayoutCreateInfo2)) {
+			std::cerr << "Could not create descriptor set layout!" << std::endl;
+			return false;
+		}
+
 		return true;
 	}
 
 	bool RenderWindow::createDescriptorPool() {
 		std::vector<VkDescriptorPoolSize> poolSize = {
 		{
-			VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,   // VkDescriptorType               type
-			1                                            // uint32_t                       descriptorCount
+			VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,   // VkDescriptorType type
+			1                                            // uint32_t         descriptorCount
 		},
 		{
 			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,           // VkDescriptorType  type
 			1                                            // uint32_t          descriptorCount
+		},
+		{
+			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,           // VkDescriptorType type
+			1                                            // uint32_t         descriptorCount
 		}
 	};
 
@@ -973,7 +1006,12 @@ namespace Nth {
 			poolSize.data()                                 // const VkDescriptorPoolSize    *pPoolSizes
 		};
 
-		if (!m_descriptor.pool.create(m_vulkanInstance.getDevice(), descriptorPoolCreateInfo)) {
+		if (!m_descriptorPool.create(m_vulkanInstance.getDevice(), descriptorPoolCreateInfo)) {
+			std::cerr << "Could not create descriptor pool!" << std::endl;
+			return false;
+		}
+
+		if (!m_descriptorPool2.create(m_vulkanInstance.getDevice(), descriptorPoolCreateInfo)) {
 			std::cerr << "Could not create descriptor pool!" << std::endl;
 			return false;
 		}
@@ -982,15 +1020,29 @@ namespace Nth {
 	}
 
 	bool RenderWindow::allocateDescriptorSet() {
-		VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {
+		VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {
 			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, // VkStructureType                sType
 			nullptr,                                        // const void                    *pNext
-			m_descriptor.pool(),                            // VkDescriptorPool               descriptorPool
+			m_descriptorPool(),                             // VkDescriptorPool               descriptorPool
 			1,                                              // uint32_t                       descriptorSetCount
 			&m_descriptor.layout()                          // const VkDescriptorSetLayout   *pSetLayouts
 		};
 
-		if (!m_descriptor.descriptor.allocate(m_vulkanInstance.getDevice(), descriptor_set_allocate_info)) {
+		if (!m_descriptor.descriptor.allocate(m_vulkanInstance.getDevice(), descriptorSetAllocateInfo)) {
+			std::cerr << "Could not allocate descriptor set!" << std::endl;
+			return false;
+		}
+
+		// TODO: Clean this up
+		VkDescriptorSetAllocateInfo descriptorSetAllocateInfo2 = {
+			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, // VkStructureType                sType
+			nullptr,                                        // const void                    *pNext
+			m_descriptorPool2(),                            // VkDescriptorPool               descriptorPool
+			1,                                              // uint32_t                       descriptorSetCount
+			&m_ssboDescriptor.layout()                      // const VkDescriptorSetLayout   *pSetLayouts
+		};
+
+		if (!m_ssboDescriptor.descriptor.allocate(m_vulkanInstance.getDevice(), descriptorSetAllocateInfo2)) {
 			std::cerr << "Could not allocate descriptor set!" << std::endl;
 			return false;
 		}
@@ -1009,6 +1061,12 @@ namespace Nth {
 			m_uniformBuffer.buffer(),                // VkBuffer         buffer
 			0,                                       // VkDeviceSize     offset
 			m_uniformBuffer.buffer.getSize()         // VkDeviceSize     range
+		};
+
+		VkDescriptorBufferInfo ssboInfo = {
+			m_ssbo.buffer(),                         // VkBuffer         buffer
+			0,                                       // VkDeviceSize     offset
+			m_ssbo.buffer.getSize()                  // VkDeviceSize     range
 		};
 
 		std::vector<VkWriteDescriptorSet> descriptorWrites = {
@@ -1035,9 +1093,22 @@ namespace Nth {
 				nullptr,                                   // const VkDescriptorImageInfo  *pImageInfo
 				&bufferInfo,                               // const VkDescriptorBufferInfo *pBufferInfo
 				nullptr                                    // const VkBufferView *pTexelBufferView
-			}
+			},
+			{
+				VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
+				nullptr,                                    // const void                    *pNext
+				m_ssboDescriptor.descriptor(),              // VkDescriptorSet                dstSet
+				0,                                          // uint32_t                       dstBinding
+				0,                                          // uint32_t                       dstArrayElement
+				1,                                          // uint32_t                       descriptorCount
+				VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,          // VkDescriptorType               descriptorType
+				nullptr,                                    // const VkDescriptorImageInfo   *pImageInfo
+				&ssboInfo,                                  // const VkDescriptorBufferInfo  *pBufferInfo
+				nullptr                                     // const VkBufferView            *pTexelBufferView
+			},
 		};
 
+		// TODO: Check if update methode should be in Device class 
 		m_descriptor.descriptor.update(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data());
 
 		return true;
@@ -1050,6 +1121,20 @@ namespace Nth {
 		}
 
 		if (!copyUniformBufferData()) {
+			return false;
+		}
+
+		return true;
+	}
+
+	bool RenderWindow::createSSBO() {
+		if (!createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 10000 * sizeof(ShaderStorageBufferObject), m_ssbo)) {
+			std::cerr << "Can't create SSBO" << std::endl;
+			return false;
+		}
+
+		if (!copySSBOData()) {
+			std::cerr << "Cant copy ssbo data" << std::endl;
 			return false;
 		}
 
@@ -1203,8 +1288,13 @@ namespace Nth {
 	}
 
 	Vk::PipelineLayout RenderWindow::createPipelineLayout() const {
+		std::vector<VkDescriptorSetLayout> descritptorLayouts{
+			m_descriptor.layout(),
+			m_ssboDescriptor.layout()
+		};
+
 		Vk::PipelineLayout layout;
-		if (!layout.create(m_vulkanInstance.getDevice(), 0, 1, &m_descriptor.layout(), 0, nullptr)) {
+		if (!layout.create(m_vulkanInstance.getDevice(), 0, static_cast<uint32_t>(descritptorLayouts.size()), descritptorLayouts.data(), 0, nullptr)) {
 			std::cerr << "Error: Could not create pipeline layout !" << std::endl;
 			return Vk::PipelineLayout{};
 		}
@@ -1364,7 +1454,9 @@ namespace Nth {
 		VkDescriptorSet vkDescriptorSet = m_descriptor.descriptor();
 		commandbuffer.bindDescriptorSets(m_pipelineLayout(), 0, 1, &vkDescriptorSet, 0, nullptr);
 
-		//commandbuffer.draw(getVertexData().size(), 1, 0, 0);
+		VkDescriptorSet vkSsboDescriptorSet = m_ssboDescriptor.descriptor();
+		commandbuffer.bindDescriptorSets(m_pipelineLayout(), 1, 1, &vkSsboDescriptorSet, 0, nullptr);
+
 		commandbuffer.drawIndexed(static_cast<uint32_t>(m_mesh.indices.size()), 1, 0, 0, 0);
 
 		commandbuffer.endRenderPass();
@@ -1380,7 +1472,7 @@ namespace Nth {
 				m_graphicsQueue.index(),                          // uint32_t                               srcQueueFamilyIndex
 				m_presentQueue.index(),                           // uint32_t                               dstQueueFamilyIndex
 				imageParameters.image,                            // VkImage                                image
-				imageSubresourceRange                           // VkImageSubresourceRange                subresourceRange
+				imageSubresourceRange                             // VkImageSubresourceRange                subresourceRange
 			};
 			commandbuffer.pipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrierFromDrawToPresent);
 		}
@@ -1591,6 +1683,79 @@ namespace Nth {
 
 		m_vulkanInstance.getDevice().waitIdle();
 		
+		return true;
+	}
+
+	bool RenderWindow::copySSBOData() {
+		if (!m_stagingBuffer.memory.map(0, m_ssbo.buffer.getSize(), 0)) {
+			std::cerr << "Could not map memory and upload data to a staging buffer!" << std::endl;
+			return false;
+		}
+
+		void* stagingBufferMemoryPointer = m_stagingBuffer.memory.getMappedPointer();
+
+		ShaderStorageBufferObject* objectSSBO = (ShaderStorageBufferObject*)stagingBufferMemoryPointer;
+
+		objectSSBO[0].model = glm::rotate(glm::mat4(1.f), glm::radians(45.f), glm::vec3(0.f, 0.f, 1.f));
+
+
+		m_stagingBuffer.memory.flushMappedMemory(0, m_ssbo.buffer.getSize());
+
+		m_stagingBuffer.memory.unmap();
+
+		// Prepare command buffer to copy data from staging buffer to a uniform buffer
+		Vk::CommandBuffer& commandBuffer = m_renderingResources[0].commandBuffer;
+
+		VkCommandBufferBeginInfo commandBufferBeginInfo = {
+			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, // VkStructureType              sType
+			nullptr,                                     // const void                  *pNext
+			VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, // VkCommandBufferUsageFlags    flags
+			nullptr                                      // const VkCommandBufferInheritanceInfo  *pInheritanceInfo
+		};
+
+		commandBuffer.begin(commandBufferBeginInfo);
+
+		VkBufferCopy bufferCopyInfo = {
+			0,                                // VkDeviceSize       srcOffset
+			0,                                // VkDeviceSize       dstOffset
+			m_ssbo.buffer.getSize()           // VkDeviceSize       size
+		};
+		commandBuffer.copyBuffer(m_stagingBuffer.buffer(), m_ssbo.buffer(), bufferCopyInfo);
+
+		VkBufferMemoryBarrier buffer_memory_barrier = {
+			VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, // VkStructureType    sType;
+			nullptr,                          // const void        *pNext
+			VK_ACCESS_TRANSFER_WRITE_BIT,     // VkAccessFlags      srcAccessMask
+			VK_ACCESS_UNIFORM_READ_BIT,       // VkAccessFlags      dstAccessMask
+			VK_QUEUE_FAMILY_IGNORED,          // uint32_t           srcQueueFamilyIndex
+			VK_QUEUE_FAMILY_IGNORED,          // uint32_t           dstQueueFamilyIndex
+			m_ssbo.buffer(),                  // VkBuffer           buffer
+			0,                                // VkDeviceSize       offset
+			VK_WHOLE_SIZE                     // VkDeviceSize       size
+		};
+		commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr, 1, &buffer_memory_barrier, 0, nullptr);
+
+		commandBuffer.end();
+
+		// Submit command buffer and copy data from staging buffer to a vertex buffer
+		VkSubmitInfo submitInfo = {
+			VK_STRUCTURE_TYPE_SUBMIT_INFO,    // VkStructureType    sType
+			nullptr,                          // const void        *pNext
+			0,                                // uint32_t           waitSemaphoreCount
+			nullptr,                          // const VkSemaphore *pWaitSemaphores
+			nullptr,                          // const VkPipelineStageFlags *pWaitDstStageMask;
+			1,                                // uint32_t           commandBufferCount
+			&commandBuffer(),                 // const VkCommandBuffer *pCommandBuffers
+			0,                                // uint32_t           signalSemaphoreCount
+			nullptr                           // const VkSemaphore *pSignalSemaphores
+		};
+
+		if (!m_graphicsQueue.submit(submitInfo, VK_NULL_HANDLE)) {
+			return false;
+		}
+
+		m_vulkanInstance.getDevice().waitIdle();
+
 		return true;
 	}
 

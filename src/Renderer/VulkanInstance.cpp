@@ -117,7 +117,8 @@ namespace Nth {
 			}
 
 			std::vector<const char*> extensions = {
-				VK_KHR_SWAPCHAIN_EXTENSION_NAME
+				VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+				VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME
 			};
 
 			VkDeviceCreateInfo deviceCreateInfo = {

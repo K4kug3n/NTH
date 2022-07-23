@@ -60,7 +60,6 @@ namespace Nth {
 
 	// TODO: Move out
 	struct DescriptorSetParameters {
-		Vk::DescriptorPool pool;
 		Vk::DescriptorSet descriptor;
 		Vk::DescriptorSetLayout layout;
 	};
@@ -71,6 +70,11 @@ namespace Nth {
 		glm::mat4 model;
 		glm::mat4 view;
 		glm::mat4 proj;
+	};
+
+	// TODO: Move out
+	struct ShaderStorageBufferObject {
+		glm::mat4 model;
 	};
 
 	class RenderWindow : public Window {
@@ -107,6 +111,7 @@ namespace Nth {
 		bool allocateDescriptorSet();
 		bool updateDescriptorSet();
 		bool createUniformBuffer();
+		bool createSSBO();
 		bool createDepthRessource();
 		void onWindowSizeChanged();
 
@@ -127,6 +132,7 @@ namespace Nth {
 		bool createImageView(Vk::ImageView& view, Vk::Image const& image, VkFormat format, VkImageAspectFlags aspectFlags) const;
 		bool createSampler(Vk::Sampler& sampler) const;
 		bool copyUniformBufferData();
+		bool copySSBOData();
 		UniformBufferObject getUniformBufferData() const;
 
 		// Depth
@@ -148,9 +154,14 @@ namespace Nth {
 		BufferParameters m_indexBuffer;
 		BufferParameters m_stagingBuffer;
 		BufferParameters m_uniformBuffer;
+		BufferParameters m_ssbo;
 		TextureParameters m_image;
 		ImageParameters m_depth;
+		Vk::DescriptorPool m_descriptorPool;
+		// TODO: No more memory, need another one (make it automatic ?)
+		Vk::DescriptorPool m_descriptorPool2;
 		DescriptorSetParameters m_descriptor;
+		DescriptorSetParameters m_ssboDescriptor;
 		std::vector<RenderingResource> m_renderingResources;
 
 		Vector2ui m_swapchainSize;

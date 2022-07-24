@@ -78,12 +78,12 @@ namespace Nth {
 	class RenderWindow : public Window {
 	public:
 		RenderWindow(Vk::VulkanInstance& vulkanInstance);
-		RenderWindow(Vk::VulkanInstance& vulkanInstance, VideoMode const& mode, std::string const& title);
+		RenderWindow(Vk::VulkanInstance& vulkanInstance, VideoMode const& mode, const std::string_view title);
 		RenderWindow(RenderWindow const&) = delete;
 		RenderWindow(RenderWindow&&) = default;
 		~RenderWindow();
 
-		bool create(VideoMode const& mode, std::string const& title);
+		bool create(VideoMode const& mode, const std::string_view title);
 		bool draw();
 
 		static constexpr uint32_t resourceCount = 3;

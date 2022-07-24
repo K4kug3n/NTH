@@ -41,7 +41,7 @@ namespace Nth{
 		return m_handle;
 	}
 
-	LibFunction Lib::getSymbol(std::string const& name) const {
+	LibFunction Lib::getSymbol(const std::string_view name) const {
 		#if defined _WIN32
 			return reinterpret_cast<LibFunction>(GetProcAddress(m_handle, name.data()));
 		#elif defined __unix__

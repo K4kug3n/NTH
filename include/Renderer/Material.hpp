@@ -6,7 +6,7 @@
 #include "Renderer/Vulkan/ShaderModule.hpp"
 #include "Renderer/Vulkan/RenderPass.hpp"
 
-#include <string>
+#include <string_view>
 #include <vector>
 
 namespace Nth {

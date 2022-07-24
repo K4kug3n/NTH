@@ -34,7 +34,7 @@ namespace Nth {
 			static std::vector<VkLayerProperties> enumerateLayerProperties();
 			static std::vector<VkExtensionProperties> enumerateExtensionProperties(char const* layerName = nullptr);
 
-			static PFN_vkVoidFunction getInstanceProcAddr(VkInstance const& instance, std::string const& name);
+			static PFN_vkVoidFunction getInstanceProcAddr(VkInstance const& instance, const std::string_view name);
 
 			#define NTH_RENDERER_VK_GLOBAL_FUNCTION(fun) static PFN_##fun fun;
 			#define NTH_RENDERER_VK_GLOBAL_FUNCTION_OPTIONAL(fun) NTH_RENDERER_VK_GLOBAL_FUNCTION(fun)

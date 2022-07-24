@@ -2,7 +2,7 @@
 #define NTH_RENDERER_VK_INSTANCE_HPP
 
 #include <vector>
-#include <string>
+#include <string_view>
 #include <unordered_set>
 
 #include <vulkan/vulkan.h>
@@ -18,12 +18,12 @@ namespace Nth {
 			Instance(Instance&&) = delete;
 			~Instance();
 
-			bool create(std::string const& appName, uint32_t appVersion, std::string const& engineName, uint32_t engineVersion,
+			bool create(const std::string_view appName, uint32_t appVersion, const std::string_view engineName, uint32_t engineVersion,
 				uint32_t apiVersion, std::vector<const char*> const& layers, std::vector<const char*> const& extensions);
 
 			bool isValid() const;
-			bool isLoadedExtension(std::string const& name) const;
-			bool isLoadedLayer(std::string const& name) const;
+			bool isLoadedExtension(const std::string_view name) const;
+			bool isLoadedLayer(const std::string_view name) const;
 
 			VkInstance const& operator()() const;
 

@@ -100,12 +100,12 @@ namespace Nth {
 			return m_device != VK_NULL_HANDLE;
 		}
 
-		bool Device::isLoadedExtension(std::string const& name) const {
-			return m_extensions.count(name) > 0;
+		bool Device::isLoadedExtension(const std::string_view name) const {
+			return m_extensions.count(name.data()) > 0;
 		}
 
-		bool Device::isLoadedLayer(std::string const& name) const {
-			return m_layers.count(name) > 0;
+		bool Device::isLoadedLayer(const std::string_view name) const {
+			return m_layers.count(name.data()) > 0;
 		}
 
 		PhysicalDevice const& Device::getPhysicalDevice() const {

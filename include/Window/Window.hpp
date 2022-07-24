@@ -11,7 +11,7 @@
 #include <SDL2/SDL_video.h>
 #include <SDL2/SDL_events.h>
 
-#include <string>
+#include <string_view>
 
 namespace Nth {
 
@@ -19,13 +19,13 @@ namespace Nth {
 	{
 	public:
 		Window();
-		Window(VideoMode const& mode, std::string const& title);
+		Window(VideoMode const& mode, const std::string_view title);
 		~Window();
 
 		static bool initialize();
 		static void uninitialize();
 
-		bool create(VideoMode const& mode, std::string const& title);
+		bool create(VideoMode const& mode, const std::string_view title);
 		void close();
 		void setTitle(std::string const& title);
 

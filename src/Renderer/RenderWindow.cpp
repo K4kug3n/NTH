@@ -21,7 +21,7 @@ namespace Nth {
 		m_swapchainSize(),
 		m_resourceIndex(0) { }
 
-	RenderWindow::RenderWindow(Vk::VulkanInstance& vulkanInstance, VideoMode const& mode, std::string const& title) :
+	RenderWindow::RenderWindow(Vk::VulkanInstance& vulkanInstance, VideoMode const& mode, const std::string_view title) :
 		m_vulkanInstance(vulkanInstance),
 		m_surface(vulkanInstance.getInstance()),
 		m_presentQueue(),
@@ -44,7 +44,7 @@ namespace Nth {
 		m_swapchain.destroy();
 	}
 
-	bool RenderWindow::create(VideoMode const& mode, std::string const& title){
+	bool RenderWindow::create(VideoMode const& mode, const std::string_view title){
 		if (!Window::create(mode, title)) {
 			return false;
 		}

@@ -69,8 +69,8 @@ namespace Nth {
 			return extensionsProperties;
 		}
 
-		bool PhysicalDevice::isSupportedExtension(std::string const& name) const {
-			return m_extensionsNames.count(name) > 0;
+		bool PhysicalDevice::isSupportedExtension(const std::string_view name) const {
+			return m_extensionsNames.count(name.data()) > 0;
 		}
 
 		std::unordered_set<std::string> PhysicalDevice::enumerateExtensionsPropertiesNames(const char* layerName) const {

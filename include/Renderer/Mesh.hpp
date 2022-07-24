@@ -4,7 +4,7 @@
 #include "Renderer/Vertex.hpp"
 
 #include <vector>
-#include <string>
+#include <string_view>
 
 namespace Nth {
 
@@ -12,7 +12,7 @@ namespace Nth {
 		std::vector<Vertex> vertices;
 		std::vector<uint32_t> indices;
 
-		static Mesh fromOBJ(std::string const& filename);
+		static Mesh fromOBJ(const std::string_view filename);
 	};
 
 }

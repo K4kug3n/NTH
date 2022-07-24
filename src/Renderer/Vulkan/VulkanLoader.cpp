@@ -95,8 +95,8 @@ namespace Nth {
 			return extensions;
 		}
 
-		PFN_vkVoidFunction VulkanLoader::getInstanceProcAddr(VkInstance const& instance, std::string const& name) {
-			return vkGetInstanceProcAddr(instance, name.c_str());
+		PFN_vkVoidFunction VulkanLoader::getInstanceProcAddr(VkInstance const& instance, const std::string_view name) {
+			return vkGetInstanceProcAddr(instance, name.data());
 		}
 	}
 }

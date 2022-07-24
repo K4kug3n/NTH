@@ -12,7 +12,7 @@ namespace Nth {
 		m_closed{ false },
 		m_size{ 0, 0 }{}
 
-	Window::Window(VideoMode const& mode, std::string const& title) :
+	Window::Window(VideoMode const& mode, const std::string_view title) :
 		m_closed{ false } {
 		create(mode, title);
 	}
@@ -34,7 +34,7 @@ namespace Nth {
 		SDL_Quit();
 	}
 
-	bool Window::create(VideoMode const& mode, std::string const& title) {
+	bool Window::create(VideoMode const& mode, const std::string_view title) {
 		m_handle = SDL_CreateWindow(title.data(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, mode.width, mode.height, SDL_WINDOW_RESIZABLE);
 
 		if (!m_handle) {

@@ -3,13 +3,13 @@
 #include <tiny_obj_loader.h>
 
 namespace Nth {
-	Mesh Mesh::fromOBJ(std::string const& filename) {
+	Mesh Mesh::fromOBJ(const std::string_view filename) {
 		tinyobj::attrib_t attrib;
 		std::vector<tinyobj::shape_t> shapes;
 		std::vector<tinyobj::material_t> materials;
 		std::string warn, err;
 
-		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename.c_str())) {
+		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename.data())) {
 			throw std::runtime_error(warn + err);
 		}
 
@@ -33,7 +33,7 @@ namespace Nth {
 				vertex.color = { 1.0f, 1.0f, 1.0f };
 
 				newMesh.vertices.push_back(vertex);
-				newMesh.indices.push_back(newMesh.indices.size());
+				newMesh.indices.push_back(static_cast<unsigned int>(newMesh.indices.size()));
 			}
 		}
 

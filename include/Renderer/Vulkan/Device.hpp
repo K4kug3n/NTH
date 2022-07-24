@@ -8,7 +8,7 @@
 
 #include <unordered_set>
 #include <memory>
-#include <string>
+#include <string_view>
 
 namespace Nth {
 	namespace Vk {
@@ -24,8 +24,8 @@ namespace Nth {
 			bool create(PhysicalDevice physicalDevice, VkDeviceCreateInfo const& infos, uint32_t presentQueueFamilyIndex, uint32_t graphicQueueFamilyIndex);
 
 			bool isValid() const;
-			bool isLoadedExtension(std::string const& name) const;
-			bool isLoadedLayer(std::string const& name) const;
+			bool isLoadedExtension(const std::string_view name) const;
+			bool isLoadedLayer(const std::string_view  name) const;
 
 			PhysicalDevice const& getPhysicalDevice() const;
 			VmaAllocator getAllocator() const;

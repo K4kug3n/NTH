@@ -6,7 +6,7 @@
 #include <vulkan/vulkan.h>
 
 #include <unordered_set>
-#include <string>
+#include <string_view>
 
 namespace Nth {
 	namespace Vk {
@@ -25,7 +25,7 @@ namespace Nth {
 			std::vector<VkQueueFamilyProperties> getQueueFamilyProperties() const;
 			std::vector<VkExtensionProperties> getExtensionsProperties(const char* layerName = nullptr) const;
 
-			bool isSupportedExtension(std::string const& name) const;
+			bool isSupportedExtension(const std::string_view name) const;
 
 			VkPhysicalDevice const& operator()() const;
 

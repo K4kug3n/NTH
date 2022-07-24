@@ -20,15 +20,15 @@ namespace Nth {
 			}
 		}
 
-		bool Instance::create(std::string const& appName, uint32_t appVersion, std::string const& engineName, uint32_t engineVersion,
+		bool Instance::create(const std::string_view appName, uint32_t appVersion, const std::string_view engineName, uint32_t engineVersion,
 			uint32_t apiVersion, std::vector<const char*> const& layers, std::vector<const char*> const& extensions) {
 
 			VkApplicationInfo appInfos{
 				VK_STRUCTURE_TYPE_APPLICATION_INFO,  // VkStructureType     sType
 				nullptr,                             // const void         *pNext
-				appName.c_str(),                     // const char         *pApplicationName
+				appName.data(),                     // const char         *pApplicationName
 				appVersion,                          // uint32_t            applicationVersion
-				engineName.c_str(),                  // const char         *pEngineName
+				engineName.data(),                  // const char         *pEngineName
 				engineVersion,                       // uint32_t            engineVersion
 				apiVersion                           // uint32_t            apiVersion
 			};
@@ -51,12 +51,12 @@ namespace Nth {
 			return m_instance != nullptr;
 		}
 
-		bool Instance::isLoadedExtension(std::string const& name) const {
-			return m_extensions.count(name) > 0;
+		bool Instance::isLoadedExtension(const std::string_view name) const {
+			return m_extensions.count(name.data()) > 0;
 		}
 
-		bool Instance::isLoadedLayer(std::string const& name) const {
-			return m_layers.count(name) > 0;
+		bool Instance::isLoadedLayer(const std::string_view name) const {
+			return m_layers.count(name.data()) > 0;
 		}
 
 		VkInstance const& Instance::operator()() const {

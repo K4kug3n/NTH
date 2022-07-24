@@ -26,7 +26,7 @@ namespace Nth {
 		bool load(std::filesystem::path const& path);
 		bool isValid() const;
 
-		LibFunction getSymbol(std::string const& name) const;
+		LibFunction getSymbol(const std::string_view name) const;
 
 		void free();
 

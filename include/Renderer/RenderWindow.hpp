@@ -14,7 +14,6 @@
 #include "Renderer/Framebuffer.hpp"
 #include "Renderer/ShaderModule.hpp"
 #include "Renderer/PipelineLayout.hpp"
-#include "Renderer/Pipeline.hpp"
 #include "Renderer/Buffer.hpp"
 #include "Renderer/DeviceMemory.hpp"
 #include "Renderer/RenderingResource.hpp"
@@ -25,6 +24,7 @@
 #include "Renderer/DescriptorSetLayout.hpp"
 #include "Renderer/Vertex.hpp"
 #include "Renderer/Mesh.hpp"
+#include "Renderer/Material.hpp"
 
 #include "Math/Vector2.hpp"
 
@@ -147,8 +147,7 @@ namespace Nth {
 		Vk::Queue m_graphicsQueue;
 		Vk::CommandPool m_graphicCommandPool;
 		Vk::RenderPass m_renderPass;
-		Vk::Pipeline m_graphicPipeline;
-		Vk::PipelineLayout m_pipelineLayout;
+		Material m_material;
 		Mesh m_mesh;
 		BufferParameters m_vertexBuffer;
 		BufferParameters m_indexBuffer;

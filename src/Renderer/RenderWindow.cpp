@@ -526,8 +526,8 @@ namespace Nth {
 			dynamic_states.data()                                         // const VkDynamicState                          *pDynamicStates
 		};
 
-		m_pipelineLayout = createPipelineLayout();
-		if (!m_pipelineLayout.isValid()) {
+		m_material.pipelineLayout = createPipelineLayout();
+		if (!m_material.pipelineLayout.isValid()) {
 			return false;
 		}
 
@@ -558,14 +558,14 @@ namespace Nth {
 			&depthStencil,                                         // const VkPipelineDepthStencilStateCreateInfo   *pDepthStencilState
 			&color_blend_state_create_info,                        // const VkPipelineColorBlendStateCreateInfo     *pColorBlendState
 			&dynamic_state_create_info,                            // const VkPipelineDynamicStateCreateInfo        *pDynamicState
-			m_pipelineLayout(),                                    // VkPipelineLayout                               layout
+			m_material.pipelineLayout(),                           // VkPipelineLayout                               layout
 			m_renderPass(),                                        // VkRenderPass                                   renderPass
 			0,                                                     // uint32_t                                       subpass
 			VK_NULL_HANDLE,                                        // VkPipeline                                     basePipelineHandle
 			-1                                                     // int32_t                                        basePipelineIndex
 		};
 
-		if (!m_graphicPipeline.createGraphics(m_vulkanInstance.getDevice(), VK_NULL_HANDLE, pipelineCreateInfo)) {
+		if (!m_material.pipeline.createGraphics(m_vulkanInstance.getDevice(), VK_NULL_HANDLE, pipelineCreateInfo)) {
 			std::cerr << "Error: Could not create graphics pipeline !" << std::endl;
 			return false;
 		}
@@ -1421,7 +1421,7 @@ namespace Nth {
 
 		commandbuffer.beginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		commandbuffer.bindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicPipeline());
+		commandbuffer.bindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, m_material.pipeline());
 
 		VkViewport viewport = {
 		  0.0f,                                               // float                                  x
@@ -1452,10 +1452,10 @@ namespace Nth {
 		commandbuffer.bindIndexBuffer(m_indexBuffer.buffer(), 0, VK_INDEX_TYPE_UINT32);
 
 		VkDescriptorSet vkDescriptorSet = m_descriptor.descriptor();
-		commandbuffer.bindDescriptorSets(m_pipelineLayout(), 0, 1, &vkDescriptorSet, 0, nullptr);
+		commandbuffer.bindDescriptorSets(m_material.pipelineLayout(), 0, 1, &vkDescriptorSet, 0, nullptr);
 
 		VkDescriptorSet vkSsboDescriptorSet = m_ssboDescriptor.descriptor();
-		commandbuffer.bindDescriptorSets(m_pipelineLayout(), 1, 1, &vkSsboDescriptorSet, 0, nullptr);
+		commandbuffer.bindDescriptorSets(m_material.pipelineLayout(), 1, 1, &vkSsboDescriptorSet, 0, nullptr);
 
 		commandbuffer.drawIndexed(static_cast<uint32_t>(m_mesh.indices.size()), 1, 0, 0, 0);
 

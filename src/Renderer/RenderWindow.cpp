@@ -1,7 +1,7 @@
 #include "Renderer/RenderWindow.hpp"
 
-#include "Renderer/ImageView.hpp"
-#include "Renderer/PhysicalDevice.hpp"
+#include "Renderer/Vulkan/ImageView.hpp"
+#include "Renderer/Vulkan/PhysicalDevice.hpp"
 
 #include "Util/Reader.hpp"
 #include "Util/Image.hpp"

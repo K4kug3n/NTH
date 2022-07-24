@@ -1,7 +1,7 @@
 #include "Renderer/RenderingResource.hpp"
 
-#include "Renderer/CommandPool.hpp"
-#include "Renderer/Device.hpp"
+#include "Renderer/Vulkan/CommandPool.hpp"
+#include "Renderer/Vulkan/Device.hpp"
 
 #include <iostream>
 

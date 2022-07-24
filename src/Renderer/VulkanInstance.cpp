@@ -16,7 +16,7 @@ namespace Nth {
 	namespace Vk {
 		VulkanInstance::VulkanInstance() :
 			m_device(m_instance) {
-			if (isInitialized()) {
+			if (m_classInstance != nullptr) {
 				throw std::runtime_error("Can't create 2 instance of VulkanInstance");
 			}
 
@@ -140,10 +140,6 @@ namespace Nth {
 			}
 
 			return true;
-		}
-
-		bool VulkanInstance::isInitialized() {
-			return m_classInstance != nullptr;
 		}
 
 		Instance& VulkanInstance::getInstance() {

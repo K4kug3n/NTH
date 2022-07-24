@@ -21,8 +21,6 @@ namespace Nth {
 			VulkanInstance(VulkanInstance&&) = delete;
 			~VulkanInstance();
 
-			static bool isInitialized();
-
 			bool createDevice(Surface& surface);
 
 			Instance& getInstance();

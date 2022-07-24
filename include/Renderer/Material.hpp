@@ -3,8 +3,8 @@
 #ifndef NTH_RENDERER_MATERIAL_HPP
 #define NTH_RENDERER_MATERIAL_HPP
 
-#include "Renderer/Pipeline.hpp"
-#include "Renderer/PipelineLayout.hpp"
+#include "Renderer/Vulkan/Pipeline.hpp"
+#include "Renderer/Vulkan/PipelineLayout.hpp"
 
 namespace Nth {
 	class Material {

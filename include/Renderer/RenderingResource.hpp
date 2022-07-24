@@ -1,10 +1,10 @@
 #ifndef NTH_RENDERER_VK_RENDERINGRESOURCE_HPP
 #define NTH_RENDERER_VK_RENDERINGRESOURCE_HPP
 
-#include "Renderer/Framebuffer.hpp"
-#include "Renderer/CommandBuffer.hpp"
-#include "Renderer/Semaphore.hpp"
-#include "Renderer/Fence.hpp"
+#include "Renderer/Vulkan/Framebuffer.hpp"
+#include "Renderer/Vulkan/CommandBuffer.hpp"
+#include "Renderer/Vulkan/Semaphore.hpp"
+#include "Renderer/Vulkan/Fence.hpp"
 
 namespace Nth {
 	class Vk::Device;

@@ -12,8 +12,6 @@
 #include "Renderer/Vulkan/CommandBuffer.hpp"
 #include "Renderer/Vulkan/RenderPass.hpp"
 #include "Renderer/Vulkan/Framebuffer.hpp"
-#include "Renderer/Vulkan/ShaderModule.hpp"
-#include "Renderer/Vulkan/PipelineLayout.hpp"
 #include "Renderer/Vulkan/Buffer.hpp"
 #include "Renderer/Vulkan/DeviceMemory.hpp"
 #include "Renderer/RenderingResource.hpp"
@@ -121,8 +119,6 @@ namespace Nth {
 		VkImageUsageFlags getSwapchainUsageFlags(VkSurfaceCapabilitiesKHR const& capabilities) const;
 		VkSurfaceTransformFlagBitsKHR getSwapchainTransform(VkSurfaceCapabilitiesKHR const& capabilities) const;
 		VkPresentModeKHR getSwapchainPresentMode(std::vector<VkPresentModeKHR> const& presentModes) const;
-		Vk::ShaderModule createShaderModule(std::string const& filename) const;
-		Vk::PipelineLayout createPipelineLayout() const;
 		bool allocateBufferMemory(Vk::Buffer const& buffer, VkMemoryPropertyFlagBits memoryProperty, Vk::DeviceMemory& memory) const;
 		bool createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size, BufferParameters& bufferParams) const;
 		bool prepareFrame(Vk::CommandBuffer& commandbuffer, Vk::SwapchainImage const& imageParameters, Vk::Framebuffer& framebuffer) const;

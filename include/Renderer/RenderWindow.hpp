@@ -136,7 +136,7 @@ namespace Nth {
 		VkFormat findDepthFormat() const;
 		bool hasStencilComponent(VkFormat format) const;
 
-		Vk::VulkanInstance& m_vulkanInstance;
+		Vk::VulkanInstance& m_vulkan;
 		Vk::Surface m_surface;
 		Vk::Swapchain m_swapchain;
 		Vk::Queue m_presentQueue;

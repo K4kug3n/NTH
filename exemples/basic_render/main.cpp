@@ -1,14 +1,14 @@
-#include "Renderer/Vulkan/VulkanInstance.hpp"
+#include "Renderer/Renderer.hpp"
 #include "Renderer/RenderWindow.hpp"
 
 #include <iostream>
 
 int main() {
-	Nth::Vk::VulkanInstance instance{};
-
 	Nth::Window::initialize();
 
-	Nth::RenderWindow window{ instance, Nth::VideoMode{ 860, 480 }, "Hello world" };
+	Nth::Renderer renderer;
+
+	Nth::RenderWindow& window{ renderer.getWindow(Nth::VideoMode{ 860, 480 }, "Hello world") };
 
 	Nth::EventHandler& eventHandler{ window.getEventHandler() };
 	eventHandler.onQuit.connect([&window]() {

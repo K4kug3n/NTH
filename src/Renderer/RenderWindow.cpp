@@ -12,7 +12,7 @@
 
 namespace Nth {
 	RenderWindow::RenderWindow(Vk::VulkanInstance& vulkanInstance) :
-		m_vulkanInstance(vulkanInstance),
+		m_vulkan(vulkanInstance),
 		m_surface(vulkanInstance.getInstance()),
 		m_presentQueue(),
 		m_graphicsQueue(),
@@ -22,7 +22,7 @@ namespace Nth {
 		m_resourceIndex(0) { }
 
 	RenderWindow::RenderWindow(Vk::VulkanInstance& vulkanInstance, VideoMode const& mode, const std::string_view title) :
-		m_vulkanInstance(vulkanInstance),
+		m_vulkan(vulkanInstance),
 		m_surface(vulkanInstance.getInstance()),
 		m_presentQueue(),
 		m_graphicsQueue(),
@@ -37,8 +37,8 @@ namespace Nth {
 	}
 
 	RenderWindow::~RenderWindow() {
-		if (m_vulkanInstance.getDevice().isValid()) {
-			m_vulkanInstance.getDevice().waitIdle();
+		if (m_vulkan.getDevice().isValid()) {
+			m_vulkan.getDevice().waitIdle();
 		}
 		
 		m_swapchain.destroy();
@@ -54,12 +54,12 @@ namespace Nth {
 			return false;
 		}
 
-		if (!m_vulkanInstance.createDevice(m_surface)) {
+		if (!m_vulkan.createDevice(m_surface)) {
 			std::cerr << "Error: Can't create surface" << std::endl;
 			return false;
 		}
 
-		Vk::Device& device = m_vulkanInstance.getDevice();
+		Vk::Device& device = m_vulkan.getDevice();
 		
 		if (!m_presentQueue.create(device, device.getPresentQueueFamilyIndex())) {
 			std::cerr << "Error: Can't create present queue" << std::endl;
@@ -237,7 +237,7 @@ namespace Nth {
 
 	bool RenderWindow::createSwapchain() {
 		VkSurfaceCapabilitiesKHR surfaceCapabilities;
-		if (!m_surface.getCapabilities(m_vulkanInstance.getDevice().getPhysicalDevice(), surfaceCapabilities)) {
+		if (!m_surface.getCapabilities(m_vulkan.getDevice().getPhysicalDevice(), surfaceCapabilities)) {
 			std::cerr << "Error: Can't get surface capabilities" << std::endl;
 			return false;
 		}
@@ -248,7 +248,7 @@ namespace Nth {
 		VkExtent2D swapchainExtend{ getSwapchainExtent(surfaceCapabilities, size()) };
 
 		std::vector<VkSurfaceFormatKHR> surfaceFormats;
-		if (!m_surface.getFormats(m_vulkanInstance.getDevice().getPhysicalDevice(), surfaceFormats)) {
+		if (!m_surface.getFormats(m_vulkan.getDevice().getPhysicalDevice(), surfaceFormats)) {
 			std::cerr << "Error: Can't get surface formats" << std::endl;
 			return false;
 		}
@@ -256,7 +256,7 @@ namespace Nth {
 		VkSurfaceFormatKHR surfaceFormat{ getSwapchainFormat(surfaceFormats) };
 
 		std::vector<VkPresentModeKHR> presentModes;
-		if (!m_surface.getPresentModes(m_vulkanInstance.getDevice().getPhysicalDevice(), presentModes)) {
+		if (!m_surface.getPresentModes(m_vulkan.getDevice().getPhysicalDevice(), presentModes)) {
 			std::cerr << "Error: Can't get surface present modes" << std::endl;
 			return false;
 		}
@@ -292,7 +292,7 @@ namespace Nth {
 		};
 
 		Vk::Swapchain newSwapchain;
-		if (!newSwapchain.create(m_vulkanInstance.getDevice(), swapchainCreateInfo)) {
+		if (!newSwapchain.create(m_vulkan.getDevice(), swapchainCreateInfo)) {
 			std::cerr << "Error: Can't create swapchain" << std::endl;
 			return false;
 		}
@@ -396,7 +396,7 @@ namespace Nth {
 			dependencies.data()                                   // const VkSubpassDependency     *pDependencies
 		};
 
-		if (!m_renderPass.create(m_vulkanInstance.getDevice(), renderPassCreateInfo)) {
+		if (!m_renderPass.create(m_vulkan.getDevice(), renderPassCreateInfo)) {
 			std::cerr << "Could not create render pass !" << std::endl;
 			return false;
 		}
@@ -411,7 +411,7 @@ namespace Nth {
 			m_ssboDescriptor.layout()
 		};
 
-		if (!m_material.createPipeline(m_vulkanInstance.getDevice(), m_renderPass, "vert.spv", "frag.spv", descritptorLayouts)) {
+		if (!m_material.createPipeline(m_vulkan.getDevice(), m_renderPass, "vert.spv", "frag.spv", descritptorLayouts)) {
 			return false;
 		}
 
@@ -467,13 +467,13 @@ namespace Nth {
 	}
 
 	bool RenderWindow::createRenderingResources() {
-		if (!m_graphicCommandPool.create(m_vulkanInstance.getDevice(), m_presentQueue.index(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT)) {
+		if (!m_graphicCommandPool.create(m_vulkan.getDevice(), m_presentQueue.index(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT)) {
 			std::cerr << "Could not create a command pool!" << std::endl;
 			return false;
 		}
 
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			if (!m_renderingResources[i].create(m_vulkanInstance.getDevice(), m_graphicCommandPool)) {
+			if (!m_renderingResources[i].create(m_vulkan.getDevice(), m_graphicCommandPool)) {
 				std::cerr << "Can't create rendering ressource" << std::endl;
 				return false;
 			}
@@ -548,7 +548,7 @@ namespace Nth {
 			return false;
 		}
 
-		m_vulkanInstance.getDevice().waitIdle();
+		m_vulkan.getDevice().waitIdle();
 
 		return true;
 
@@ -620,7 +620,7 @@ namespace Nth {
 			return false;
 		}
 
-		m_vulkanInstance.getDevice().waitIdle();
+		m_vulkan.getDevice().waitIdle();
 
 		return true;
 	}
@@ -763,7 +763,7 @@ namespace Nth {
 			return false;
 		}
 
-		m_vulkanInstance.getDevice().waitIdle();
+		m_vulkan.getDevice().waitIdle();
 
 		return true;
 	}
@@ -794,7 +794,7 @@ namespace Nth {
 			layoutBindings.data()                                 // const VkDescriptorSetLayoutBinding  *pBindings
 		};
 
-		if (!m_descriptor.layout.create(m_vulkanInstance.getDevice(), descriptorSetLayoutCreateInfo)) {
+		if (!m_descriptor.layout.create(m_vulkan.getDevice(), descriptorSetLayoutCreateInfo)) {
 			std::cerr << "Could not create descriptor set layout!" << std::endl;
 			return false;
 		}
@@ -818,7 +818,7 @@ namespace Nth {
 			layoutBindings2.data()                                // const VkDescriptorSetLayoutBinding  *pBindings
 		};
 
-		if (!m_ssboDescriptor.layout.create(m_vulkanInstance.getDevice(), descriptorSetLayoutCreateInfo2)) {
+		if (!m_ssboDescriptor.layout.create(m_vulkan.getDevice(), descriptorSetLayoutCreateInfo2)) {
 			std::cerr << "Could not create descriptor set layout!" << std::endl;
 			return false;
 		}
@@ -851,12 +851,12 @@ namespace Nth {
 			poolSize.data()                                 // const VkDescriptorPoolSize    *pPoolSizes
 		};
 
-		if (!m_descriptorPool.create(m_vulkanInstance.getDevice(), descriptorPoolCreateInfo)) {
+		if (!m_descriptorPool.create(m_vulkan.getDevice(), descriptorPoolCreateInfo)) {
 			std::cerr << "Could not create descriptor pool!" << std::endl;
 			return false;
 		}
 
-		if (!m_descriptorPool2.create(m_vulkanInstance.getDevice(), descriptorPoolCreateInfo)) {
+		if (!m_descriptorPool2.create(m_vulkan.getDevice(), descriptorPoolCreateInfo)) {
 			std::cerr << "Could not create descriptor pool!" << std::endl;
 			return false;
 		}
@@ -873,7 +873,7 @@ namespace Nth {
 			&m_descriptor.layout()                          // const VkDescriptorSetLayout   *pSetLayouts
 		};
 
-		if (!m_descriptor.descriptor.allocate(m_vulkanInstance.getDevice(), descriptorSetAllocateInfo)) {
+		if (!m_descriptor.descriptor.allocate(m_vulkan.getDevice(), descriptorSetAllocateInfo)) {
 			std::cerr << "Could not allocate descriptor set!" << std::endl;
 			return false;
 		}
@@ -887,7 +887,7 @@ namespace Nth {
 			&m_ssboDescriptor.layout()                      // const VkDescriptorSetLayout   *pSetLayouts
 		};
 
-		if (!m_ssboDescriptor.descriptor.allocate(m_vulkanInstance.getDevice(), descriptorSetAllocateInfo2)) {
+		if (!m_ssboDescriptor.descriptor.allocate(m_vulkan.getDevice(), descriptorSetAllocateInfo2)) {
 			std::cerr << "Could not allocate descriptor set!" << std::endl;
 			return false;
 		}
@@ -1014,7 +1014,7 @@ namespace Nth {
 	}
 
 	void RenderWindow::onWindowSizeChanged() {
-		m_vulkanInstance.getDevice().waitIdle();
+		m_vulkan.getDevice().waitIdle();
 
 		if (!createSwapchain()) {
 			std::cerr << "Error: Can't re-create swapchain" << std::endl;
@@ -1122,7 +1122,7 @@ namespace Nth {
 
 	bool RenderWindow::allocateBufferMemory(Vk::Buffer const& buffer, VkMemoryPropertyFlagBits memoryProperty, Vk::DeviceMemory& memory) const {
 		VkMemoryRequirements bufferMemoryRequirements = buffer.getMemoryRequirements();;
-		VkPhysicalDeviceMemoryProperties memoryProperties = m_vulkanInstance.getDevice().getPhysicalDevice().getMemoryProperties();
+		VkPhysicalDeviceMemoryProperties memoryProperties = m_vulkan.getDevice().getPhysicalDevice().getMemoryProperties();
 
 		for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i) {
 			if ((bufferMemoryRequirements.memoryTypeBits & (1 << i)) &&
@@ -1135,7 +1135,7 @@ namespace Nth {
 					i                                           // uint32_t                               memoryTypeIndex
 				};
 
-				if (memory.create(m_vulkanInstance.getDevice(), memoryAllocateInfo)) {
+				if (memory.create(m_vulkan.getDevice(), memoryAllocateInfo)) {
 					return true;
 				}
 			}
@@ -1155,7 +1155,7 @@ namespace Nth {
 			nullptr                                           // const uint32_t                *pQueueFamilyIndices
 		};
 
-		if (!bufferParams.buffer.create(m_vulkanInstance.getDevice(), bufferCreateInfo)) {
+		if (!bufferParams.buffer.create(m_vulkan.getDevice(), bufferCreateInfo)) {
 			std::cerr << "Could not create buffer!" << std::endl;
 			return false;
 		}
@@ -1320,11 +1320,11 @@ namespace Nth {
 			1                                           // uint32_t                       layers
 		};
 
-		return framebuffer.create(m_vulkanInstance.getDevice(), framebufferCreateInfo);
+		return framebuffer.create(m_vulkan.getDevice(), framebufferCreateInfo);
 	}
 
 	uint32_t RenderWindow::findMemoryType(uint32_t memoryTypeBit, VkMemoryPropertyFlags properties) const {
-		VkPhysicalDeviceMemoryProperties memProperties = m_vulkanInstance.getDevice().getPhysicalDevice().getMemoryProperties();
+		VkPhysicalDeviceMemoryProperties memProperties = m_vulkan.getDevice().getPhysicalDevice().getMemoryProperties();
 
 		for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
 			if ((memoryTypeBit & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
@@ -1358,7 +1358,7 @@ namespace Nth {
 			VK_IMAGE_LAYOUT_UNDEFINED             // VkImageLayout          initialLayout
 		};
 
-		if (!image.create(m_vulkanInstance.getDevice(), imageCreateInfo)) {
+		if (!image.create(m_vulkan.getDevice(), imageCreateInfo)) {
 			return false;
 		}
 
@@ -1371,7 +1371,7 @@ namespace Nth {
 			findMemoryType(memRequirements.memoryTypeBits, properties) // uint32_t                               memoryTypeIndex
 		};
 
-		if (!memory.create(m_vulkanInstance.getDevice(), memoryAllocateInfo)) {
+		if (!memory.create(m_vulkan.getDevice(), memoryAllocateInfo)) {
 			return false;
 		}
 
@@ -1403,7 +1403,7 @@ namespace Nth {
 			}
 		};
 
-		return view.create(m_vulkanInstance.getDevice(), imageViewCreateInfo);
+		return view.create(m_vulkan.getDevice(), imageViewCreateInfo);
 	}
 
 	bool RenderWindow::createSampler(Vk::Sampler& sampler) const {
@@ -1428,7 +1428,7 @@ namespace Nth {
 			VK_FALSE                                // VkBool32               unnormalizedCoordinates
 		};
 
-		return sampler.create(m_vulkanInstance.getDevice(), samplerCreateInfo);
+		return sampler.create(m_vulkan.getDevice(), samplerCreateInfo);
 	}
 
 	bool RenderWindow::copyUniformBufferData() {
@@ -1498,7 +1498,7 @@ namespace Nth {
 			return false;
 		}
 
-		m_vulkanInstance.getDevice().waitIdle();
+		m_vulkan.getDevice().waitIdle();
 		
 		return true;
 	}
@@ -1571,7 +1571,7 @@ namespace Nth {
 			return false;
 		}
 
-		m_vulkanInstance.getDevice().waitIdle();
+		m_vulkan.getDevice().waitIdle();
 
 		return true;
 	}
@@ -1588,7 +1588,7 @@ namespace Nth {
 	}
 
 	VkFormat RenderWindow::findSupportedFormat(std::vector<VkFormat> const& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const {
-		Vk::PhysicalDevice const& physicalDevice = m_vulkanInstance.getDevice().getPhysicalDevice();
+		Vk::PhysicalDevice const& physicalDevice = m_vulkan.getDevice().getPhysicalDevice();
 		
 		for (VkFormat format : candidates) {
 			VkFormatProperties props = physicalDevice.getFormatProperties(format);

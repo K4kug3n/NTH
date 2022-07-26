@@ -12,17 +12,16 @@
 #include "Renderer/Vulkan/CommandBuffer.hpp"
 #include "Renderer/Vulkan/RenderPass.hpp"
 #include "Renderer/Vulkan/Framebuffer.hpp"
-#include "Renderer/Vulkan/Buffer.hpp"
-#include "Renderer/Vulkan/DeviceMemory.hpp"
 #include "Renderer/RenderingResource.hpp"
-#include "Renderer/Vulkan/Image.hpp"
-#include "Renderer/Vulkan/Sampler.hpp"
 #include "Renderer/Vulkan/DescriptorPool.hpp"
 #include "Renderer/Vulkan/DescriptorSet.hpp"
 #include "Renderer/Vulkan/DescriptorSetLayout.hpp"
 #include "Renderer/Vertex.hpp"
 #include "Renderer/Mesh.hpp"
 #include "Renderer/Material.hpp"
+#include "Renderer/VulkanBuffer.hpp"
+#include "Renderer/VulkanImage.hpp"
+#include "Renderer/VulkanTexture.hpp"
 
 #include "Math/Vector2.hpp"
 
@@ -35,27 +34,6 @@
 #include <array>
 
 namespace Nth {
-	// TODO: Move out
-	struct BufferParameters {
-		Vk::Buffer buffer;
-		Vk::DeviceMemory memory;
-	};
-
-	// TODO: Move out
-	struct TextureParameters {
-		Vk::Image image;
-		Vk::ImageView view;
-		Vk::DeviceMemory memory;
-		Vk::Sampler sampler;
-	};
-
-	// TODO: Move out
-	struct ImageParameters {
-		Vk::Image image;
-		Vk::ImageView view;
-		Vk::DeviceMemory memory;
-	};
-
 	// TODO: Move out
 	struct DescriptorSetParameters {
 		Vk::DescriptorSet descriptor;
@@ -120,15 +98,11 @@ namespace Nth {
 		VkSurfaceTransformFlagBitsKHR getSwapchainTransform(VkSurfaceCapabilitiesKHR const& capabilities) const;
 		VkPresentModeKHR getSwapchainPresentMode(std::vector<VkPresentModeKHR> const& presentModes) const;
 		bool allocateBufferMemory(Vk::Buffer const& buffer, VkMemoryPropertyFlagBits memoryProperty, Vk::DeviceMemory& memory) const;
-		bool createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size, BufferParameters& bufferParams) const;
 		bool prepareFrame(Vk::CommandBuffer& commandbuffer, Vk::SwapchainImage const& imageParameters, Vk::Framebuffer& framebuffer) const;
 		bool createFramebuffer(Vk::Framebuffer& framebuffer, Vk::SwapchainImage const& swapchainImage) const;
-		uint32_t findMemoryType(uint32_t memoryTypeBit, VkMemoryPropertyFlags properties) const;
-		bool createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, Vk::Image& image, Vk::DeviceMemory& memory) const;
-		bool createImageView(Vk::ImageView& view, Vk::Image const& image, VkFormat format, VkImageAspectFlags aspectFlags) const;
-		bool createSampler(Vk::Sampler& sampler) const;
 		bool copyUniformBufferData();
 		bool copySSBOData();
+		bool copyBufferByStaging(VulkanBuffer& target, VulkanBuffer& staging, std::function<void(void*)> copyFunction);
 		UniformBufferObject getUniformBufferData() const;
 
 		// Depth
@@ -145,13 +119,13 @@ namespace Nth {
 		Vk::RenderPass m_renderPass;
 		Material m_material;
 		Mesh m_mesh;
-		BufferParameters m_vertexBuffer;
-		BufferParameters m_indexBuffer;
-		BufferParameters m_stagingBuffer;
-		BufferParameters m_uniformBuffer;
-		BufferParameters m_ssbo;
-		TextureParameters m_image;
-		ImageParameters m_depth;
+		VulkanBuffer m_vertexBuffer;
+		VulkanBuffer m_indexBuffer;
+		VulkanBuffer m_stagingBuffer;
+		VulkanBuffer m_uniformBuffer;
+		VulkanBuffer m_ssbo;
+		VulkanTexture m_image;
+		VulkanImage m_depth;
 		Vk::DescriptorPool m_descriptorPool;
 		// TODO: No more memory, need another one (make it automatic ?)
 		Vk::DescriptorPool m_descriptorPool2;

@@ -427,7 +427,7 @@ namespace Nth {
 	bool RenderWindow::createVertexBuffer() {
 		std::vector<Vertex> const& vertexData = m_mesh.vertices;
 
-		if (!createBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, static_cast<uint32_t>(vertexData.size() * sizeof(vertexData[0])), m_vertexBuffer)) {
+		if (!m_vertexBuffer.create(m_vulkan.getDevice(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, static_cast<uint32_t>(vertexData.size() * sizeof(vertexData[0])))) {
 			std::cerr << "Could not create a vertex buffer!" << std::endl;
 			return false;
 		}
@@ -443,7 +443,7 @@ namespace Nth {
 	bool RenderWindow::createIndicesBuffer() {
 		std::vector<uint32_t>& indices = m_mesh.indices;
 		VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
-		if (!createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, bufferSize, m_indexBuffer)) {
+		if (!m_indexBuffer.create(m_vulkan.getDevice(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, bufferSize)) {
 			std::cerr << "Can't create index buffer" << std::endl;
 			return false;
 		}
@@ -457,7 +457,7 @@ namespace Nth {
 	}
 
 	bool RenderWindow::createStagingBuffer() {
-		if (!createBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 5000000, m_stagingBuffer)) {
+		if (!m_stagingBuffer.create(m_vulkan.getDevice(),  VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 5000000)) {
 			std::cerr << "Could not staging buffer!" << std::endl;
 			return false;
 		}
@@ -485,144 +485,17 @@ namespace Nth {
 	bool RenderWindow::copyVertexData() {
 		std::vector<Vertex> const& vertexData = m_mesh.vertices;
 
-		if (!m_stagingBuffer.memory.map(0, m_vertexBuffer.buffer.getSize(), 0)) {
-			std::cerr << "Could not map memory and upload data to a staging buffer!" << std::endl;
-			return false;
-		}
-		void* stagingBufferMemoryPointer = m_stagingBuffer.memory.getMappedPointer();
-
-		memcpy(stagingBufferMemoryPointer, vertexData.data(), m_vertexBuffer.buffer.getSize());
-
-		m_stagingBuffer.memory.flushMappedMemory(0, m_vertexBuffer.buffer.getSize());
-
-		m_stagingBuffer.memory.unmap();
-
-		// Prepare command buffer to copy data from staging buffer to a vertex buffer
-		VkCommandBufferBeginInfo commandBufferBeginInfo = {
-			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,      // VkStructureType                        sType
-			nullptr,                                          // const void                            *pNext
-			VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,      // VkCommandBufferUsageFlags              flags
-			nullptr                                           // const VkCommandBufferInheritanceInfo  *pInheritanceInfo
-		};
-
-		Vk::CommandBuffer& commandBuffer = m_renderingResources[0].commandBuffer;
-
-		commandBuffer.begin(commandBufferBeginInfo);
-
-		VkBufferCopy bufferCopyInfo = {
-			0,                                                // VkDeviceSize                           srcOffset
-			0,                                                // VkDeviceSize                           dstOffset
-			m_vertexBuffer.buffer.getSize()                   // VkDeviceSize                           size
-		};
-		commandBuffer.copyBuffer(m_stagingBuffer.buffer(), m_vertexBuffer.buffer(), bufferCopyInfo);
-
-		VkBufferMemoryBarrier bufferMemoryBarrier = {
-			VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,          // VkStructureType                        sType;
-			nullptr,                                          // const void                            *pNext
-			VK_ACCESS_MEMORY_WRITE_BIT,                       // VkAccessFlags                          srcAccessMask
-			VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,              // VkAccessFlags                          dstAccessMask
-			VK_QUEUE_FAMILY_IGNORED,                          // uint32_t                               srcQueueFamilyIndex
-			VK_QUEUE_FAMILY_IGNORED,                          // uint32_t                               dstQueueFamilyIndex
-			m_vertexBuffer.buffer(),                          // VkBuffer                               buffer
-			0,                                                // VkDeviceSize                           offset
-			VK_WHOLE_SIZE                                     // VkDeviceSize                           size
-		};
-		commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr, 1, &bufferMemoryBarrier, 0, nullptr);
-
-		commandBuffer.end();
-
-		// Submit command buffer and copy data from staging buffer to a vertex buffer
-		VkSubmitInfo submitInfo = {
-			VK_STRUCTURE_TYPE_SUBMIT_INFO,                    // VkStructureType                        sType
-			nullptr,                                          // const void                            *pNext
-			0,                                                // uint32_t                               waitSemaphoreCount
-			nullptr,                                          // const VkSemaphore                     *pWaitSemaphores
-			nullptr,                                          // const VkPipelineStageFlags            *pWaitDstStageMask;
-			1,                                                // uint32_t                               commandBufferCount
-			&commandBuffer(),                                 // const VkCommandBuffer                 *pCommandBuffers
-			0,                                                // uint32_t                               signalSemaphoreCount
-			nullptr                                           // const VkSemaphore                     *pSignalSemaphores
-		};
-
-		if (!m_graphicsQueue.submit(submitInfo, VK_NULL_HANDLE)) {
-			return false;
-		}
-
-		m_vulkan.getDevice().waitIdle();
-
-		return true;
-
+		return copyBufferByStaging(m_vertexBuffer, m_stagingBuffer, [this, &vertexData](void* mappedPtr) {
+			memcpy(mappedPtr, vertexData.data(), m_vertexBuffer.handle.getSize());
+		});
 	}
 
 	bool RenderWindow::copyIndicesData() {
 		std::vector<uint32_t>& indices = m_mesh.indices;
 
-		if (!m_stagingBuffer.memory.map(0, m_indexBuffer.buffer.getSize(), 0)) {
-			std::cerr << "Could not map memory and upload data to a staging buffer!" << std::endl;
-			return false;
-		}
-		void* stagingBufferMemoryPointer = m_stagingBuffer.memory.getMappedPointer();
-
-		memcpy(stagingBufferMemoryPointer, indices.data(), m_indexBuffer.buffer.getSize());
-
-		m_stagingBuffer.memory.flushMappedMemory(0, m_indexBuffer.buffer.getSize());
-
-		m_stagingBuffer.memory.unmap();
-
-		// Prepare command buffer to copy data from staging buffer to a vertex buffer
-		VkCommandBufferBeginInfo commandBufferBeginInfo = {
-			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,      // VkStructureType                        sType
-			nullptr,                                          // const void                            *pNext
-			VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,      // VkCommandBufferUsageFlags              flags
-			nullptr                                           // const VkCommandBufferInheritanceInfo  *pInheritanceInfo
-		};
-
-		Vk::CommandBuffer& commandBuffer = m_renderingResources[0].commandBuffer;
-
-		commandBuffer.begin(commandBufferBeginInfo);
-
-		VkBufferCopy bufferCopyInfo = {
-			0,                                                // VkDeviceSize                           srcOffset
-			0,                                                // VkDeviceSize                           dstOffset
-			m_indexBuffer.buffer.getSize()                   // VkDeviceSize                           size
-		};
-		commandBuffer.copyBuffer(m_stagingBuffer.buffer(), m_indexBuffer.buffer(), bufferCopyInfo);
-
-		VkBufferMemoryBarrier bufferMemoryBarrier = {
-			VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,          // VkStructureType                        sType;
-			nullptr,                                          // const void                            *pNext
-			VK_ACCESS_MEMORY_WRITE_BIT,                       // VkAccessFlags                          srcAccessMask
-			VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,              // VkAccessFlags                          dstAccessMask
-			VK_QUEUE_FAMILY_IGNORED,                          // uint32_t                               srcQueueFamilyIndex
-			VK_QUEUE_FAMILY_IGNORED,                          // uint32_t                               dstQueueFamilyIndex
-			m_indexBuffer.buffer(),                         // VkBuffer                               buffer
-			0,                                                // VkDeviceSize                           offset
-			VK_WHOLE_SIZE                                     // VkDeviceSize                           size
-		};
-		commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr, 1, &bufferMemoryBarrier, 0, nullptr);
-
-		commandBuffer.end();
-
-		// Submit command buffer and copy data from staging buffer to a vertex buffer
-		VkSubmitInfo submitInfo = {
-			VK_STRUCTURE_TYPE_SUBMIT_INFO,                    // VkStructureType                        sType
-			nullptr,                                          // const void                            *pNext
-			0,                                                // uint32_t                               waitSemaphoreCount
-			nullptr,                                          // const VkSemaphore                     *pWaitSemaphores
-			nullptr,                                          // const VkPipelineStageFlags            *pWaitDstStageMask;
-			1,                                                // uint32_t                               commandBufferCount
-			&commandBuffer(),                                 // const VkCommandBuffer                 *pCommandBuffers
-			0,                                                // uint32_t                               signalSemaphoreCount
-			nullptr                                           // const VkSemaphore                     *pSignalSemaphores
-		};
-
-		if (!m_graphicsQueue.submit(submitInfo, VK_NULL_HANDLE)) {
-			return false;
-		}
-
-		m_vulkan.getDevice().waitIdle();
-
-		return true;
+		return copyBufferByStaging(m_indexBuffer, m_stagingBuffer, [this, &indices](void* mappedPtr) {
+			memcpy(mappedPtr, indices.data(), m_indexBuffer.handle.getSize());
+		});
 	}
 
 	bool RenderWindow::createTexture() {
@@ -633,23 +506,19 @@ namespace Nth {
 			return false;
 		}
 
-		if (!createImage(
+		if (!m_image.create(
+			m_vulkan.getDevice(),
 			image.width(),
 			image.height(),
 			VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_TILING_OPTIMAL,
 			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			m_image.image,
-			m_image.memory)) {
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+		)) {
 			return false;
 		}
 
-		if (!createImageView(m_image.view, m_image.image, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT)) {
-			return false;
-		}
-
-		if (!createSampler(m_image.sampler)) {
+		if (!m_image.createView(m_vulkan.getDevice(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT)) {
 			return false;
 		}
 
@@ -702,7 +571,7 @@ namespace Nth {
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,   // VkImageLayout             newLayout
 			VK_QUEUE_FAMILY_IGNORED,                // uint32_t                  srcQueueFamilyIndex
 			VK_QUEUE_FAMILY_IGNORED,                // uint32_t                  dstQueueFamilyIndex
-			m_image.image(),                        // VkImage                   image
+			m_image.image.handle(),                 // VkImage                   image
 			image_subresource_range                 // VkImageSubresourceRange   subresourceRange
 		};
 		commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrierFromUndefinedToTransferDst);
@@ -728,7 +597,7 @@ namespace Nth {
 				1                                   // uint32_t                   depth
 			}
 		};
-		commandBuffer.copyBufferToImage(m_stagingBuffer.buffer(), m_image.image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &bufferImageCopyInfo);
+		commandBuffer.copyBufferToImage(m_stagingBuffer.handle(), m_image.image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &bufferImageCopyInfo);
 
 		VkImageMemoryBarrier imageMemoryBarrierFromTransferToShaderRead = {
 			VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,   // VkStructureType              sType
@@ -739,7 +608,7 @@ namespace Nth {
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, // VkImageLayout                newLayout
 			VK_QUEUE_FAMILY_IGNORED,                  // uint32_t                     srcQueueFamilyIndex
 			VK_QUEUE_FAMILY_IGNORED,                  // uint32_t                     dstQueueFamilyIndex
-			m_image.image(),                          // VkImage                      image
+			m_image.image.handle(),                   // VkImage                      image
 			image_subresource_range                   // VkImageSubresourceRange      subresourceRange
 		};
 		commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrierFromTransferToShaderRead);
@@ -898,20 +767,20 @@ namespace Nth {
 	bool RenderWindow::updateDescriptorSet() {
 		VkDescriptorImageInfo imageInfo = {
 			m_image.sampler(),                          // VkSampler                      sampler
-			m_image.view(),                             // VkImageView                    imageView
+			m_image.image.view(),                       // VkImageView                    imageView
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL    // VkImageLayout                  imageLayout
 		};
 
 		VkDescriptorBufferInfo bufferInfo = {
-			m_uniformBuffer.buffer(),                // VkBuffer         buffer
+			m_uniformBuffer.handle(),                // VkBuffer         buffer
 			0,                                       // VkDeviceSize     offset
-			m_uniformBuffer.buffer.getSize()         // VkDeviceSize     range
+			m_uniformBuffer.handle.getSize()         // VkDeviceSize     range
 		};
 
 		VkDescriptorBufferInfo ssboInfo = {
-			m_ssbo.buffer(),                         // VkBuffer         buffer
+			m_ssbo.handle(),                         // VkBuffer         buffer
 			0,                                       // VkDeviceSize     offset
-			m_ssbo.buffer.getSize()                  // VkDeviceSize     range
+			m_ssbo.handle.getSize()                  // VkDeviceSize     range
 		};
 
 		std::vector<VkWriteDescriptorSet> descriptorWrites = {
@@ -960,7 +829,7 @@ namespace Nth {
 	}
 
 	bool RenderWindow::createUniformBuffer() {
-		if (!createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sizeof(UniformBufferObject), m_uniformBuffer)) {
+		if (!m_uniformBuffer.create(m_vulkan.getDevice(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sizeof(UniformBufferObject))) {
 			std::cerr << "Could not create uniform buffer!" << std::endl;
 			return false;
 		}
@@ -973,7 +842,7 @@ namespace Nth {
 	}
 
 	bool RenderWindow::createSSBO() {
-		if (!createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 10000 * sizeof(ShaderStorageBufferObject), m_ssbo)) {
+		if (!m_ssbo.create(m_vulkan.getDevice(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 10000 * sizeof(ShaderStorageBufferObject))) {
 			std::cerr << "Can't create SSBO" << std::endl;
 			return false;
 		}
@@ -987,24 +856,23 @@ namespace Nth {
 	}
 
 	bool RenderWindow::createDepthRessource() {
-		ImageParameters newDepth;
+		VulkanImage newDepth;
 
 		VkFormat depthFormat = findDepthFormat();
 
-		if (!createImage(
+		if (!newDepth.create(
+			m_vulkan.getDevice(),
 			m_swapchainSize.x, 
 			m_swapchainSize.y, 
 			depthFormat, 
 			VK_IMAGE_TILING_OPTIMAL, 
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-			newDepth.image,
-			newDepth.memory)) {
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
 			std::cerr << "Can't create depth image" << std::endl;
 			return false;
 		}
 
-		if (!createImageView(newDepth.view, newDepth.image, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT)) {
+		if (!newDepth.createView(m_vulkan.getDevice(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT)) {
 			return false;
 		}
 
@@ -1143,36 +1011,6 @@ namespace Nth {
 		return false;
 	}
 
-	bool RenderWindow::createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size,  BufferParameters& bufferParams) const {
-		VkBufferCreateInfo bufferCreateInfo = {
-			VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,             // VkStructureType                sType
-			nullptr,                                          // const void                    *pNext
-			0,                                                // VkBufferCreateFlags            flags
-			size,                                             // VkDeviceSize                   size
-			usage,                                            // VkBufferUsageFlags             usage
-			VK_SHARING_MODE_EXCLUSIVE,                        // VkSharingMode                  sharingMode
-			0,                                                // uint32_t                       queueFamilyIndexCount
-			nullptr                                           // const uint32_t                *pQueueFamilyIndices
-		};
-
-		if (!bufferParams.buffer.create(m_vulkan.getDevice(), bufferCreateInfo)) {
-			std::cerr << "Could not create buffer!" << std::endl;
-			return false;
-		}
-
-		if (!allocateBufferMemory(bufferParams.buffer, memoryProperty, bufferParams.memory)) {
-			std::cerr << "Could not allocate memory for a buffer!" << std::endl;
-			return false;
-		}
-
-		if (!bufferParams.buffer.bindBufferMemory(bufferParams.memory)) {
-			std::cerr << "Could not bind memory to a buffer!" << std::endl;
-			return false;
-		}
-
-		return true;
-	}
-
 	bool RenderWindow::prepareFrame(Vk::CommandBuffer& commandbuffer, Vk::SwapchainImage const& imageParameters, Vk::Framebuffer& framebuffer) const {
 		framebuffer.destroy();
 		if (!createFramebuffer(framebuffer, imageParameters)) {
@@ -1264,9 +1102,9 @@ namespace Nth {
 		commandbuffer.setScissor(scissor);
 
 		VkDeviceSize offset = 0;
-		commandbuffer.bindVertexBuffer(m_vertexBuffer.buffer(), offset);
+		commandbuffer.bindVertexBuffer(m_vertexBuffer.handle(), offset);
 
-		commandbuffer.bindIndexBuffer(m_indexBuffer.buffer(), 0, VK_INDEX_TYPE_UINT32);
+		commandbuffer.bindIndexBuffer(m_indexBuffer.handle(), 0, VK_INDEX_TYPE_UINT32);
 
 		VkDescriptorSet vkDescriptorSet = m_descriptor.descriptor();
 		commandbuffer.bindDescriptorSets(m_material.pipelineLayout(), 0, 1, &vkDescriptorSet, 0, nullptr);
@@ -1323,202 +1161,35 @@ namespace Nth {
 		return framebuffer.create(m_vulkan.getDevice(), framebufferCreateInfo);
 	}
 
-	uint32_t RenderWindow::findMemoryType(uint32_t memoryTypeBit, VkMemoryPropertyFlags properties) const {
-		VkPhysicalDeviceMemoryProperties memProperties = m_vulkan.getDevice().getPhysicalDevice().getMemoryProperties();
-
-		for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-			if ((memoryTypeBit & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-				return i;
-			}
-		}
-
-		throw std::runtime_error("Canno't find suitable memory type!");
-	}
-
-	bool RenderWindow::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, Vk::Image& image, Vk::DeviceMemory& memory) const {
-		VkImageCreateInfo imageCreateInfo = {
-			VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,  // VkStructureType        sType;
-			nullptr,                              // const void            *pNext
-			0,                                    // VkImageCreateFlags     flags
-			VK_IMAGE_TYPE_2D,                     // VkImageType            imageType
-			format,                               // VkFormat               format
-			{                                     // VkExtent3D             extent
-				width,                                // uint32_t               width
-				height,                               // uint32_t               height
-				1                                     // uint32_t               depth
-			},
-			1,                                    // uint32_t               mipLevels
-			1,                                    // uint32_t               arrayLayers
-			VK_SAMPLE_COUNT_1_BIT,                // VkSampleCountFlagBits  samples
-			tiling,                               // VkImageTiling          tiling
-			usage,                                // VkImageUsageFlags      usage
-			VK_SHARING_MODE_EXCLUSIVE,            // VkSharingMode          sharingMode
-			0,                                    // uint32_t               queueFamilyIndexCount
-			nullptr,                              // const uint32_t        *pQueueFamilyIndices
-			VK_IMAGE_LAYOUT_UNDEFINED             // VkImageLayout          initialLayout
-		};
-
-		if (!image.create(m_vulkan.getDevice(), imageCreateInfo)) {
-			return false;
-		}
-
-		VkMemoryRequirements memRequirements = image.getImageMemoryRequirements();
-
-		VkMemoryAllocateInfo memoryAllocateInfo = {
-			VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,                    // VkStructureType                        sType
-			nullptr,                                                   // const void                            *pNext
-			memRequirements.size,                                      // VkDeviceSize                           allocationSize
-			findMemoryType(memRequirements.memoryTypeBits, properties) // uint32_t                               memoryTypeIndex
-		};
-
-		if (!memory.create(m_vulkan.getDevice(), memoryAllocateInfo)) {
-			return false;
-		}
-
-		image.bindImageMemory(memory);
-
-		return true;
-	}
-
-	bool RenderWindow::createImageView(Vk::ImageView& view, Vk::Image const& image, VkFormat format, VkImageAspectFlags aspectFlags) const {
-		VkImageViewCreateInfo imageViewCreateInfo = {
-			VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, // VkStructureType          sType
-			nullptr,                                  // const void              *pNext
-			0,                                        // VkImageViewCreateFlags   flags
-			image(),                                  // VkImage                  image
-			VK_IMAGE_VIEW_TYPE_2D,                    // VkImageViewType          viewType
-			format,                                   // VkFormat                 format
-			{                                         // VkComponentMapping       components
-				VK_COMPONENT_SWIZZLE_IDENTITY,            // VkComponentSwizzle       r
-				VK_COMPONENT_SWIZZLE_IDENTITY,            // VkComponentSwizzle       g
-				VK_COMPONENT_SWIZZLE_IDENTITY,            // VkComponentSwizzle       b
-				VK_COMPONENT_SWIZZLE_IDENTITY             // VkComponentSwizzle       a
-			},
-			{                                         // VkImageSubresourceRange  subresourceRange
-				aspectFlags,                              // VkImageAspectFlags       aspectMask
-				0,                                        // uint32_t                 baseMipLevel
-				1,                                        // uint32_t                 levelCount
-				0,                                        // uint32_t                 baseArrayLayer
-				1                                         // uint32_t                 layerCount
-			}
-		};
-
-		return view.create(m_vulkan.getDevice(), imageViewCreateInfo);
-	}
-
-	bool RenderWindow::createSampler(Vk::Sampler& sampler) const {
-		VkSamplerCreateInfo samplerCreateInfo = {
-			VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,  // VkStructureType        sType
-			nullptr,                                // const void*            pNext
-			0,                                      // VkSamplerCreateFlags   flags
-			VK_FILTER_LINEAR,                       // VkFilter               magFilter
-			VK_FILTER_LINEAR,                       // VkFilter               minFilter
-			VK_SAMPLER_MIPMAP_MODE_NEAREST,         // VkSamplerMipmapMode    mipmapMode
-			VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,  // VkSamplerAddressMode   addressModeU
-			VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,  // VkSamplerAddressMode   addressModeV
-			VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,  // VkSamplerAddressMode   addressModeW
-			0.0f,                                   // float                  mipLodBias
-			VK_FALSE,                               // VkBool32               anisotropyEnable
-			1.0f,                                   // float                  maxAnisotropy
-			VK_FALSE,                               // VkBool32               compareEnable
-			VK_COMPARE_OP_ALWAYS,                   // VkCompareOp            compareOp
-			0.0f,                                   // float                  minLod
-			0.0f,                                   // float                  maxLod
-			VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK,// VkBorderColor          borderColor
-			VK_FALSE                                // VkBool32               unnormalizedCoordinates
-		};
-
-		return sampler.create(m_vulkan.getDevice(), samplerCreateInfo);
-	}
-
 	bool RenderWindow::copyUniformBufferData() {
 		const UniformBufferObject uniformData = getUniformBufferData();
 
-		if (!m_stagingBuffer.memory.map(0, m_uniformBuffer.buffer.getSize(), 0)) {
-			std::cerr << "Could not map memory and upload data to a staging buffer!" << std::endl;
-			return false;
-		}
-
-		void* stagingBufferMemoryPointer = m_stagingBuffer.memory.getMappedPointer();
-
-		memcpy(stagingBufferMemoryPointer, &uniformData, m_uniformBuffer.buffer.getSize());
-
-		m_stagingBuffer.memory.flushMappedMemory(0, m_uniformBuffer.buffer.getSize());
-
-		m_stagingBuffer.memory.unmap();
-
-		// Prepare command buffer to copy data from staging buffer to a uniform buffer
-		Vk::CommandBuffer& commandBuffer = m_renderingResources[0].commandBuffer;
-
-		VkCommandBufferBeginInfo commandBufferBeginInfo = {
-			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, // VkStructureType              sType
-			nullptr,                                     // const void                  *pNext
-			VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, // VkCommandBufferUsageFlags    flags
-			nullptr                                      // const VkCommandBufferInheritanceInfo  *pInheritanceInfo
-		};
-
-		commandBuffer.begin(commandBufferBeginInfo);
-
-		VkBufferCopy bufferCopyInfo = {
-			0,                                // VkDeviceSize       srcOffset
-			0,                                // VkDeviceSize       dstOffset
-			m_uniformBuffer.buffer.getSize()  // VkDeviceSize       size
-		};
-		commandBuffer.copyBuffer(m_stagingBuffer.buffer(), m_uniformBuffer.buffer(), bufferCopyInfo);
-
-		VkBufferMemoryBarrier buffer_memory_barrier = {
-			VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, // VkStructureType    sType;
-			nullptr,                          // const void        *pNext
-			VK_ACCESS_TRANSFER_WRITE_BIT,     // VkAccessFlags      srcAccessMask
-			VK_ACCESS_UNIFORM_READ_BIT,       // VkAccessFlags      dstAccessMask
-			VK_QUEUE_FAMILY_IGNORED,          // uint32_t           srcQueueFamilyIndex
-			VK_QUEUE_FAMILY_IGNORED,          // uint32_t           dstQueueFamilyIndex
-			m_uniformBuffer.buffer(),         // VkBuffer           buffer
-			0,                                // VkDeviceSize       offset
-			VK_WHOLE_SIZE                     // VkDeviceSize       size
-		};
-		commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr, 1, &buffer_memory_barrier, 0, nullptr);
-
-		commandBuffer.end();
-
-		// Submit command buffer and copy data from staging buffer to a vertex buffer
-		VkSubmitInfo submitInfo = {
-			VK_STRUCTURE_TYPE_SUBMIT_INFO,    // VkStructureType    sType
-			nullptr,                          // const void        *pNext
-			0,                                // uint32_t           waitSemaphoreCount
-			nullptr,                          // const VkSemaphore *pWaitSemaphores
-			nullptr,                          // const VkPipelineStageFlags *pWaitDstStageMask;
-			1,                                // uint32_t           commandBufferCount
-			&commandBuffer(),                 // const VkCommandBuffer *pCommandBuffers
-			0,                                // uint32_t           signalSemaphoreCount
-			nullptr                           // const VkSemaphore *pSignalSemaphores
-		};
-
-		if (!m_graphicsQueue.submit(submitInfo, VK_NULL_HANDLE)) {
-			return false;
-		}
-
-		m_vulkan.getDevice().waitIdle();
-		
-		return true;
+		return copyBufferByStaging(m_uniformBuffer, m_stagingBuffer, [this , &uniformData](void* mappedPtr) {
+			memcpy(mappedPtr, &uniformData, m_uniformBuffer.handle.getSize());
+		});
 	}
 
 	bool RenderWindow::copySSBOData() {
-		if (!m_stagingBuffer.memory.map(0, m_ssbo.buffer.getSize(), 0)) {
+		return copyBufferByStaging(m_ssbo, m_stagingBuffer, [](void* mappedPtr) {
+			ShaderStorageBufferObject* objectSSBO = (ShaderStorageBufferObject*)mappedPtr;
+
+			objectSSBO[0].model = glm::rotate(glm::mat4(1.f), glm::radians(45.f), glm::vec3(0.f, 0.f, 1.f));
+		});
+	}
+
+	bool RenderWindow::copyBufferByStaging(VulkanBuffer& target, VulkanBuffer& staging, std::function<void(void*)> copyFunction) {
+		if (!staging.memory.map(0, target.handle.getSize(), 0)) {
 			std::cerr << "Could not map memory and upload data to a staging buffer!" << std::endl;
 			return false;
 		}
 
 		void* stagingBufferMemoryPointer = m_stagingBuffer.memory.getMappedPointer();
+		
+		copyFunction(stagingBufferMemoryPointer);
 
-		ShaderStorageBufferObject* objectSSBO = (ShaderStorageBufferObject*)stagingBufferMemoryPointer;
+		staging.memory.flushMappedMemory(0, target.handle.getSize());
 
-		objectSSBO[0].model = glm::rotate(glm::mat4(1.f), glm::radians(45.f), glm::vec3(0.f, 0.f, 1.f));
-
-
-		m_stagingBuffer.memory.flushMappedMemory(0, m_ssbo.buffer.getSize());
-
-		m_stagingBuffer.memory.unmap();
+		staging.memory.unmap();
 
 		// Prepare command buffer to copy data from staging buffer to a uniform buffer
 		Vk::CommandBuffer& commandBuffer = m_renderingResources[0].commandBuffer;
@@ -1535,9 +1206,9 @@ namespace Nth {
 		VkBufferCopy bufferCopyInfo = {
 			0,                                // VkDeviceSize       srcOffset
 			0,                                // VkDeviceSize       dstOffset
-			m_ssbo.buffer.getSize()           // VkDeviceSize       size
+			target.handle.getSize()  // VkDeviceSize       size
 		};
-		commandBuffer.copyBuffer(m_stagingBuffer.buffer(), m_ssbo.buffer(), bufferCopyInfo);
+		commandBuffer.copyBuffer(staging.handle(), target.handle(), bufferCopyInfo);
 
 		VkBufferMemoryBarrier buffer_memory_barrier = {
 			VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, // VkStructureType    sType;
@@ -1546,7 +1217,7 @@ namespace Nth {
 			VK_ACCESS_UNIFORM_READ_BIT,       // VkAccessFlags      dstAccessMask
 			VK_QUEUE_FAMILY_IGNORED,          // uint32_t           srcQueueFamilyIndex
 			VK_QUEUE_FAMILY_IGNORED,          // uint32_t           dstQueueFamilyIndex
-			m_ssbo.buffer(),                  // VkBuffer           buffer
+			target.handle(),                  // VkBuffer           buffer
 			0,                                // VkDeviceSize       offset
 			VK_WHOLE_SIZE                     // VkDeviceSize       size
 		};

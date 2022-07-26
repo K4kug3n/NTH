@@ -2,7 +2,7 @@
 
 namespace Nth {
 	namespace Vk {
-		std::string toString(VkResult const& result) {
+		std::string toString(VkResult result) {
 			switch (result) {
 			case VkResult::VK_SUCCESS:
 				return "No error";

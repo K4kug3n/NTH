@@ -7,7 +7,7 @@
 
 namespace Nth {
 	namespace Vk {
-		std::string toString(VkResult const& result);
+		std::string toString(VkResult result);
 	}	
 }
 

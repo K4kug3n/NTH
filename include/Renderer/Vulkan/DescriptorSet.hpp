@@ -16,7 +16,7 @@ namespace Nth {
 			DescriptorSet(DescriptorSet&& object) noexcept;
 			~DescriptorSet();
 
-			bool allocate(Device const& device, VkDescriptorSetAllocateInfo const& info);
+			VkResult allocate(Device const& device, VkDescriptorSetAllocateInfo const& info);
 			
 			void update(uint32_t nbSetWrite, VkWriteDescriptorSet const* setWrites);
 

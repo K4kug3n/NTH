@@ -4,6 +4,7 @@
 #include "Renderer/Vulkan/VkUtil.hpp"
 
 #include <iostream>
+#include <cassert>
 
 namespace Nth {
 	namespace Vk {
@@ -30,6 +31,18 @@ namespace Nth {
 			}
 
 			m_device = &device;
+
+			return true;
+		}
+
+		bool DescriptorPool::reset() const {
+			assert(m_device != nullptr);
+
+			VkResult result{ m_device->vkResetDescriptorPool((*m_device)(), m_descriptorPool, 0) };
+			if (result != VK_SUCCESS) {
+				std::cerr << "Error: Can't reset Descriptor Pool, " << toString(result) << std::endl;
+				return false;
+			}
 
 			return true;
 		}

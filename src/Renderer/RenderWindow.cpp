@@ -111,10 +111,7 @@ namespace Nth {
 			return false;
 		}
 
-		if (!createDescriptorPool()) {
-			std::cerr << "Can't create descriptor pool" << std::endl;
-			return false;
-		}
+		m_descriptorAllocator.init(m_vulkan.getDevice());
 
 		if (!allocateDescriptorSet()) {
 			std::cerr << "Can't allocate descriptor set" << std::endl;
@@ -695,71 +692,10 @@ namespace Nth {
 		return true;
 	}
 
-	bool RenderWindow::createDescriptorPool() {
-		std::vector<VkDescriptorPoolSize> poolSize = {
-		{
-			VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,   // VkDescriptorType type
-			1                                            // uint32_t         descriptorCount
-		},
-		{
-			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,           // VkDescriptorType  type
-			1                                            // uint32_t          descriptorCount
-		},
-		{
-			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,           // VkDescriptorType type
-			1                                            // uint32_t         descriptorCount
-		}
-	};
-
-		VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = {
-			VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,  // VkStructureType                sType
-			nullptr,                                        // const void                    *pNext
-			0,                                              // VkDescriptorPoolCreateFlags    flags
-			1,                                              // uint32_t                       maxSets
-			static_cast<uint32_t>(poolSize.size()),         // uint32_t                       poolSizeCount
-			poolSize.data()                                 // const VkDescriptorPoolSize    *pPoolSizes
-		};
-
-		if (!m_descriptorPool.create(m_vulkan.getDevice(), descriptorPoolCreateInfo)) {
-			std::cerr << "Could not create descriptor pool!" << std::endl;
-			return false;
-		}
-
-		if (!m_descriptorPool2.create(m_vulkan.getDevice(), descriptorPoolCreateInfo)) {
-			std::cerr << "Could not create descriptor pool!" << std::endl;
-			return false;
-		}
-		
-		return true;
-	}
-
 	bool RenderWindow::allocateDescriptorSet() {
-		VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {
-			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, // VkStructureType                sType
-			nullptr,                                        // const void                    *pNext
-			m_descriptorPool(),                             // VkDescriptorPool               descriptorPool
-			1,                                              // uint32_t                       descriptorSetCount
-			&m_descriptor.layout()                          // const VkDescriptorSetLayout   *pSetLayouts
-		};
+		m_descriptor.descriptor = m_descriptorAllocator.allocate(m_descriptor.layout);
 
-		if (!m_descriptor.descriptor.allocate(m_vulkan.getDevice(), descriptorSetAllocateInfo)) {
-			std::cerr << "Could not allocate descriptor set!" << std::endl;
-			return false;
-		}
-
-		// TODO: Clean this up
-		VkDescriptorSetAllocateInfo descriptorSetAllocateInfo2 = {
-			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, // VkStructureType                sType
-			nullptr,                                        // const void                    *pNext
-			m_descriptorPool2(),                            // VkDescriptorPool               descriptorPool
-			1,                                              // uint32_t                       descriptorSetCount
-			&m_ssboDescriptor.layout()                      // const VkDescriptorSetLayout   *pSetLayouts
-		};
-
-		if (!m_ssboDescriptor.descriptor.allocate(m_vulkan.getDevice(), descriptorSetAllocateInfo2)) {
-			std::cerr << "Could not allocate descriptor set!" << std::endl;
-			return false;
-		}
+		m_ssboDescriptor.descriptor = m_descriptorAllocator.allocate(m_ssboDescriptor.layout);
 
 		return true;
 	}
@@ -1079,12 +1015,12 @@ namespace Nth {
 		commandbuffer.bindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, m_material.pipeline());
 
 		VkViewport viewport = {
-		  0.0f,                                               // float                                  x
-		  0.0f,                                               // float                                  y
-		  static_cast<float>(m_swapchainSize.x),              // float                                  width
-		  static_cast<float>(m_swapchainSize.y),              // float                                  height
-		  0.0f,                                               // float                                  minDepth
-		  1.0f                                                // float                                  maxDepth
+			0.0f,                                               // float                                  x
+			0.0f,                                               // float                                  y
+			static_cast<float>(m_swapchainSize.x),              // float                                  width
+			static_cast<float>(m_swapchainSize.y),              // float                                  height
+			0.0f,                                               // float                                  minDepth
+			1.0f                                                // float                                  maxDepth
 		};
 
 		VkRect2D scissor = {

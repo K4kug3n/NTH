@@ -13,7 +13,6 @@
 #include "Renderer/Vulkan/RenderPass.hpp"
 #include "Renderer/Vulkan/Framebuffer.hpp"
 #include "Renderer/RenderingResource.hpp"
-#include "Renderer/Vulkan/DescriptorPool.hpp"
 #include "Renderer/Vulkan/DescriptorSet.hpp"
 #include "Renderer/Vulkan/DescriptorSetLayout.hpp"
 #include "Renderer/Vertex.hpp"
@@ -22,6 +21,7 @@
 #include "Renderer/VulkanBuffer.hpp"
 #include "Renderer/VulkanImage.hpp"
 #include "Renderer/VulkanTexture.hpp"
+#include "Renderer/DescriptorAllocator.hpp"
 
 #include "Math/Vector2.hpp"
 
@@ -83,7 +83,6 @@ namespace Nth {
 		bool createTexture();
 		bool copyTextureData(char const* textureData, uint32_t dataSize, uint32_t width, uint32_t height);
 		bool createDescriptorSetLayout();
-		bool createDescriptorPool();
 		bool allocateDescriptorSet();
 		bool updateDescriptorSet();
 		bool createUniformBuffer();
@@ -126,9 +125,7 @@ namespace Nth {
 		VulkanBuffer m_ssbo;
 		VulkanTexture m_image;
 		VulkanImage m_depth;
-		Vk::DescriptorPool m_descriptorPool;
-		// TODO: No more memory, need another one (make it automatic ?)
-		Vk::DescriptorPool m_descriptorPool2;
+		DescriptorAllocator m_descriptorAllocator;
 		DescriptorSetParameters m_descriptor;
 		DescriptorSetParameters m_ssboDescriptor;
 		std::vector<RenderingResource> m_renderingResources;

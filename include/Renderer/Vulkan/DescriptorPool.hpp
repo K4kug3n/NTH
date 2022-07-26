@@ -17,6 +17,7 @@ namespace Nth {
 			~DescriptorPool();
 
 			bool create(Device const& device, VkDescriptorPoolCreateInfo const& info);
+			bool reset() const;
 			void destroy();
 
 			VkDescriptorPool operator()() const;

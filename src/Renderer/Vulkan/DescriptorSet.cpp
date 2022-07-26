@@ -22,16 +22,10 @@ namespace Nth {
 		DescriptorSet::~DescriptorSet() {
 		}
 
-		bool DescriptorSet::allocate(Device const& device, VkDescriptorSetAllocateInfo const& info) {
-			VkResult result{ device.vkAllocateDescriptorSets(device(), &info, &m_descriptorSet) };
-			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Can't allocate Descriptor Set, " << toString(result) << std::endl;
-				return false;
-			}
-
+		VkResult DescriptorSet::allocate(Device const& device, VkDescriptorSetAllocateInfo const& info) {
 			m_device = &device;
 
-			return true;
+			return device.vkAllocateDescriptorSets(device(), &info, &m_descriptorSet);
 		}
 
 		void DescriptorSet::update(uint32_t nbSetWrite, VkWriteDescriptorSet const* setWrites) {

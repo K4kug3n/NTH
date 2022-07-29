@@ -7,15 +7,11 @@
 #include "Renderer/Vulkan/Surface.hpp"
 #include "Renderer/Vulkan/Swapchain.hpp"
 #include "Renderer/Vulkan/Queue.hpp"
-#include "Renderer/Vulkan/Semaphore.hpp"
-#include "Renderer/Vulkan/CommandPool.hpp"
-#include "Renderer/Vulkan/CommandBuffer.hpp"
 #include "Renderer/Vulkan/RenderPass.hpp"
 #include "Renderer/Vulkan/Framebuffer.hpp"
 #include "Renderer/RenderingResource.hpp"
 #include "Renderer/Vulkan/DescriptorSet.hpp"
 #include "Renderer/Vulkan/DescriptorSetLayout.hpp"
-#include "Renderer/Vertex.hpp"
 #include "Renderer/Mesh.hpp"
 #include "Renderer/Material.hpp"
 #include "Renderer/VulkanBuffer.hpp"
@@ -63,6 +59,8 @@ namespace Nth {
 
 		bool create(VideoMode const& mode, const std::string_view title);
 		bool draw();
+
+		Vk::RenderPass& getRenderPass();
 
 		static constexpr uint32_t resourceCount = 3;
 
@@ -114,7 +112,6 @@ namespace Nth {
 		Vk::Swapchain m_swapchain;
 		Vk::Queue m_presentQueue;
 		Vk::Queue m_graphicsQueue;
-		Vk::CommandPool m_graphicCommandPool;
 		Vk::RenderPass m_renderPass;
 		Material m_material;
 		Mesh m_mesh;

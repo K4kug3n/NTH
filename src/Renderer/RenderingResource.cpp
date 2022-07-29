@@ -6,8 +6,13 @@
 #include <iostream>
 
 namespace Nth {
-	bool RenderingResource::create(Vk::Device const& device, Vk::CommandPool& pool) {
-		if (!pool.allocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, commandBuffer)) {
+	bool RenderingResource::create(Vk::Device const& device, uint32_t index) {
+		if (!commandPool.create(device, index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT)) {
+			std::cerr << "Can't create command buffer pool" << std::endl;
+			return false;
+		}
+
+		if (!commandPool.allocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, commandBuffer)) {
 			std::cerr << "Can't allocate command buffer" << std::endl;
 			return false;
 		}

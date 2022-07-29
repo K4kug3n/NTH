@@ -2,13 +2,13 @@
 #define NTH_RENDERER_VK_RENDERINGRESOURCE_HPP
 
 #include "Renderer/Vulkan/Framebuffer.hpp"
+#include "Renderer/Vulkan/CommandPool.hpp"
 #include "Renderer/Vulkan/CommandBuffer.hpp"
 #include "Renderer/Vulkan/Semaphore.hpp"
 #include "Renderer/Vulkan/Fence.hpp"
 
 namespace Nth {
 	class Vk::Device;
-	class Vk::CommandPool;
 
 	class RenderingResource {
 	public:
@@ -17,9 +17,10 @@ namespace Nth {
 		RenderingResource(RenderingResource&&) = delete;
 		~RenderingResource() = default;
 
-		bool create(Vk::Device const& device, Vk::CommandPool& pool);
+		bool create(Vk::Device const& device, uint32_t index);
 
 		Vk::Framebuffer framebuffer;
+		Vk::CommandPool commandPool;
 		Vk::CommandBuffer commandBuffer;
 		Vk::Semaphore imageAvailableSemaphore;
 		Vk::Semaphore finishedRenderingSemaphore;

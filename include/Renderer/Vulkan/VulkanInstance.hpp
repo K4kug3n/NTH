@@ -25,6 +25,7 @@ namespace Nth {
 
 			Instance& getInstance();
 			Device& getDevice();
+			Device const& getDevice() const;
 
 			VulkanInstance& operator=(VulkanInstance const&) = delete;
 			VulkanInstance& operator=(VulkanInstance&&) = delete;

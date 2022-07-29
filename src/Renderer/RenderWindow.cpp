@@ -16,7 +16,6 @@ namespace Nth {
 		m_surface(vulkanInstance.getInstance()),
 		m_presentQueue(),
 		m_graphicsQueue(),
-		m_graphicCommandPool(),
 		m_renderingResources(resourceCount),
 		m_swapchainSize(),
 		m_resourceIndex(0) { }
@@ -26,7 +25,6 @@ namespace Nth {
 		m_surface(vulkanInstance.getInstance()),
 		m_presentQueue(),
 		m_graphicsQueue(),
-		m_graphicCommandPool(),
 		m_renderingResources(resourceCount),
 		m_swapchainSize(),
 		m_resourceIndex(0) {
@@ -209,10 +207,10 @@ namespace Nth {
 			VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,                        // VkStructureType              sType
 			nullptr,                                                   // const void                  *pNext
 			1,                                                         // uint32_t                     waitSemaphoreCount
-			&currentRenderingResource.finishedRenderingSemaphore(),  // const VkSemaphore           *pWaitSemaphores
+			&currentRenderingResource.finishedRenderingSemaphore(),    // const VkSemaphore           *pWaitSemaphores
 			1,                                                         // uint32_t                     swapchainCount
-			&vkSwapchain,                                               // const VkSwapchainKHR        *pSwapchains
-			&imageIndex,                                              // const uint32_t              *pImageIndices
+			&vkSwapchain,                                              // const VkSwapchainKHR        *pSwapchains
+			&imageIndex,                                               // const uint32_t              *pImageIndices
 			nullptr                                                    // VkResult                    *pResults
 		};
 		result = m_presentQueue.present(presentInfo);
@@ -230,6 +228,10 @@ namespace Nth {
 		}
 
 		return true;
+	}
+
+	Vk::RenderPass& RenderWindow::getRenderPass() {
+		return m_renderPass;
 	}
 
 	bool RenderWindow::createSwapchain() {
@@ -464,13 +466,8 @@ namespace Nth {
 	}
 
 	bool RenderWindow::createRenderingResources() {
-		if (!m_graphicCommandPool.create(m_vulkan.getDevice(), m_presentQueue.index(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT)) {
-			std::cerr << "Could not create a command pool!" << std::endl;
-			return false;
-		}
-
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			if (!m_renderingResources[i].create(m_vulkan.getDevice(), m_graphicCommandPool)) {
+			if (!m_renderingResources[i].create(m_vulkan.getDevice(), m_presentQueue.index())) {
 				std::cerr << "Can't create rendering ressource" << std::endl;
 				return false;
 			}

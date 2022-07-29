@@ -150,6 +150,10 @@ namespace Nth {
 			return m_device;
 		}
 
+		Device const& VulkanInstance::getDevice() const {
+			return m_device;
+		}
+
 		VulkanInstance* VulkanInstance::instance() {
 			return m_classInstance;
 		}

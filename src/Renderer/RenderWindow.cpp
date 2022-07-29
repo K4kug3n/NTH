@@ -182,7 +182,15 @@ namespace Nth {
 			return false;
 		}
 
-		if (!prepareFrame(currentRenderingResource, m_swapchain.getImages()[imageIndex])) {
+		std::vector<RenderObject> objects{
+			{
+				&m_mesh,
+				&m_material,
+				glm::rotate(glm::mat4(1.f), glm::radians(45.f), glm::vec3(0.f, 0.f, 1.f))
+			}
+		};
+
+		if (!prepareFrame(currentRenderingResource, m_swapchain.getImages()[imageIndex], objects)) {
 			return false;
 		}
 
@@ -952,7 +960,7 @@ namespace Nth {
 		return false;
 	}
 
-	bool RenderWindow::prepareFrame(RenderingResource& ressources, Vk::SwapchainImage const& imageParameters) const {
+	bool RenderWindow::prepareFrame(RenderingResource& ressources, Vk::SwapchainImage const& imageParameters, std::vector<RenderObject> const& objects) const {
 		ressources.framebuffer.destroy();
 		if (!createFramebuffer(ressources.framebuffer, imageParameters)) {
 			return false;
@@ -962,8 +970,10 @@ namespace Nth {
 		void* mappedPtr = ressources.ssbo.memory.getMappedPointer();
 		ShaderStorageBufferObject* objectSSBO = (ShaderStorageBufferObject*)mappedPtr;
 
-		objectSSBO[0].model = glm::rotate(glm::mat4(1.f), glm::radians(45.f), glm::vec3(0.f, 0.f, 1.f));
-
+		for (size_t i = 0; i < objects.size(); ++i) {
+			objectSSBO[i].model = objects[i].transformMatrix;
+		}
+		
 		ressources.ssbo.memory.unmap();
 
 		VkCommandBufferBeginInfo commandBufferBeginInfo = {
@@ -1025,8 +1035,6 @@ namespace Nth {
 
 		ressources.commandBuffer.beginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		ressources.commandBuffer.bindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, m_material.pipeline());
-
 		VkViewport viewport = {
 			0.0f,                                               // float                                  x
 			0.0f,                                               // float                                  y
@@ -1050,6 +1058,8 @@ namespace Nth {
 		ressources.commandBuffer.setViewport(viewport);
 		ressources.commandBuffer.setScissor(scissor);
 
+		ressources.commandBuffer.bindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, m_material.pipeline());
+
 		VkDeviceSize offset = 0;
 		ressources.commandBuffer.bindVertexBuffer(m_vertexBuffer.handle(), offset);
 
@@ -1061,7 +1071,9 @@ namespace Nth {
 		VkDescriptorSet vkSsboDescriptorSet = ressources.ssboDescriptor();
 		ressources.commandBuffer.bindDescriptorSets(m_material.pipelineLayout(), 1, 1, &vkSsboDescriptorSet, 0, nullptr);
 
-		ressources.commandBuffer.drawIndexed(static_cast<uint32_t>(m_mesh.indices.size()), 1, 0, 0, 0);
+		for (size_t i = 0; i < objects.size(); ++i) {
+			ressources.commandBuffer.drawIndexed(static_cast<uint32_t>(objects[i].mesh->indices.size()), 1, 0, 0, 0);
+		}
 
 		ressources.commandBuffer.endRenderPass();
 

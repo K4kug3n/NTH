@@ -74,13 +74,25 @@ namespace Nth {
 			return false;
 		}
 
+		if (!createStagingBuffer()) {
+			std::cerr << "Can't create stagging buffer" << std::endl;
+			return false;
+		}
+
+		m_descriptorAllocator.init(m_vulkan.getDevice());
+
+		if (!createDescriptorSetLayout()) {
+			std::cerr << "Can't create descriptor set layout" << std::endl;
+			return false;
+		}
+
 		if (!createRenderingResources()) {
 			std::cerr << "Can't create rendering ressources" << std::endl;
 			return false;
 		}
 
-		if (!createStagingBuffer()) {
-			std::cerr << "Can't create stagging buffer" << std::endl;
+		if (!allocateDescriptorSet()) {
+			std::cerr << "Can't allocate descriptor set" << std::endl;
 			return false;
 		}
 
@@ -101,18 +113,6 @@ namespace Nth {
 
 		if (!createUniformBuffer()) {
 			std::cerr << "Can't create uniform buffer" << std::endl;
-			return false;
-		}
-
-		if (!createDescriptorSetLayout()) {
-			std::cerr << "Can't create descriptor set layout" << std::endl;
-			return false;
-		}
-
-		m_descriptorAllocator.init(m_vulkan.getDevice());
-
-		if (!allocateDescriptorSet()) {
-			std::cerr << "Can't allocate descriptor set" << std::endl;
 			return false;
 		}
 
@@ -182,7 +182,7 @@ namespace Nth {
 			return false;
 		}
 
-		if (!prepareFrame(currentRenderingResource.commandBuffer, m_swapchain.getImages()[imageIndex], currentRenderingResource.framebuffer)) {
+		if (!prepareFrame(currentRenderingResource, m_swapchain.getImages()[imageIndex])) {
 			return false;
 		}
 
@@ -406,8 +406,8 @@ namespace Nth {
 
 	bool RenderWindow::createPipeline() {
 		std::vector<VkDescriptorSetLayout> descritptorLayouts{
-			m_descriptor.layout(),
-			m_ssboDescriptor.layout()
+			m_descriptorLayout(),
+			m_ssboDescriptorLayout()
 		};
 
 		if (!m_material.createPipeline(m_vulkan.getDevice(), m_renderPass, "vert.spv", "frag.spv", descritptorLayouts)) {
@@ -471,6 +471,8 @@ namespace Nth {
 				std::cerr << "Can't create rendering ressource" << std::endl;
 				return false;
 			}
+
+			m_renderingResources[i].ssboDescriptor = m_descriptorAllocator.allocate(m_ssboDescriptorLayout);
 		}
 
 		return true;
@@ -657,7 +659,7 @@ namespace Nth {
 			layoutBindings.data()                                 // const VkDescriptorSetLayoutBinding  *pBindings
 		};
 
-		if (!m_descriptor.layout.create(m_vulkan.getDevice(), descriptorSetLayoutCreateInfo)) {
+		if (!m_descriptorLayout.create(m_vulkan.getDevice(), descriptorSetLayoutCreateInfo)) {
 			std::cerr << "Could not create descriptor set layout!" << std::endl;
 			return false;
 		}
@@ -681,7 +683,7 @@ namespace Nth {
 			layoutBindings2.data()                                // const VkDescriptorSetLayoutBinding  *pBindings
 		};
 
-		if (!m_ssboDescriptor.layout.create(m_vulkan.getDevice(), descriptorSetLayoutCreateInfo2)) {
+		if (!m_ssboDescriptorLayout.create(m_vulkan.getDevice(), descriptorSetLayoutCreateInfo2)) {
 			std::cerr << "Could not create descriptor set layout!" << std::endl;
 			return false;
 		}
@@ -690,9 +692,7 @@ namespace Nth {
 	}
 
 	bool RenderWindow::allocateDescriptorSet() {
-		m_descriptor.descriptor = m_descriptorAllocator.allocate(m_descriptor.layout);
-
-		m_ssboDescriptor.descriptor = m_descriptorAllocator.allocate(m_ssboDescriptor.layout);
+		m_descriptor = m_descriptorAllocator.allocate(m_descriptorLayout);
 
 		return true;
 	}
@@ -710,17 +710,11 @@ namespace Nth {
 			m_uniformBuffer.handle.getSize()         // VkDeviceSize     range
 		};
 
-		VkDescriptorBufferInfo ssboInfo = {
-			m_ssbo.handle(),                         // VkBuffer         buffer
-			0,                                       // VkDeviceSize     offset
-			m_ssbo.handle.getSize()                  // VkDeviceSize     range
-		};
-
 		std::vector<VkWriteDescriptorSet> descriptorWrites = {
 			{
 				VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
 				nullptr,                                    // const void                    *pNext
-				m_descriptor.descriptor(),                  // VkDescriptorSet                dstSet
+				m_descriptor(),                             // VkDescriptorSet                dstSet
 				0,                                          // uint32_t                       dstBinding
 				0,                                          // uint32_t                       dstArrayElement
 				1,                                          // uint32_t                       descriptorCount
@@ -732,7 +726,7 @@ namespace Nth {
 			{
 				VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,    // VkStructureType     sType
 				nullptr,                                   // const void         *pNext
-				m_descriptor.descriptor(),                 // VkDescriptorSet     dstSet
+				m_descriptor(),                            // VkDescriptorSet     dstSet
 				1,                                         // uint32_t            dstBinding
 				0,                                         // uint32_t            dstArrayElement
 				1,                                         // uint32_t            descriptorCount
@@ -740,23 +734,36 @@ namespace Nth {
 				nullptr,                                   // const VkDescriptorImageInfo  *pImageInfo
 				&bufferInfo,                               // const VkDescriptorBufferInfo *pBufferInfo
 				nullptr                                    // const VkBufferView *pTexelBufferView
-			},
-			{
-				VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
-				nullptr,                                    // const void                    *pNext
-				m_ssboDescriptor.descriptor(),              // VkDescriptorSet                dstSet
-				0,                                          // uint32_t                       dstBinding
-				0,                                          // uint32_t                       dstArrayElement
-				1,                                          // uint32_t                       descriptorCount
-				VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,          // VkDescriptorType               descriptorType
-				nullptr,                                    // const VkDescriptorImageInfo   *pImageInfo
-				&ssboInfo,                                  // const VkDescriptorBufferInfo  *pBufferInfo
-				nullptr                                     // const VkBufferView            *pTexelBufferView
-			},
+			}
 		};
 
 		// TODO: Check if update methode should be in Device class 
-		m_descriptor.descriptor.update(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data());
+		m_descriptor.update(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data());
+
+		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
+			VkDescriptorBufferInfo ssboInfo = {
+				m_renderingResources[i].ssbo.handle(),         // VkBuffer         buffer
+				0,                                             // VkDeviceSize     offset
+				m_renderingResources[i].ssbo.handle.getSize()  // VkDeviceSize     range
+			};
+
+			std::vector<VkWriteDescriptorSet> descriptorWrites2 = {
+				{
+					VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
+					nullptr,                                    // const void                    *pNext
+					m_renderingResources[i].ssboDescriptor(),   // VkDescriptorSet                dstSet
+					0,                                          // uint32_t                       dstBinding
+					0,                                          // uint32_t                       dstArrayElement
+					1,                                          // uint32_t                       descriptorCount
+					VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,          // VkDescriptorType               descriptorType
+					nullptr,                                    // const VkDescriptorImageInfo   *pImageInfo
+					&ssboInfo,                                  // const VkDescriptorBufferInfo  *pBufferInfo
+					nullptr                                     // const VkBufferView            *pTexelBufferView
+				},
+			};
+
+			m_renderingResources[i].ssboDescriptor.update(static_cast<uint32_t>(descriptorWrites2.size()), descriptorWrites2.data());
+		}
 
 		return true;
 	}
@@ -775,14 +782,15 @@ namespace Nth {
 	}
 
 	bool RenderWindow::createSSBO() {
-		if (!m_ssbo.create(m_vulkan.getDevice(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 10000 * sizeof(ShaderStorageBufferObject))) {
-			std::cerr << "Can't create SSBO" << std::endl;
-			return false;
-		}
-
-		if (!copySSBOData()) {
-			std::cerr << "Cant copy ssbo data" << std::endl;
-			return false;
+		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
+			if (!m_renderingResources[i].ssbo.create(
+				m_vulkan.getDevice(),
+				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+				10000 * sizeof(ShaderStorageBufferObject))) {
+				std::cerr << "Can't create SSBO" << std::endl;
+				return false;
+			}
 		}
 
 		return true;
@@ -944,11 +952,19 @@ namespace Nth {
 		return false;
 	}
 
-	bool RenderWindow::prepareFrame(Vk::CommandBuffer& commandbuffer, Vk::SwapchainImage const& imageParameters, Vk::Framebuffer& framebuffer) const {
-		framebuffer.destroy();
-		if (!createFramebuffer(framebuffer, imageParameters)) {
+	bool RenderWindow::prepareFrame(RenderingResource& ressources, Vk::SwapchainImage const& imageParameters) const {
+		ressources.framebuffer.destroy();
+		if (!createFramebuffer(ressources.framebuffer, imageParameters)) {
 			return false;
 		}
+
+		ressources.ssbo.memory.map(0, ressources.ssbo.handle.getSize(), 0);
+		void* mappedPtr = ressources.ssbo.memory.getMappedPointer();
+		ShaderStorageBufferObject* objectSSBO = (ShaderStorageBufferObject*)mappedPtr;
+
+		objectSSBO[0].model = glm::rotate(glm::mat4(1.f), glm::radians(45.f), glm::vec3(0.f, 0.f, 1.f));
+
+		ressources.ssbo.memory.unmap();
 
 		VkCommandBufferBeginInfo commandBufferBeginInfo = {
 			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,        // VkStructureType                        sType
@@ -957,7 +973,7 @@ namespace Nth {
 			nullptr                                             // const VkCommandBufferInheritanceInfo  *pInheritanceInfo
 		};
 
-		commandbuffer.begin(commandBufferBeginInfo);
+		ressources.commandBuffer.begin(commandBufferBeginInfo);
 
 		VkImageSubresourceRange imageSubresourceRange = {
 			VK_IMAGE_ASPECT_COLOR_BIT,                          // VkImageAspectFlags                     aspectMask
@@ -981,7 +997,7 @@ namespace Nth {
 				imageSubresourceRange                             // VkImageSubresourceRange                subresourceRange
 			};
 
-			commandbuffer.pipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrierFromPresentToDraw);
+			ressources.commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrierFromPresentToDraw);
 		}
 
 		std::vector<VkClearValue> clearValues(2);
@@ -992,7 +1008,7 @@ namespace Nth {
 			VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,           // VkStructureType                        sType
 			nullptr,                                            // const void                            *pNext
 			m_renderPass(),                                     // VkRenderPass                           renderPass
-			framebuffer(),                                      // VkFramebuffer                          framebuffer
+			ressources.framebuffer(),                           // VkFramebuffer                          framebuffer
 			{                                                   // VkRect2D                               renderArea
 				{                                                 // VkOffset2D                             offset
 					0,                                                // int32_t                                x
@@ -1007,9 +1023,9 @@ namespace Nth {
 			clearValues.data()                                 // const VkClearValue                    *pClearValues
 		};
 
-		commandbuffer.beginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+		ressources.commandBuffer.beginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		commandbuffer.bindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, m_material.pipeline());
+		ressources.commandBuffer.bindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, m_material.pipeline());
 
 		VkViewport viewport = {
 			0.0f,                                               // float                                  x
@@ -1031,23 +1047,23 @@ namespace Nth {
 			}
 		};
 
-		commandbuffer.setViewport(viewport);
-		commandbuffer.setScissor(scissor);
+		ressources.commandBuffer.setViewport(viewport);
+		ressources.commandBuffer.setScissor(scissor);
 
 		VkDeviceSize offset = 0;
-		commandbuffer.bindVertexBuffer(m_vertexBuffer.handle(), offset);
+		ressources.commandBuffer.bindVertexBuffer(m_vertexBuffer.handle(), offset);
 
-		commandbuffer.bindIndexBuffer(m_indexBuffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+		ressources.commandBuffer.bindIndexBuffer(m_indexBuffer.handle(), 0, VK_INDEX_TYPE_UINT32);
 
-		VkDescriptorSet vkDescriptorSet = m_descriptor.descriptor();
-		commandbuffer.bindDescriptorSets(m_material.pipelineLayout(), 0, 1, &vkDescriptorSet, 0, nullptr);
+		VkDescriptorSet vkDescriptorSet = m_descriptor();
+		ressources.commandBuffer.bindDescriptorSets(m_material.pipelineLayout(), 0, 1, &vkDescriptorSet, 0, nullptr);
 
-		VkDescriptorSet vkSsboDescriptorSet = m_ssboDescriptor.descriptor();
-		commandbuffer.bindDescriptorSets(m_material.pipelineLayout(), 1, 1, &vkSsboDescriptorSet, 0, nullptr);
+		VkDescriptorSet vkSsboDescriptorSet = ressources.ssboDescriptor();
+		ressources.commandBuffer.bindDescriptorSets(m_material.pipelineLayout(), 1, 1, &vkSsboDescriptorSet, 0, nullptr);
 
-		commandbuffer.drawIndexed(static_cast<uint32_t>(m_mesh.indices.size()), 1, 0, 0, 0);
+		ressources.commandBuffer.drawIndexed(static_cast<uint32_t>(m_mesh.indices.size()), 1, 0, 0, 0);
 
-		commandbuffer.endRenderPass();
+		ressources.commandBuffer.endRenderPass();
 
 		if (m_presentQueue() != m_graphicsQueue()) {
 			VkImageMemoryBarrier barrierFromDrawToPresent = {
@@ -1062,10 +1078,10 @@ namespace Nth {
 				imageParameters.image,                            // VkImage                                image
 				imageSubresourceRange                             // VkImageSubresourceRange                subresourceRange
 			};
-			commandbuffer.pipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrierFromDrawToPresent);
+			ressources.commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrierFromDrawToPresent);
 		}
 
-		if (!commandbuffer.end()) {
+		if (!ressources.commandBuffer.end()) {
 			std::cerr << "Could not record command buffer !" << std::endl;
 			return false;
 		}
@@ -1099,14 +1115,6 @@ namespace Nth {
 
 		return copyBufferByStaging(m_uniformBuffer, m_stagingBuffer, [this , &uniformData](void* mappedPtr) {
 			memcpy(mappedPtr, &uniformData, m_uniformBuffer.handle.getSize());
-		});
-	}
-
-	bool RenderWindow::copySSBOData() {
-		return copyBufferByStaging(m_ssbo, m_stagingBuffer, [](void* mappedPtr) {
-			ShaderStorageBufferObject* objectSSBO = (ShaderStorageBufferObject*)mappedPtr;
-
-			objectSSBO[0].model = glm::rotate(glm::mat4(1.f), glm::radians(45.f), glm::vec3(0.f, 0.f, 1.f));
 		});
 	}
 

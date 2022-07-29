@@ -6,6 +6,9 @@
 #include "Renderer/Vulkan/CommandBuffer.hpp"
 #include "Renderer/Vulkan/Semaphore.hpp"
 #include "Renderer/Vulkan/Fence.hpp"
+#include "Renderer/Vulkan/DescriptorSet.hpp"
+
+#include "Renderer/VulkanBuffer.hpp"
 
 namespace Nth {
 	class Vk::Device;
@@ -25,6 +28,9 @@ namespace Nth {
 		Vk::Semaphore imageAvailableSemaphore;
 		Vk::Semaphore finishedRenderingSemaphore;
 		Vk::Fence fence;
+
+		Vk::DescriptorSet ssboDescriptor;
+		VulkanBuffer ssbo;
 
 		RenderingResource& operator=(RenderingResource const&) = delete;
 		RenderingResource& operator=(RenderingResource&&) = delete;

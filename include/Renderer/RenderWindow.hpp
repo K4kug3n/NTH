@@ -31,12 +31,6 @@
 
 namespace Nth {
 	// TODO: Move out
-	struct DescriptorSetParameters {
-		Vk::DescriptorSet descriptor;
-		Vk::DescriptorSetLayout layout;
-	};
-
-	// TODO: Move out
 	// TODO: Precalculate VP CPU-side
 	struct UniformBufferObject {
 		glm::mat4 model;
@@ -95,10 +89,9 @@ namespace Nth {
 		VkSurfaceTransformFlagBitsKHR getSwapchainTransform(VkSurfaceCapabilitiesKHR const& capabilities) const;
 		VkPresentModeKHR getSwapchainPresentMode(std::vector<VkPresentModeKHR> const& presentModes) const;
 		bool allocateBufferMemory(Vk::Buffer const& buffer, VkMemoryPropertyFlagBits memoryProperty, Vk::DeviceMemory& memory) const;
-		bool prepareFrame(Vk::CommandBuffer& commandbuffer, Vk::SwapchainImage const& imageParameters, Vk::Framebuffer& framebuffer) const;
+		bool prepareFrame(RenderingResource& ressources, Vk::SwapchainImage const& imageParameters) const;
 		bool createFramebuffer(Vk::Framebuffer& framebuffer, Vk::SwapchainImage const& swapchainImage) const;
 		bool copyUniformBufferData();
-		bool copySSBOData();
 		bool copyBufferByStaging(VulkanBuffer& target, VulkanBuffer& staging, std::function<void(void*)> copyFunction);
 		UniformBufferObject getUniformBufferData() const;
 
@@ -119,12 +112,12 @@ namespace Nth {
 		VulkanBuffer m_indexBuffer;
 		VulkanBuffer m_stagingBuffer;
 		VulkanBuffer m_uniformBuffer;
-		VulkanBuffer m_ssbo;
 		VulkanTexture m_image;
 		VulkanImage m_depth;
 		DescriptorAllocator m_descriptorAllocator;
-		DescriptorSetParameters m_descriptor;
-		DescriptorSetParameters m_ssboDescriptor;
+		Vk::DescriptorSet m_descriptor;
+		Vk::DescriptorSetLayout m_descriptorLayout;
+		Vk::DescriptorSetLayout m_ssboDescriptorLayout;
 		std::vector<RenderingResource> m_renderingResources;
 
 		Vector2ui m_swapchainSize;

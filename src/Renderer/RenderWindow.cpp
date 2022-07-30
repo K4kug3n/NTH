@@ -82,65 +82,10 @@ namespace Nth {
 
 		m_descriptorAllocator.init(m_vulkan.getDevice());
 
-		if (!createDescriptorSetLayout()) {
-			std::cerr << "Can't create descriptor set layout" << std::endl;
-			return false;
-		}
-
-		if (!createRenderingResources()) {
-			std::cerr << "Can't create rendering ressources" << std::endl;
-			return false;
-		}
-
-		if (!allocateDescriptorSet()) {
-			std::cerr << "Can't allocate descriptor set" << std::endl;
-			return false;
-		}
-
-		if (!createTexture()) {
-			std::cerr << "Can't create texture" << std::endl;
-			return false;
-		}
-
-		if (!createDepthRessource()) {
-			std::cerr << "Can't create depth ressource" << std::endl;
-			return false;
-		}
-
-		if (!createSSBO()) {
-			std::cerr << "Can't create ssbo" << std::endl;
-			return false;
-		}
-
-		if (!createUniformBuffer()) {
-			std::cerr << "Can't create uniform buffer" << std::endl;
-			return false;
-		}
-
-		if (!updateDescriptorSet()) {
-			std::cerr << "Can't update descriptor set" << std::endl;
-			return false;
-		}
-
-		if (!createRenderPass()) {
-			std::cerr << "Can't create render pass" << std::endl;
-			return false;
-		}
-
-		if (!createPipeline()) {
-			std::cerr << "Can't create pipeline" << std::endl;
-			return false;
-		}
-
-		if (!loadModel()) {
-			std::cerr << "Can't load model" << std::endl;
-			return false;
-		}
-
 		return true;
 	}
 
-	bool RenderWindow::draw() {
+	bool RenderWindow::draw(std::vector<RenderObject> const& objects) {
 		if (m_swapchainSize != size()) {
 			onWindowSizeChanged();
 		}
@@ -172,14 +117,6 @@ namespace Nth {
 			std::cerr << "Problem occurred during swap chain image acquisition!" << std::endl;
 			return false;
 		}
-
-		std::vector<RenderObject> objects{
-			{
-				&m_mesh,
-				&m_material,
-				glm::rotate(glm::mat4(1.f), glm::radians(45.f), glm::vec3(0.f, 0.f, 1.f))
-			}
-		};
 
 		if (!prepareFrame(currentRenderingResource, m_swapchain.getImages()[imageIndex], objects)) {
 			return false;
@@ -253,6 +190,51 @@ namespace Nth {
 		}
 
 		return true;
+	}
+
+	bool RenderWindow::setDescriptorSetLayouts(Vk::DescriptorSetLayout& descriptorLayout, Vk::DescriptorSetLayout& ssboDescriptorLayout) {
+		m_descriptorLayout = &descriptorLayout;
+		m_ssboDescriptorLayout = &ssboDescriptorLayout;
+
+		if (!createRenderingResources()) {
+			std::cerr << "Can't create rendering ressources" << std::endl;
+			return false;
+		}
+
+		if (!allocateDescriptorSet()) {
+			std::cerr << "Can't allocate descriptor set" << std::endl;
+			return false;
+		}
+
+		if (!createTexture()) {
+			std::cerr << "Can't create texture" << std::endl;
+			return false;
+		}
+
+		if (!createDepthRessource()) {
+			std::cerr << "Can't create depth ressource" << std::endl;
+			return false;
+		}
+
+		if (!createSSBO()) {
+			std::cerr << "Can't create ssbo" << std::endl;
+			return false;
+		}
+
+		if (!createUniformBuffer()) {
+			std::cerr << "Can't create uniform buffer" << std::endl;
+			return false;
+		}
+
+		if (!updateDescriptorSet()) {
+			std::cerr << "Can't update descriptor set" << std::endl;
+			return false;
+		}
+
+		if (!createRenderPass()) {
+			std::cerr << "Can't create render pass" << std::endl;
+			return false;
+		}
 	}
 
 	Vk::RenderPass& RenderWindow::getRenderPass() {
@@ -429,25 +411,6 @@ namespace Nth {
 
 	}
 
-	bool RenderWindow::createPipeline() {
-		std::vector<VkDescriptorSetLayout> descritptorLayouts{
-			m_descriptorLayout(),
-			m_ssboDescriptorLayout()
-		};
-
-		if (!m_material.createPipeline(m_vulkan.getDevice(), m_renderPass, "vert.spv", "frag.spv", descritptorLayouts)) {
-			return false;
-		}
-
-		return true;
-	}
-
-	bool RenderWindow::loadModel() {
-		m_mesh = Mesh::fromOBJ("viking_room.obj");
-
-		return createMesh(m_mesh);
-	}
-
 	bool RenderWindow::createStagingBuffer() {
 		if (!m_stagingBuffer.create(m_vulkan.getDevice(),  VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 5000000)) {
 			std::cerr << "Could not staging buffer!" << std::endl;
@@ -465,7 +428,7 @@ namespace Nth {
 				return false;
 			}
 
-			m_renderingResources[i].ssboDescriptor = m_descriptorAllocator.allocate(m_ssboDescriptorLayout);
+			m_renderingResources[i].ssboDescriptor = m_descriptorAllocator.allocate(*m_ssboDescriptorLayout);
 		}
 
 		return true;
@@ -610,66 +573,66 @@ namespace Nth {
 		return true;
 	}
 
-	bool RenderWindow::createDescriptorSetLayout() {
-		std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {
-			{
-				0,                                          // uint32_t             binding
-				VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  // VkDescriptorType     descriptorType
-				1,                                          // uint32_t             descriptorCount
-				VK_SHADER_STAGE_FRAGMENT_BIT,               // VkShaderStageFlags   stageFlags
-				nullptr                                     // const VkSampler     *pImmutableSamplers
-			},
-			{
-				1,                                         // uint32_t           binding
-				VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         // VkDescriptorType   descriptorType
-				1,                                         // uint32_t           descriptorCount
-				VK_SHADER_STAGE_VERTEX_BIT,                // VkShaderStageFlags stageFlags
-				nullptr                                    // const VkSampler *pImmutableSamplers
-			}
-		};
+	//bool RenderWindow::createDescriptorSetLayout() {
+	//	std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {
+	//		{
+	//			0,                                          // uint32_t             binding
+	//			VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  // VkDescriptorType     descriptorType
+	//			1,                                          // uint32_t             descriptorCount
+	//			VK_SHADER_STAGE_FRAGMENT_BIT,               // VkShaderStageFlags   stageFlags
+	//			nullptr                                     // const VkSampler     *pImmutableSamplers
+	//		},
+	//		{
+	//			1,                                         // uint32_t           binding
+	//			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         // VkDescriptorType   descriptorType
+	//			1,                                         // uint32_t           descriptorCount
+	//			VK_SHADER_STAGE_VERTEX_BIT,                // VkShaderStageFlags stageFlags
+	//			nullptr                                    // const VkSampler *pImmutableSamplers
+	//		}
+	//	};
 
-		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
-			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,  // VkStructureType                      sType
-			nullptr,                                              // const void                          *pNext
-			0,                                                    // VkDescriptorSetLayoutCreateFlags     flags
-			static_cast<uint32_t>(layoutBindings.size()),         // uint32_t                             bindingCount
-			layoutBindings.data()                                 // const VkDescriptorSetLayoutBinding  *pBindings
-		};
+	//	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
+	//		VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,  // VkStructureType                      sType
+	//		nullptr,                                              // const void                          *pNext
+	//		0,                                                    // VkDescriptorSetLayoutCreateFlags     flags
+	//		static_cast<uint32_t>(layoutBindings.size()),         // uint32_t                             bindingCount
+	//		layoutBindings.data()                                 // const VkDescriptorSetLayoutBinding  *pBindings
+	//	};
 
-		if (!m_descriptorLayout.create(m_vulkan.getDevice(), descriptorSetLayoutCreateInfo)) {
-			std::cerr << "Could not create descriptor set layout!" << std::endl;
-			return false;
-		}
+	//	if (!m_descriptorLayout.create(m_vulkan.getDevice(), descriptorSetLayoutCreateInfo)) {
+	//		std::cerr << "Could not create descriptor set layout!" << std::endl;
+	//		return false;
+	//	}
 
-		// TODO: Clean this
-		std::vector<VkDescriptorSetLayoutBinding> layoutBindings2 = {
-			{
-				0,                                          // uint32_t             binding
-				VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ,         // VkDescriptorType     descriptorType
-				1,                                          // uint32_t             descriptorCount
-				VK_SHADER_STAGE_VERTEX_BIT,                 // VkShaderStageFlags   stageFlags
-				nullptr                                     // const VkSampler     *pImmutableSamplers
-			}
-		};
+	//	// TODO: Clean this
+	//	std::vector<VkDescriptorSetLayoutBinding> layoutBindings2 = {
+	//		{
+	//			0,                                          // uint32_t             binding
+	//			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ,         // VkDescriptorType     descriptorType
+	//			1,                                          // uint32_t             descriptorCount
+	//			VK_SHADER_STAGE_VERTEX_BIT,                 // VkShaderStageFlags   stageFlags
+	//			nullptr                                     // const VkSampler     *pImmutableSamplers
+	//		}
+	//	};
 
-		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo2 = {
-			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,  // VkStructureType                      sType
-			nullptr,                                              // const void                          *pNext
-			0,                                                    // VkDescriptorSetLayoutCreateFlags     flags
-			static_cast<uint32_t>(layoutBindings2.size()),        // uint32_t                             bindingCount
-			layoutBindings2.data()                                // const VkDescriptorSetLayoutBinding  *pBindings
-		};
+	//	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo2 = {
+	//		VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,  // VkStructureType                      sType
+	//		nullptr,                                              // const void                          *pNext
+	//		0,                                                    // VkDescriptorSetLayoutCreateFlags     flags
+	//		static_cast<uint32_t>(layoutBindings2.size()),        // uint32_t                             bindingCount
+	//		layoutBindings2.data()                                // const VkDescriptorSetLayoutBinding  *pBindings
+	//	};
 
-		if (!m_ssboDescriptorLayout.create(m_vulkan.getDevice(), descriptorSetLayoutCreateInfo2)) {
-			std::cerr << "Could not create descriptor set layout!" << std::endl;
-			return false;
-		}
+	//	if (!m_ssboDescriptorLayout.create(m_vulkan.getDevice(), descriptorSetLayoutCreateInfo2)) {
+	//		std::cerr << "Could not create descriptor set layout!" << std::endl;
+	//		return false;
+	//	}
 
-		return true;
-	}
+	//	return true;
+	//}
 
 	bool RenderWindow::allocateDescriptorSet() {
-		m_descriptor = m_descriptorAllocator.allocate(m_descriptorLayout);
+		m_descriptor = m_descriptorAllocator.allocate(*m_descriptorLayout);
 
 		return true;
 	}
@@ -942,6 +905,8 @@ namespace Nth {
 		for (size_t i = 0; i < objects.size(); ++i) {
 			objectSSBO[i].model = objects[i].transformMatrix;
 		}
+
+		ressources.ssbo.memory.flushMappedMemory(0, ressources.ssbo.handle.getSize());
 		
 		ressources.ssbo.memory.unmap();
 

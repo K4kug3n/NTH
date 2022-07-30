@@ -54,9 +54,11 @@ namespace Nth {
 		~RenderWindow();
 
 		bool create(VideoMode const& mode, const std::string_view title);
-		bool draw();
+		bool draw(std::vector<RenderObject> const& objects);
 
+		// TODO: Temp while moving features
 		bool createMesh(Mesh& mesh);
+		bool setDescriptorSetLayouts(Vk::DescriptorSetLayout& descriptorLayout, Vk::DescriptorSetLayout& ssboDescriptorLayout);
 
 		Vk::RenderPass& getRenderPass();
 
@@ -68,13 +70,11 @@ namespace Nth {
 	private:
 		bool createSwapchain();
 		bool createRenderPass();
-		bool createPipeline();
-		bool loadModel();
 		bool createStagingBuffer();
 		bool createRenderingResources();
 		bool createTexture();
 		bool copyTextureData(char const* textureData, uint32_t dataSize, uint32_t width, uint32_t height);
-		bool createDescriptorSetLayout();
+		//bool createDescriptorSetLayout();
 		bool allocateDescriptorSet();
 		bool updateDescriptorSet();
 		bool createUniformBuffer();
@@ -106,16 +106,14 @@ namespace Nth {
 		Vk::Queue m_presentQueue;
 		Vk::Queue m_graphicsQueue;
 		Vk::RenderPass m_renderPass;
-		Material m_material;
-		Mesh m_mesh;
 		VulkanBuffer m_stagingBuffer;
 		VulkanBuffer m_uniformBuffer;
 		VulkanTexture m_image;
 		VulkanImage m_depth;
 		DescriptorAllocator m_descriptorAllocator;
 		Vk::DescriptorSet m_descriptor;
-		Vk::DescriptorSetLayout m_descriptorLayout;
-		Vk::DescriptorSetLayout m_ssboDescriptorLayout;
+		Vk::DescriptorSetLayout* m_descriptorLayout;
+		Vk::DescriptorSetLayout* m_ssboDescriptorLayout;
 		std::vector<RenderingResource> m_renderingResources;
 
 		Vector2ui m_swapchainSize;

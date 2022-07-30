@@ -2,12 +2,16 @@
 #define NTH_RENDERER_RENDERER_HPP
 
 #include "Renderer/Vulkan/VulkanInstance.hpp"
+#include "Renderer/Vulkan/DescriptorSetLayout.hpp"
 #include "Renderer/RenderWindow.hpp"
 #include "Renderer/Material.hpp"
 
+#include <vector>
 #include <string_view>
 
 namespace Nth {
+	class RenderObject;
+
 	class Renderer {
 	public:
 		Renderer();
@@ -18,6 +22,12 @@ namespace Nth {
 		RenderWindow& getWindow(VideoMode const& mode, const std::string_view title);
 
 		Material& createMaterial(const std::string_view vertexShaderName, const std::string_view fragmentShaderName);
+		
+		Vk::DescriptorSetLayout getMainDescriptorLayout() const;
+		Vk::DescriptorSetLayout getSSBODescriptorLayout() const;
+
+		// TODO: Move out, used for sync destructor
+		void waitIdle() const;
 
 		Renderer& operator=(Renderer const&) = delete;
 		Renderer& operator=(Renderer&&) = default;
@@ -27,6 +37,9 @@ namespace Nth {
 		RenderWindow m_renderWindow;
 
 		std::vector<Material> m_materials;
+
+		// TODO: Maybe move it out ?
+		std::vector<Vk::DescriptorSetLayout> m_descriptorLayouts;
 	};
 }
 

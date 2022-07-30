@@ -21,7 +21,7 @@ namespace Nth {
 
 			bool isValid();
 
-			VkPipelineLayout const& operator()() const;
+			VkPipelineLayout operator()() const;
 
 			PipelineLayout& operator=(PipelineLayout const&) = delete;
 			PipelineLayout& operator=(PipelineLayout&& object) noexcept;

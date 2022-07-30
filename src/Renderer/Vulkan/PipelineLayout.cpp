@@ -55,7 +55,7 @@ namespace Nth {
 			return m_pipelineLayout != VK_NULL_HANDLE;
 		}
 
-		VkPipelineLayout const& PipelineLayout::operator()() const {
+		VkPipelineLayout PipelineLayout::operator()() const {
 			return m_pipelineLayout;
 		}
 

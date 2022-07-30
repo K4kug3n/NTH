@@ -12,7 +12,7 @@ namespace Nth {
 		public:
 			Buffer();
 			Buffer(Buffer const&) = delete;
-			Buffer(Buffer&&) = delete;
+			Buffer(Buffer&& object) noexcept;
 			~Buffer();
 
 			bool create(Device const& device, VkBufferCreateInfo const& infos);
@@ -25,7 +25,7 @@ namespace Nth {
 			VkBuffer operator()() const;
 
 			Buffer& operator=(Buffer const&) = delete;
-			Buffer& operator=(Buffer&&) = delete;
+			Buffer& operator=(Buffer&& object) noexcept;
 
 		private:
 			VkBuffer m_buffer;

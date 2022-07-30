@@ -13,6 +13,13 @@ namespace Nth {
 			m_memoryPointer(nullptr) {
 		}
 
+		DeviceMemory::DeviceMemory(DeviceMemory&& object) noexcept :
+			m_device(object.m_device),
+			m_deviceMemory(object.m_deviceMemory),
+			m_memoryPointer(object.m_memoryPointer){
+			object.m_deviceMemory = VK_NULL_HANDLE;
+		}
+
 		DeviceMemory::~DeviceMemory() {
 			destroy();
 		}

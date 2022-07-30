@@ -11,7 +11,7 @@ namespace Nth {
 		public:
 			DeviceMemory();
 			DeviceMemory(DeviceMemory const&) = delete;
-			DeviceMemory(DeviceMemory&&) = delete;
+			DeviceMemory(DeviceMemory&& object) noexcept;
 			~DeviceMemory();
 
 			bool create(Device const& device, VkMemoryAllocateInfo const& infos);

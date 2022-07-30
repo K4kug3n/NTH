@@ -40,7 +40,7 @@ namespace Nth {
 			}
 		}
 
-		VkPipeline const& Pipeline::operator()() const {
+		VkPipeline Pipeline::operator()() const {
 			return m_pipeline;
 		}
 

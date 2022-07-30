@@ -5,6 +5,7 @@
 #include <stb_image.h>
 
 #include <iostream>
+#include <cstring>
 
 namespace Nth{
 	Image::Image(unsigned int width, unsigned int height, unsigned int channels, std::vector<char> const& pixels) :

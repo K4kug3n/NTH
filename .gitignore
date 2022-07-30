@@ -39,3 +39,5 @@ install/*
 
 # Useless assets
 assets/*.txt
+
+.vscode/*

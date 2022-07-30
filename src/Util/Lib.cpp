@@ -45,7 +45,7 @@ namespace Nth{
 		#if defined _WIN32
 			return reinterpret_cast<LibFunction>(GetProcAddress(m_handle, name.data()));
 		#elif defined __unix__
-			return reinterpret_cast<LibFunction>(dlsym(m_handle, name.c_str()));
+			return reinterpret_cast<LibFunction>(dlsym(m_handle, name.data()));
 		#else
 			#error "OS not supported"
 		#endif

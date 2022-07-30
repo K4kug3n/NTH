@@ -7,6 +7,11 @@ jobs:
       - name: Get project
         uses: actions/checkout@v3
 
+      - name: Install system dependencies
+        run : |
+          sudo apt-get update
+          sudo apt-get install mesa-common-dev
+
       - name: Install xmake
         uses: xmake-io/github-action-setup-xmake@v1
         with:

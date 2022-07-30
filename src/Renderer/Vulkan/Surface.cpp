@@ -53,11 +53,11 @@ namespace Nth {
 				VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,   // VkStructureType                sType
 				nullptr,                                          // const void                    *pNext
 				0,                                                // VkXlibSurfaceCreateFlagsKHR    flags
-				static_cast<Display>(infos.x11.dpy),              // Display                       *dpy
+				static_cast<Display*>(infos.x11.dpy),             // Display                       *dpy
 				static_cast<Window>(infos.x11.window)             // Window                         window
 			};
 
-			VkResult result{ instance.vkCreateXlibSurfaceKHR(m_instance(), &surface_create_info, nullptr, &m_surface) };
+			VkResult result{ m_instance.vkCreateXlibSurfaceKHR(m_instance(), &surface_create_info, nullptr, &m_surface) };
 			if (result != VkResult::VK_SUCCESS) {
 				std::cerr << "Error : Can't create surface: " << toString(result) << std::endl;
 				return false;

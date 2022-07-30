@@ -2,6 +2,7 @@
 
 #include "Renderer/Vulkan/ImageView.hpp"
 #include "Renderer/Vulkan/PhysicalDevice.hpp"
+#include "Renderer/RenderObject.hpp"
 
 #include "Util/Reader.hpp"
 #include "Util/Image.hpp"
@@ -136,16 +137,6 @@ namespace Nth {
 			return false;
 		}
 
-		if (!createVertexBuffer()) {
-			std::cerr << "Can't create vertex buffer" << std::endl;
-			return false;
-		}
-
-		if (!createIndicesBuffer()) {
-			std::cerr << "Can't create indices buffer" << std::endl;
-			return false;
-		}
-
 		return true;
 	}
 
@@ -232,6 +223,32 @@ namespace Nth {
 			return true;
 		default:
 			std::cerr << "Problem occurred during image presentation!" << std::endl;
+			return false;
+		}
+
+		return true;
+	}
+
+	bool RenderWindow::createMesh(Mesh& mesh) {
+		if (!mesh.vertexBuffer.create(m_vulkan.getDevice(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, static_cast<uint32_t>(mesh.vertices.size() * sizeof(mesh.vertices[0])))) {
+			std::cerr << "Could not create a vertex buffer!" << std::endl;
+			return false;
+		}
+
+		if (!copyBufferByStaging(mesh.vertexBuffer, m_stagingBuffer, [this, &mesh](void* mappedPtr) {
+			memcpy(mappedPtr, mesh.vertices.data(), mesh.vertexBuffer.handle.getSize());
+		})) {
+			return false;
+		}
+
+		if (!mesh.indexBuffer.create(m_vulkan.getDevice(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sizeof(mesh.indices[0]) * mesh.indices.size())) {
+			std::cerr << "Can't create index buffer" << std::endl;
+			return false;
+		}
+
+		if (!copyBufferByStaging(mesh.indexBuffer, m_stagingBuffer, [this, &mesh](void* mappedPtr) {
+			memcpy(mappedPtr, mesh.indices.data(), mesh.indexBuffer.handle.getSize());
+		})) {
 			return false;
 		}
 
@@ -428,39 +445,7 @@ namespace Nth {
 	bool RenderWindow::loadModel() {
 		m_mesh = Mesh::fromOBJ("viking_room.obj");
 
-		return true;
-	}
-
-	bool RenderWindow::createVertexBuffer() {
-		std::vector<Vertex> const& vertexData = m_mesh.vertices;
-
-		if (!m_vertexBuffer.create(m_vulkan.getDevice(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, static_cast<uint32_t>(vertexData.size() * sizeof(vertexData[0])))) {
-			std::cerr << "Could not create a vertex buffer!" << std::endl;
-			return false;
-		}
-
-		if (!copyVertexData()) {
-			std::cerr << "Could not copy vertex data" << std::endl;
-			return false;
-		}
-
-		return true;
-	}
-
-	bool RenderWindow::createIndicesBuffer() {
-		std::vector<uint32_t>& indices = m_mesh.indices;
-		VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
-		if (!m_indexBuffer.create(m_vulkan.getDevice(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, bufferSize)) {
-			std::cerr << "Can't create index buffer" << std::endl;
-			return false;
-		}
-
-		if (!copyIndicesData()) {
-			std::cerr << "Can't copy index data" << std::endl;
-			return false;
-		}
-
-		return true;
+		return createMesh(m_mesh);
 	}
 
 	bool RenderWindow::createStagingBuffer() {
@@ -484,22 +469,6 @@ namespace Nth {
 		}
 
 		return true;
-	}
-
-	bool RenderWindow::copyVertexData() {
-		std::vector<Vertex> const& vertexData = m_mesh.vertices;
-
-		return copyBufferByStaging(m_vertexBuffer, m_stagingBuffer, [this, &vertexData](void* mappedPtr) {
-			memcpy(mappedPtr, vertexData.data(), m_vertexBuffer.handle.getSize());
-		});
-	}
-
-	bool RenderWindow::copyIndicesData() {
-		std::vector<uint32_t>& indices = m_mesh.indices;
-
-		return copyBufferByStaging(m_indexBuffer, m_stagingBuffer, [this, &indices](void* mappedPtr) {
-			memcpy(mappedPtr, indices.data(), m_indexBuffer.handle.getSize());
-		});
 	}
 
 	bool RenderWindow::createTexture() {
@@ -1058,20 +1027,30 @@ namespace Nth {
 		ressources.commandBuffer.setViewport(viewport);
 		ressources.commandBuffer.setScissor(scissor);
 
-		ressources.commandBuffer.bindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, m_material.pipeline());
-
-		VkDeviceSize offset = 0;
-		ressources.commandBuffer.bindVertexBuffer(m_vertexBuffer.handle(), offset);
-
-		ressources.commandBuffer.bindIndexBuffer(m_indexBuffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-
-		VkDescriptorSet vkDescriptorSet = m_descriptor();
-		ressources.commandBuffer.bindDescriptorSets(m_material.pipelineLayout(), 0, 1, &vkDescriptorSet, 0, nullptr);
-
-		VkDescriptorSet vkSsboDescriptorSet = ressources.ssboDescriptor();
-		ressources.commandBuffer.bindDescriptorSets(m_material.pipelineLayout(), 1, 1, &vkSsboDescriptorSet, 0, nullptr);
-
+		Mesh* lastMesh = nullptr;
+		Material* lastMaterial = nullptr;
 		for (size_t i = 0; i < objects.size(); ++i) {
+			if (objects[i].material != lastMaterial) {
+				ressources.commandBuffer.bindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, objects[i].material->pipeline());
+
+				VkDescriptorSet vkDescriptorSet = m_descriptor();
+				ressources.commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 0, 1, &vkDescriptorSet, 0, nullptr);
+
+				VkDescriptorSet vkSsboDescriptorSet = ressources.ssboDescriptor();
+				ressources.commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 1, 1, &vkSsboDescriptorSet, 0, nullptr);
+
+				lastMaterial = objects[i].material;
+			}
+
+			if (objects[i].mesh != lastMesh) {
+				VkDeviceSize offset = 0;
+				ressources.commandBuffer.bindVertexBuffer(objects[i].mesh->vertexBuffer.handle(), offset);
+
+				ressources.commandBuffer.bindIndexBuffer(objects[i].mesh->indexBuffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+
+				lastMesh = objects[i].mesh;
+			}
+
 			ressources.commandBuffer.drawIndexed(static_cast<uint32_t>(objects[i].mesh->indices.size()), 1, 0, 0, 0);
 		}
 

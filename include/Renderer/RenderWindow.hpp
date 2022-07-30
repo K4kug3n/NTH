@@ -30,6 +30,8 @@
 #include <array>
 
 namespace Nth {
+	class RenderObject;
+
 	// TODO: Move out
 	// TODO: Precalculate VP CPU-side
 	struct UniformBufferObject {
@@ -54,6 +56,8 @@ namespace Nth {
 		bool create(VideoMode const& mode, const std::string_view title);
 		bool draw();
 
+		bool createMesh(Mesh& mesh);
+
 		Vk::RenderPass& getRenderPass();
 
 		static constexpr uint32_t resourceCount = 3;
@@ -66,12 +70,8 @@ namespace Nth {
 		bool createRenderPass();
 		bool createPipeline();
 		bool loadModel();
-		bool createVertexBuffer();
-		bool createIndicesBuffer();
 		bool createStagingBuffer();
 		bool createRenderingResources();
-		bool copyVertexData();
-		bool copyIndicesData();
 		bool createTexture();
 		bool copyTextureData(char const* textureData, uint32_t dataSize, uint32_t width, uint32_t height);
 		bool createDescriptorSetLayout();
@@ -89,7 +89,7 @@ namespace Nth {
 		VkSurfaceTransformFlagBitsKHR getSwapchainTransform(VkSurfaceCapabilitiesKHR const& capabilities) const;
 		VkPresentModeKHR getSwapchainPresentMode(std::vector<VkPresentModeKHR> const& presentModes) const;
 		bool allocateBufferMemory(Vk::Buffer const& buffer, VkMemoryPropertyFlagBits memoryProperty, Vk::DeviceMemory& memory) const;
-		bool prepareFrame(RenderingResource& ressources, Vk::SwapchainImage const& imageParameters) const;
+		bool prepareFrame(RenderingResource& ressources, Vk::SwapchainImage const& imageParameters, std::vector<RenderObject> const& objects) const;
 		bool createFramebuffer(Vk::Framebuffer& framebuffer, Vk::SwapchainImage const& swapchainImage) const;
 		bool copyUniformBufferData();
 		bool copyBufferByStaging(VulkanBuffer& target, VulkanBuffer& staging, std::function<void(void*)> copyFunction);
@@ -108,8 +108,6 @@ namespace Nth {
 		Vk::RenderPass m_renderPass;
 		Material m_material;
 		Mesh m_mesh;
-		VulkanBuffer m_vertexBuffer;
-		VulkanBuffer m_indexBuffer;
 		VulkanBuffer m_stagingBuffer;
 		VulkanBuffer m_uniformBuffer;
 		VulkanTexture m_image;

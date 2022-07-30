@@ -17,7 +17,7 @@ namespace Nth {
 			bool createGraphics(Device const& device, VkPipelineCache cache, VkGraphicsPipelineCreateInfo const& infos);
 			void destroy();
 
-			VkPipeline const& operator()() const;
+			VkPipeline operator()() const;
 
 			Pipeline& operator=(Pipeline const&) = delete;
 			Pipeline& operator=(Pipeline&& object) noexcept;

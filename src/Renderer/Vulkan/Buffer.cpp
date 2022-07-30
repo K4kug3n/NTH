@@ -13,6 +13,13 @@ namespace Nth {
 			m_device(nullptr) {
 		}
 
+		Buffer::Buffer(Buffer&& object) noexcept :
+			m_buffer(object.m_buffer),
+			m_device(object.m_device),
+			m_size(object.m_size) {
+			object.m_buffer = VK_NULL_HANDLE;
+		}
+
 		Buffer::~Buffer() {
 			if (m_buffer != VK_NULL_HANDLE) {
 				m_device->vkDestroyBuffer((*m_device)(), m_buffer, nullptr);
@@ -56,6 +63,16 @@ namespace Nth {
 
 		VkBuffer Buffer::operator()() const {
 			return m_buffer;
+		}
+
+		Buffer& Buffer::operator=(Buffer&& object) noexcept {
+			m_buffer = object.m_buffer;
+			m_device = object.m_device;
+			m_size = object.m_size;
+
+			object.m_buffer = VK_NULL_HANDLE;
+
+			return *this;
 		}
 	}
 }

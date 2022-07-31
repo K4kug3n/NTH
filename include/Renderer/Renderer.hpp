@@ -5,6 +5,7 @@
 #include "Renderer/Vulkan/DescriptorSetLayout.hpp"
 #include "Renderer/RenderWindow.hpp"
 #include "Renderer/Material.hpp"
+#include "Renderer/DescriptorAllocator.hpp"
 
 #include <vector>
 #include <string_view>
@@ -38,8 +39,11 @@ namespace Nth {
 
 		std::vector<Material> m_materials;
 
+		DescriptorAllocator m_descriptorAllocator;
+
 		// TODO: Maybe move it out ?
-		std::vector<Vk::DescriptorSetLayout> m_descriptorLayouts;
+		Vk::DescriptorSetLayout m_mainDescriptorLayout;
+		Vk::DescriptorSetLayout m_ssboDescriptorLayout;
 	};
 }
 

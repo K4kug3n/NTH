@@ -8,16 +8,13 @@
 #include "Renderer/Vulkan/Swapchain.hpp"
 #include "Renderer/Vulkan/Queue.hpp"
 #include "Renderer/Vulkan/RenderPass.hpp"
-#include "Renderer/Vulkan/Framebuffer.hpp"
 #include "Renderer/RenderingResource.hpp"
 #include "Renderer/Vulkan/DescriptorSet.hpp"
-#include "Renderer/Vulkan/DescriptorSetLayout.hpp"
 #include "Renderer/Mesh.hpp"
 #include "Renderer/Material.hpp"
 #include "Renderer/VulkanBuffer.hpp"
 #include "Renderer/VulkanImage.hpp"
 #include "Renderer/VulkanTexture.hpp"
-#include "Renderer/DescriptorAllocator.hpp"
 
 #include "Math/Vector2.hpp"
 
@@ -57,9 +54,10 @@ namespace Nth {
 
 		// TODO: Temp while moving features
 		bool createMesh(Mesh& mesh);
-		bool setDescriptorSetLayouts(Vk::DescriptorSetLayout& descriptorLayout, Vk::DescriptorSetLayout& ssboDescriptorLayout);
-
+		std::vector<RenderingResource>& getRenderingRessources();
+		Vk::DescriptorSet& getDescriptor();
 		Vk::RenderPass& getRenderPass();
+		bool updateDescriptorSet();
 
 		static constexpr uint32_t resourceCount = 3;
 
@@ -73,8 +71,6 @@ namespace Nth {
 		bool createRenderingResources();
 		bool createTexture();
 		bool copyTextureData(char const* textureData, uint32_t dataSize, uint32_t width, uint32_t height);
-		bool allocateDescriptorSet();
-		bool updateDescriptorSet();
 		bool createUniformBuffer();
 		bool createSSBO();
 		bool createDepthRessource();
@@ -86,7 +82,6 @@ namespace Nth {
 		VkImageUsageFlags getSwapchainUsageFlags(VkSurfaceCapabilitiesKHR const& capabilities) const;
 		VkSurfaceTransformFlagBitsKHR getSwapchainTransform(VkSurfaceCapabilitiesKHR const& capabilities) const;
 		VkPresentModeKHR getSwapchainPresentMode(std::vector<VkPresentModeKHR> const& presentModes) const;
-		bool allocateBufferMemory(Vk::Buffer const& buffer, VkMemoryPropertyFlagBits memoryProperty, Vk::DeviceMemory& memory) const;
 		bool prepareFrame(RenderingResource& ressources, Vk::SwapchainImage const& imageParameters, std::vector<RenderObject> const& objects) const;
 		bool createFramebuffer(Vk::Framebuffer& framebuffer, Vk::SwapchainImage const& swapchainImage) const;
 		bool copyUniformBufferData();
@@ -108,10 +103,7 @@ namespace Nth {
 		VulkanBuffer m_uniformBuffer;
 		VulkanTexture m_image;
 		VulkanImage m_depth;
-		DescriptorAllocator m_descriptorAllocator;
 		Vk::DescriptorSet m_descriptor;
-		Vk::DescriptorSetLayout* m_descriptorLayout;
-		Vk::DescriptorSetLayout* m_ssboDescriptorLayout;
 		std::vector<RenderingResource> m_renderingResources;
 
 		Vector2ui m_swapchainSize;

@@ -35,7 +35,6 @@ namespace Nth {
 	// TODO: Move out
 	// TODO: Precalculate VP CPU-side
 	struct UniformBufferObject {
-		glm::mat4 model;
 		glm::mat4 view;
 		glm::mat4 proj;
 	};
@@ -74,7 +73,6 @@ namespace Nth {
 		bool createRenderingResources();
 		bool createTexture();
 		bool copyTextureData(char const* textureData, uint32_t dataSize, uint32_t width, uint32_t height);
-		//bool createDescriptorSetLayout();
 		bool allocateDescriptorSet();
 		bool updateDescriptorSet();
 		bool createUniformBuffer();

@@ -54,7 +54,7 @@ namespace Nth {
 		}
 
 		if (!m_vulkan.createDevice(m_surface)) {
-			std::cerr << "Error: Can't create surface" << std::endl;
+			std::cerr << "Error: Can't create device" << std::endl;
 			return false;
 		}
 
@@ -124,14 +124,14 @@ namespace Nth {
 
 		VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		VkSubmitInfo submitInfo = {
-			VK_STRUCTURE_TYPE_SUBMIT_INFO,                           // VkStructureType              sType
-			nullptr,                                                 // const void                  *pNext
-			1,                                                       // uint32_t                     waitSemaphoreCount
+			VK_STRUCTURE_TYPE_SUBMIT_INFO,                         // VkStructureType              sType
+			nullptr,                                               // const void                  *pNext
+			1,                                                     // uint32_t                     waitSemaphoreCount
 			&currentRenderingResource.imageAvailableSemaphore(),   // const VkSemaphore           *pWaitSemaphores
-			&waitDstStageMask,                                    // const VkPipelineStageFlags  *pWaitDstStageMask;
-			1,                                                       // uint32_t                     commandBufferCount
+			&waitDstStageMask,                                     // const VkPipelineStageFlags  *pWaitDstStageMask;
+			1,                                                     // uint32_t                     commandBufferCount
 			&currentRenderingResource.commandBuffer(),             // const VkCommandBuffer       *pCommandBuffers
-			1,                                                       // uint32_t                     signalSemaphoreCount
+			1,                                                     // uint32_t                     signalSemaphoreCount
 			&currentRenderingResource.finishedRenderingSemaphore() // const VkSemaphore           *pSignalSemaphores
 		};
 
@@ -235,6 +235,8 @@ namespace Nth {
 			std::cerr << "Can't create render pass" << std::endl;
 			return false;
 		}
+
+		return true;
 	}
 
 	Vk::RenderPass& RenderWindow::getRenderPass() {
@@ -572,64 +574,6 @@ namespace Nth {
 
 		return true;
 	}
-
-	//bool RenderWindow::createDescriptorSetLayout() {
-	//	std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {
-	//		{
-	//			0,                                          // uint32_t             binding
-	//			VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  // VkDescriptorType     descriptorType
-	//			1,                                          // uint32_t             descriptorCount
-	//			VK_SHADER_STAGE_FRAGMENT_BIT,               // VkShaderStageFlags   stageFlags
-	//			nullptr                                     // const VkSampler     *pImmutableSamplers
-	//		},
-	//		{
-	//			1,                                         // uint32_t           binding
-	//			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         // VkDescriptorType   descriptorType
-	//			1,                                         // uint32_t           descriptorCount
-	//			VK_SHADER_STAGE_VERTEX_BIT,                // VkShaderStageFlags stageFlags
-	//			nullptr                                    // const VkSampler *pImmutableSamplers
-	//		}
-	//	};
-
-	//	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
-	//		VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,  // VkStructureType                      sType
-	//		nullptr,                                              // const void                          *pNext
-	//		0,                                                    // VkDescriptorSetLayoutCreateFlags     flags
-	//		static_cast<uint32_t>(layoutBindings.size()),         // uint32_t                             bindingCount
-	//		layoutBindings.data()                                 // const VkDescriptorSetLayoutBinding  *pBindings
-	//	};
-
-	//	if (!m_descriptorLayout.create(m_vulkan.getDevice(), descriptorSetLayoutCreateInfo)) {
-	//		std::cerr << "Could not create descriptor set layout!" << std::endl;
-	//		return false;
-	//	}
-
-	//	// TODO: Clean this
-	//	std::vector<VkDescriptorSetLayoutBinding> layoutBindings2 = {
-	//		{
-	//			0,                                          // uint32_t             binding
-	//			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ,         // VkDescriptorType     descriptorType
-	//			1,                                          // uint32_t             descriptorCount
-	//			VK_SHADER_STAGE_VERTEX_BIT,                 // VkShaderStageFlags   stageFlags
-	//			nullptr                                     // const VkSampler     *pImmutableSamplers
-	//		}
-	//	};
-
-	//	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo2 = {
-	//		VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,  // VkStructureType                      sType
-	//		nullptr,                                              // const void                          *pNext
-	//		0,                                                    // VkDescriptorSetLayoutCreateFlags     flags
-	//		static_cast<uint32_t>(layoutBindings2.size()),        // uint32_t                             bindingCount
-	//		layoutBindings2.data()                                // const VkDescriptorSetLayoutBinding  *pBindings
-	//	};
-
-	//	if (!m_ssboDescriptorLayout.create(m_vulkan.getDevice(), descriptorSetLayoutCreateInfo2)) {
-	//		std::cerr << "Could not create descriptor set layout!" << std::endl;
-	//		return false;
-	//	}
-
-	//	return true;
-	//}
 
 	bool RenderWindow::allocateDescriptorSet() {
 		m_descriptor = m_descriptorAllocator.allocate(*m_descriptorLayout);
@@ -1147,7 +1091,6 @@ namespace Nth {
 	UniformBufferObject RenderWindow::getUniformBufferData() const {
 		UniformBufferObject ubo {};
 
-		ubo.model = glm::mat4(1.f);
 		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		ubo.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(m_swapchainSize.x) / static_cast<float>(m_swapchainSize.y), 0.1f, 10.0f);
 		ubo.proj[1][1] *= -1;

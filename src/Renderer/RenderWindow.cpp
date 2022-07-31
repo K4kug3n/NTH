@@ -80,7 +80,35 @@ namespace Nth {
 			return false;
 		}
 
-		m_descriptorAllocator.init(m_vulkan.getDevice());
+		if (!createRenderingResources()) {
+			std::cerr << "Can't create rendering ressources" << std::endl;
+			return false;
+		}
+
+		if (!createTexture()) {
+			std::cerr << "Can't create texture" << std::endl;
+			return false;
+		}
+
+		if (!createDepthRessource()) {
+			std::cerr << "Can't create depth ressource" << std::endl;
+			return false;
+		}
+
+		if (!createSSBO()) {
+			std::cerr << "Can't create ssbo" << std::endl;
+			return false;
+		}
+
+		if (!createUniformBuffer()) {
+			std::cerr << "Can't create uniform buffer" << std::endl;
+			return false;
+		}
+
+		if (!createRenderPass()) {
+			std::cerr << "Can't create render pass" << std::endl;
+			return false;
+		}
 
 		return true;
 	}
@@ -192,51 +220,12 @@ namespace Nth {
 		return true;
 	}
 
-	bool RenderWindow::setDescriptorSetLayouts(Vk::DescriptorSetLayout& descriptorLayout, Vk::DescriptorSetLayout& ssboDescriptorLayout) {
-		m_descriptorLayout = &descriptorLayout;
-		m_ssboDescriptorLayout = &ssboDescriptorLayout;
+	std::vector<RenderingResource>& RenderWindow::getRenderingRessources() {
+		return m_renderingResources;
+	}
 
-		if (!createRenderingResources()) {
-			std::cerr << "Can't create rendering ressources" << std::endl;
-			return false;
-		}
-
-		if (!allocateDescriptorSet()) {
-			std::cerr << "Can't allocate descriptor set" << std::endl;
-			return false;
-		}
-
-		if (!createTexture()) {
-			std::cerr << "Can't create texture" << std::endl;
-			return false;
-		}
-
-		if (!createDepthRessource()) {
-			std::cerr << "Can't create depth ressource" << std::endl;
-			return false;
-		}
-
-		if (!createSSBO()) {
-			std::cerr << "Can't create ssbo" << std::endl;
-			return false;
-		}
-
-		if (!createUniformBuffer()) {
-			std::cerr << "Can't create uniform buffer" << std::endl;
-			return false;
-		}
-
-		if (!updateDescriptorSet()) {
-			std::cerr << "Can't update descriptor set" << std::endl;
-			return false;
-		}
-
-		if (!createRenderPass()) {
-			std::cerr << "Can't create render pass" << std::endl;
-			return false;
-		}
-
-		return true;
+	Vk::DescriptorSet& RenderWindow::getDescriptor() {
+		return m_descriptor;
 	}
 
 	Vk::RenderPass& RenderWindow::getRenderPass() {
@@ -429,8 +418,6 @@ namespace Nth {
 				std::cerr << "Can't create rendering ressource" << std::endl;
 				return false;
 			}
-
-			m_renderingResources[i].ssboDescriptor = m_descriptorAllocator.allocate(*m_ssboDescriptorLayout);
 		}
 
 		return true;
@@ -571,12 +558,6 @@ namespace Nth {
 		}
 
 		m_vulkan.getDevice().waitIdle();
-
-		return true;
-	}
-
-	bool RenderWindow::allocateDescriptorSet() {
-		m_descriptor = m_descriptorAllocator.allocate(*m_descriptorLayout);
 
 		return true;
 	}
@@ -811,29 +792,6 @@ namespace Nth {
 
 		std::cerr << "Error: FIFO present mode is not supported by the swapchain" << std::endl;
 		return static_cast<VkPresentModeKHR>(-1);
-	}
-
-	bool RenderWindow::allocateBufferMemory(Vk::Buffer const& buffer, VkMemoryPropertyFlagBits memoryProperty, Vk::DeviceMemory& memory) const {
-		VkMemoryRequirements bufferMemoryRequirements = buffer.getMemoryRequirements();;
-		VkPhysicalDeviceMemoryProperties memoryProperties = m_vulkan.getDevice().getPhysicalDevice().getMemoryProperties();
-
-		for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i) {
-			if ((bufferMemoryRequirements.memoryTypeBits & (1 << i)) &&
-				(memoryProperties.memoryTypes[i].propertyFlags & memoryProperty) == memoryProperty) {
-
-				VkMemoryAllocateInfo memoryAllocateInfo = {
-					VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,     // VkStructureType                        sType
-					nullptr,                                    // const void                            *pNext
-					bufferMemoryRequirements.size,              // VkDeviceSize                           allocationSize
-					i                                           // uint32_t                               memoryTypeIndex
-				};
-
-				if (memory.create(m_vulkan.getDevice(), memoryAllocateInfo)) {
-					return true;
-				}
-			}
-		}
-		return false;
 	}
 
 	bool RenderWindow::prepareFrame(RenderingResource& ressources, Vk::SwapchainImage const& imageParameters, std::vector<RenderObject> const& objects) const {

@@ -10,19 +10,28 @@ namespace Nth {
 			throw std::runtime_error("Can't create render window");
 		}
 
-		m_descriptorLayouts.emplace_back(getMainDescriptorLayout());
-		m_descriptorLayouts.emplace_back(getSSBODescriptorLayout());
+		m_mainDescriptorLayout = getMainDescriptorLayout();
+		m_ssboDescriptorLayout = getSSBODescriptorLayout();
+
+		m_descriptorAllocator.init(m_vulkan.getDevice());
+
+		m_renderWindow.getDescriptor() = m_descriptorAllocator.allocate(m_mainDescriptorLayout);
+
+		std::vector<RenderingResource>& ressources = m_renderWindow.getRenderingRessources();
+		for (size_t i = 0; i < ressources.size(); ++i) {
+			ressources[i].ssboDescriptor = m_descriptorAllocator.allocate(m_ssboDescriptorLayout);
+		}
+
+		m_renderWindow.updateDescriptorSet();
 
 		return m_renderWindow;
 	}
 
-	Material& Renderer::createMaterial(const std::string_view vertexShaderName, const std::string_view fragmentShaderName) {
-		m_renderWindow.setDescriptorSetLayouts(m_descriptorLayouts[0], m_descriptorLayouts[1]);
-		
-		std::vector<VkDescriptorSetLayout> vkDescritptorLayouts;
-		for (size_t i = 0; i < m_descriptorLayouts.size(); ++i) {
-			vkDescritptorLayouts.push_back(m_descriptorLayouts[i]());
-		}
+	Material& Renderer::createMaterial(const std::string_view vertexShaderName, const std::string_view fragmentShaderName) {		
+		std::vector<VkDescriptorSetLayout> vkDescritptorLayouts {
+			m_mainDescriptorLayout(),
+			m_ssboDescriptorLayout()
+		};
 
 		Material material;
 		material.createPipeline(m_vulkan.getDevice(), m_renderWindow.getRenderPass(), vertexShaderName, fragmentShaderName, vkDescritptorLayouts);

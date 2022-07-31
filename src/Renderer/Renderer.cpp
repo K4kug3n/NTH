@@ -6,15 +6,17 @@ namespace Nth {
 		m_renderWindow(m_vulkan) { }
 
 	RenderWindow& Renderer::getWindow(VideoMode const& mode, const std::string_view title) {
-		m_renderWindow.create(mode, title);
+		if (!m_renderWindow.create(mode, title)) {
+			throw std::runtime_error("Can't create render window");
+		}
+
+		m_descriptorLayouts.emplace_back(getMainDescriptorLayout());
+		m_descriptorLayouts.emplace_back(getSSBODescriptorLayout());
 
 		return m_renderWindow;
 	}
 
 	Material& Renderer::createMaterial(const std::string_view vertexShaderName, const std::string_view fragmentShaderName) {
-		m_descriptorLayouts.emplace_back(getMainDescriptorLayout());
-		m_descriptorLayouts.emplace_back(getSSBODescriptorLayout());
-
 		m_renderWindow.setDescriptorSetLayouts(m_descriptorLayouts[0], m_descriptorLayouts[1]);
 		
 		std::vector<VkDescriptorSetLayout> vkDescritptorLayouts;

@@ -1,7 +1,6 @@
 #version 460
 
 layout(set=0, binding=1) uniform UniformBufferObject {
-  mat4 model;
   mat4 view;
   mat4 proj;
 } ubo;

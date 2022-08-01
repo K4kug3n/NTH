@@ -315,7 +315,7 @@ namespace Nth {
 			},
 			{
 				0,                                                // VkAttachmentDescriptionFlags   flags
-				findDepthFormat(),                                // VkFormat                       format
+				m_depth.format(),                                 // VkFormat                       format
 				VK_SAMPLE_COUNT_1_BIT,                            // VkSampleCountFlagBits          samples
 				VK_ATTACHMENT_LOAD_OP_CLEAR,                      // VkAttachmentLoadOp             loadOp
 				VK_ATTACHMENT_STORE_OP_DONT_CARE,                 // VkAttachmentStoreOp            storeOp
@@ -662,23 +662,9 @@ namespace Nth {
 	}
 
 	bool RenderWindow::createDepthRessource() {
-		VulkanImage newDepth;
+		DepthImage newDepth;
 
-		VkFormat depthFormat = findDepthFormat();
-
-		if (!newDepth.create(
-			m_vulkan.getDevice(),
-			m_swapchainSize.x, 
-			m_swapchainSize.y, 
-			depthFormat, 
-			VK_IMAGE_TILING_OPTIMAL, 
-			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
-			std::cerr << "Can't create depth image" << std::endl;
-			return false;
-		}
-
-		if (!newDepth.createView(m_vulkan.getDevice(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT)) {
+		if (!newDepth.create(m_vulkan.getDevice(), m_swapchainSize)) {
 			return false;
 		}
 
@@ -950,7 +936,7 @@ namespace Nth {
 	bool RenderWindow::createFramebuffer(Vk::Framebuffer& framebuffer, Vk::SwapchainImage const& swapchainImage) const {
 		std::vector<VkImageView> attachements{
 			swapchainImage.view(),
-			m_depth.view()
+			m_depth.view()()
 		};
 
 		VkFramebufferCreateInfo framebufferCreateInfo = {
@@ -1054,34 +1040,5 @@ namespace Nth {
 		ubo.proj[1][1] *= -1;
 
 		return ubo;
-	}
-
-	VkFormat RenderWindow::findSupportedFormat(std::vector<VkFormat> const& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const {
-		Vk::PhysicalDevice const& physicalDevice = m_vulkan.getDevice().getPhysicalDevice();
-		
-		for (VkFormat format : candidates) {
-			VkFormatProperties props = physicalDevice.getFormatProperties(format);
-			
-			if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
-				return format;
-			}
-			else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
-				return format;
-			}
-		}
-
-		throw std::runtime_error("Canno't find supported format!");
-	}
-
-	VkFormat RenderWindow::findDepthFormat() const {
-		return findSupportedFormat(
-			{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
-			VK_IMAGE_TILING_OPTIMAL,
-			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
-		);
-	}
-
-	bool RenderWindow::hasStencilComponent(VkFormat format) const {
-		return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 	}
 }

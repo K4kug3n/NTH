@@ -44,6 +44,17 @@ namespace Nth {
 		// TODO: Maybe move it out ?
 		Vk::DescriptorSetLayout m_mainDescriptorLayout;
 		Vk::DescriptorSetLayout m_ssboDescriptorLayout;
+
+		Vk::RenderPass m_renderPass;
+		VulkanBuffer m_stagingBuffer;
+		VulkanBuffer m_uniformBuffer;
+		VulkanTexture m_image;
+		VulkanImage m_depth;
+		Vk::DescriptorSet m_descriptor;
+		std::vector<RenderingResource> m_renderingResources;
+
+		Vector2ui m_swapchainSize;
+		size_t m_resourceIndex;
 	};
 }
 

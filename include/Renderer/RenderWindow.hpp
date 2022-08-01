@@ -13,8 +13,8 @@
 #include "Renderer/Mesh.hpp"
 #include "Renderer/Material.hpp"
 #include "Renderer/VulkanBuffer.hpp"
-#include "Renderer/VulkanImage.hpp"
 #include "Renderer/VulkanTexture.hpp"
+#include "Renderer/DepthImage.hpp"
 
 #include "Math/Vector2.hpp"
 
@@ -88,11 +88,6 @@ namespace Nth {
 		bool copyBufferByStaging(VulkanBuffer& target, VulkanBuffer& staging, std::function<void(void*)> copyFunction);
 		UniformBufferObject getUniformBufferData() const;
 
-		// Depth
-		VkFormat findSupportedFormat(std::vector<VkFormat> const& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
-		VkFormat findDepthFormat() const;
-		bool hasStencilComponent(VkFormat format) const;
-
 		Vk::VulkanInstance& m_vulkan;
 		Vk::Surface m_surface;
 		Vk::Swapchain m_swapchain;
@@ -102,7 +97,7 @@ namespace Nth {
 		VulkanBuffer m_stagingBuffer;
 		VulkanBuffer m_uniformBuffer;
 		VulkanTexture m_image;
-		VulkanImage m_depth;
+		DepthImage m_depth;
 		Vk::DescriptorSet m_descriptor;
 		std::vector<RenderingResource> m_renderingResources;
 

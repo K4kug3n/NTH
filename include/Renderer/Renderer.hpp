@@ -23,7 +23,9 @@ namespace Nth {
 		RenderWindow& getWindow(VideoMode const& mode, const std::string_view title);
 
 		Material& createMaterial(const std::string_view vertexShaderName, const std::string_view fragmentShaderName);
-		
+		void createMesh(Mesh& mesh);
+
+		// TODO: review it
 		Vk::DescriptorSetLayout getMainDescriptorLayout() const;
 		Vk::DescriptorSetLayout getSSBODescriptorLayout() const;
 
@@ -34,6 +36,14 @@ namespace Nth {
 		Renderer& operator=(Renderer&&) = default;
 
 	private:
+		bool createTexture();
+		bool copyTextureData(char const* textureData, uint32_t dataSize, uint32_t width, uint32_t height);
+		bool copyBufferByStaging(VulkanBuffer& target, VulkanBuffer& staging, std::function<void(void*)> copyFunction);
+		bool createUniformBuffer();
+		bool copyUniformBufferData();
+		UniformBufferObject getUniformBufferData() const;
+		bool updateDescriptorSet();
+
 		Vk::VulkanInstance m_vulkan;
 		RenderWindow m_renderWindow;
 
@@ -45,16 +55,13 @@ namespace Nth {
 		Vk::DescriptorSetLayout m_mainDescriptorLayout;
 		Vk::DescriptorSetLayout m_ssboDescriptorLayout;
 
-		Vk::RenderPass m_renderPass;
 		VulkanBuffer m_stagingBuffer;
 		VulkanBuffer m_uniformBuffer;
 		VulkanTexture m_image;
 		VulkanImage m_depth;
-		Vk::DescriptorSet m_descriptor;
-		std::vector<RenderingResource> m_renderingResources;
 
-		Vector2ui m_swapchainSize;
-		size_t m_resourceIndex;
+		//std::vector<RenderingResource> m_renderingResources;
+		//size_t m_resourceIndex;
 	};
 }
 

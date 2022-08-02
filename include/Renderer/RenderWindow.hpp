@@ -52,12 +52,10 @@ namespace Nth {
 		bool create(VideoMode const& mode, const std::string_view title);
 		bool draw(std::vector<RenderObject> const& objects);
 
-		// TODO: Temp while moving features
-		bool createMesh(Mesh& mesh);
 		std::vector<RenderingResource>& getRenderingRessources();
 		Vk::DescriptorSet& getDescriptor();
 		Vk::RenderPass& getRenderPass();
-		bool updateDescriptorSet();
+		Vk::Queue& getGraphicsQueue();
 
 		static constexpr uint32_t resourceCount = 3;
 
@@ -67,11 +65,7 @@ namespace Nth {
 	private:
 		bool createSwapchain();
 		bool createRenderPass();
-		bool createStagingBuffer();
 		bool createRenderingResources();
-		bool createTexture();
-		bool copyTextureData(char const* textureData, uint32_t dataSize, uint32_t width, uint32_t height);
-		bool createUniformBuffer();
 		bool createSSBO();
 		bool createDepthRessource();
 		void onWindowSizeChanged();
@@ -84,9 +78,6 @@ namespace Nth {
 		VkPresentModeKHR getSwapchainPresentMode(std::vector<VkPresentModeKHR> const& presentModes) const;
 		bool prepareFrame(RenderingResource& ressources, Vk::SwapchainImage const& imageParameters, std::vector<RenderObject> const& objects) const;
 		bool createFramebuffer(Vk::Framebuffer& framebuffer, Vk::SwapchainImage const& swapchainImage) const;
-		bool copyUniformBufferData();
-		bool copyBufferByStaging(VulkanBuffer& target, VulkanBuffer& staging, std::function<void(void*)> copyFunction);
-		UniformBufferObject getUniformBufferData() const;
 
 		Vk::VulkanInstance& m_vulkan;
 		Vk::Surface m_surface;
@@ -94,9 +85,6 @@ namespace Nth {
 		Vk::Queue m_presentQueue;
 		Vk::Queue m_graphicsQueue;
 		Vk::RenderPass m_renderPass;
-		VulkanBuffer m_stagingBuffer;
-		VulkanBuffer m_uniformBuffer;
-		VulkanTexture m_image;
 		DepthImage m_depth;
 		Vk::DescriptorSet m_descriptor;
 		std::vector<RenderingResource> m_renderingResources;

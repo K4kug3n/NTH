@@ -9,7 +9,7 @@
   </div>
   <div>
     <a href="https://github.com/K4kug3n/NTH/blob/master/LICENSE.md">
-      <img src="https://img.shields.io/github/license/K4kug3n/NTH?style=for-the-badge" alt="license" />
+      <img src="https://img.shields.io/github/license/K4kug3n/NTH?style=plastic" alt="license" />
     </a>
   </div>
 

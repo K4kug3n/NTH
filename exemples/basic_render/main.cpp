@@ -16,8 +16,8 @@ int main() {
 
 	Nth::Mesh vikingRoomMesh = Nth::Mesh::fromOBJ("viking_room.obj");
 
-	// TODO: Remove this infamous line
-	window.createMesh(vikingRoomMesh);
+	// TODO: Review this API
+	renderer.createMesh(vikingRoomMesh);
 
 	Nth::RenderObject vikingRoom {
 		&vikingRoomMesh,

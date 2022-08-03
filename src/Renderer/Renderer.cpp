@@ -7,11 +7,21 @@
 namespace Nth {
 	Renderer::Renderer() :
 		m_vulkan(),
-		m_renderWindow(m_vulkan) { }
+		m_renderWindow(m_vulkan),
+		m_resourceIndex(0),
+		m_renderingResources(RenderWindow::resourceCount) { }
 
 	RenderWindow& Renderer::getWindow(VideoMode const& mode, const std::string_view title) {
 		if (!m_renderWindow.create(mode, title)) {
 			throw std::runtime_error("Can't create render window");
+		}
+
+		if (!createRenderingResources()) {
+			throw std::runtime_error("Can't create rendering ressources");
+		}
+
+		if (!createSSBO()) {
+			throw std::runtime_error("Can't create ssbo");
 		}
 
 		if (!m_stagingBuffer.create(m_vulkan.getDevice(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 5000000)) {
@@ -33,9 +43,8 @@ namespace Nth {
 
 		m_renderWindow.getDescriptor() = m_descriptorAllocator.allocate(m_mainDescriptorLayout);
 
-		std::vector<RenderingResource>& ressources = m_renderWindow.getRenderingRessources();
-		for (size_t i = 0; i < ressources.size(); ++i) {
-			ressources[i].ssboDescriptor = m_descriptorAllocator.allocate(m_ssboDescriptorLayout);
+		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
+			m_renderingResources[i].ssboDescriptor = m_descriptorAllocator.allocate(m_ssboDescriptorLayout);
 		}
 
 		updateDescriptorSet();
@@ -83,6 +92,12 @@ namespace Nth {
 			throw std::runtime_error("Can't create index buffer");
 		}
 
+	}
+
+	void Renderer::draw(std::vector<RenderObject> const& objects) {
+		m_renderWindow.draw(m_renderingResources[m_resourceIndex], objects);
+		
+		m_resourceIndex = (m_resourceIndex + 1) % RenderWindow::resourceCount;
 	}
 
 	Vk::DescriptorSetLayout Renderer::getMainDescriptorLayout() const {
@@ -201,7 +216,7 @@ namespace Nth {
 			nullptr                                       // const VkCommandBufferInheritanceInfo  *pInheritanceInfo
 		};
 
-		Vk::CommandBuffer& commandBuffer = m_renderWindow.getRenderingRessources()[0].commandBuffer;
+		Vk::CommandBuffer& commandBuffer = m_renderingResources[0].commandBuffer;
 
 		commandBuffer.begin(commandBufferBeginInfo);
 
@@ -303,7 +318,7 @@ namespace Nth {
 		staging.memory.unmap();
 
 		// Prepare command buffer to copy data from staging buffer to a uniform buffer
-		Vk::CommandBuffer& commandBuffer = m_renderWindow.getRenderingRessources()[0].commandBuffer;
+		Vk::CommandBuffer& commandBuffer = m_renderingResources[0].commandBuffer;
 
 		VkCommandBufferBeginInfo commandBufferBeginInfo = {
 			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, // VkStructureType              sType
@@ -434,20 +449,18 @@ namespace Nth {
 		// TODO: Check if update methode should be in Device class 
 		m_renderWindow.getDescriptor().update(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data());
 
-		std::vector<RenderingResource>& ressources = m_renderWindow.getRenderingRessources();
-
-		for (size_t i = 0; i < ressources.size(); ++i) {
+		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
 			VkDescriptorBufferInfo ssboInfo = {
-				ressources[i].ssbo.handle(),         // VkBuffer         buffer
-				0,                                   // VkDeviceSize     offset
-				ressources[i].ssbo.handle.getSize()  // VkDeviceSize     range
+				m_renderingResources[i].ssbo.handle(),         // VkBuffer         buffer
+				0,                                             // VkDeviceSize     offset
+				m_renderingResources[i].ssbo.handle.getSize()  // VkDeviceSize     range
 			};
 
 			std::vector<VkWriteDescriptorSet> descriptorWrites2 = {
 				{
 					VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
 					nullptr,                                    // const void                    *pNext
-					ressources[i].ssboDescriptor(),             // VkDescriptorSet                dstSet
+					m_renderingResources[i].ssboDescriptor(),   // VkDescriptorSet                dstSet
 					0,                                          // uint32_t                       dstBinding
 					0,                                          // uint32_t                       dstArrayElement
 					1,                                          // uint32_t                       descriptorCount
@@ -458,7 +471,33 @@ namespace Nth {
 				},
 			};
 
-			ressources[i].ssboDescriptor.update(static_cast<uint32_t>(descriptorWrites2.size()), descriptorWrites2.data());
+			m_renderingResources[i].ssboDescriptor.update(static_cast<uint32_t>(descriptorWrites2.size()), descriptorWrites2.data());
+		}
+
+		return true;
+	}
+
+	bool Renderer::createRenderingResources() {
+		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
+			if (!m_renderingResources[i].create(m_vulkan.getDevice(), m_renderWindow.getPresentQueue().index())) {
+				std::cerr << "Can't create rendering ressource" << std::endl;
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	bool Renderer::createSSBO() {
+		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
+			if (!m_renderingResources[i].ssbo.create(
+				m_vulkan.getDevice(),
+				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+				10000 * sizeof(ShaderStorageBufferObject))) {
+				std::cerr << "Can't create SSBO" << std::endl;
+				return false;
+			}
 		}
 
 		return true;

@@ -17,18 +17,14 @@ namespace Nth {
 		m_surface(vulkanInstance.getInstance()),
 		m_presentQueue(),
 		m_graphicsQueue(),
-		m_renderingResources(resourceCount),
-		m_swapchainSize(),
-		m_resourceIndex(0) { }
+		m_swapchainSize() { }
 
 	RenderWindow::RenderWindow(Vk::VulkanInstance& vulkanInstance, VideoMode const& mode, const std::string_view title) :
 		m_vulkan(vulkanInstance),
 		m_surface(vulkanInstance.getInstance()),
 		m_presentQueue(),
 		m_graphicsQueue(),
-		m_renderingResources(resourceCount),
-		m_swapchainSize(),
-		m_resourceIndex(0) {
+		m_swapchainSize() {
 
 		if (!create(mode, title)) {
 			throw std::runtime_error("Can't create render window");
@@ -75,18 +71,8 @@ namespace Nth {
 			return false;
 		}
 
-		if (!createRenderingResources()) {
-			std::cerr << "Can't create rendering ressources" << std::endl;
-			return false;
-		}
-
 		if (!createDepthRessource()) {
 			std::cerr << "Can't create depth ressource" << std::endl;
-			return false;
-		}
-
-		if (!createSSBO()) {
-			std::cerr << "Can't create ssbo" << std::endl;
 			return false;
 		}
 
@@ -98,27 +84,25 @@ namespace Nth {
 		return true;
 	}
 
-	bool RenderWindow::draw(std::vector<RenderObject> const& objects) {
+	bool RenderWindow::draw(RenderingResource& ressource, std::vector<RenderObject> const& objects) {
 		if (m_swapchainSize != size()) {
 			onWindowSizeChanged();
 		}
-		RenderingResource& currentRenderingResource = m_renderingResources[m_resourceIndex];
 		VkSwapchainKHR vkSwapchain = m_swapchain();
 	
-		m_resourceIndex = (m_resourceIndex + 1) % resourceCount;
 
-		if (!currentRenderingResource.fence.wait(1000000000)) {
+		if (!ressource.fence.wait(1000000000)) {
 			std::cerr << "Waiting for fence takes too long !" << std::endl;
 			return false;
 		}
 
-		if (!currentRenderingResource.fence.reset()) {
+		if (!ressource.fence.reset()) {
 			std::cerr << "Can't reset fence !" << std::endl;
 			return false;
 		}
 		
 		uint32_t imageIndex;
-		VkResult result = m_swapchain.aquireNextImage(currentRenderingResource.imageAvailableSemaphore(), VK_NULL_HANDLE, imageIndex);
+		VkResult result = m_swapchain.aquireNextImage(ressource.imageAvailableSemaphore(), VK_NULL_HANDLE, imageIndex);
 		switch (result) {
 		case VK_SUCCESS:
 		case VK_SUBOPTIMAL_KHR:
@@ -131,7 +115,7 @@ namespace Nth {
 			return false;
 		}
 
-		if (!prepareFrame(currentRenderingResource, m_swapchain.getImages()[imageIndex], objects)) {
+		if (!prepareFrame(ressource, m_swapchain.getImages()[imageIndex], objects)) {
 			return false;
 		}
 
@@ -140,15 +124,15 @@ namespace Nth {
 			VK_STRUCTURE_TYPE_SUBMIT_INFO,                         // VkStructureType              sType
 			nullptr,                                               // const void                  *pNext
 			1,                                                     // uint32_t                     waitSemaphoreCount
-			&currentRenderingResource.imageAvailableSemaphore(),   // const VkSemaphore           *pWaitSemaphores
+			&ressource.imageAvailableSemaphore(),                  // const VkSemaphore           *pWaitSemaphores
 			&waitDstStageMask,                                     // const VkPipelineStageFlags  *pWaitDstStageMask;
 			1,                                                     // uint32_t                     commandBufferCount
-			&currentRenderingResource.commandBuffer(),             // const VkCommandBuffer       *pCommandBuffers
+			&ressource.commandBuffer(),                            // const VkCommandBuffer       *pCommandBuffers
 			1,                                                     // uint32_t                     signalSemaphoreCount
-			&currentRenderingResource.finishedRenderingSemaphore() // const VkSemaphore           *pSignalSemaphores
+			&ressource.finishedRenderingSemaphore()                // const VkSemaphore           *pSignalSemaphores
 		};
 
-		if (!m_graphicsQueue.submit(submitInfo, currentRenderingResource.fence())) {
+		if (!m_graphicsQueue.submit(submitInfo, ressource.fence())) {
 			return false;
 		}
 
@@ -156,7 +140,7 @@ namespace Nth {
 			VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,                        // VkStructureType              sType
 			nullptr,                                                   // const void                  *pNext
 			1,                                                         // uint32_t                     waitSemaphoreCount
-			&currentRenderingResource.finishedRenderingSemaphore(),    // const VkSemaphore           *pWaitSemaphores
+			&ressource.finishedRenderingSemaphore(),                   // const VkSemaphore           *pWaitSemaphores
 			1,                                                         // uint32_t                     swapchainCount
 			&vkSwapchain,                                              // const VkSwapchainKHR        *pSwapchains
 			&imageIndex,                                               // const uint32_t              *pImageIndices
@@ -179,10 +163,6 @@ namespace Nth {
 		return true;
 	}
 
-	std::vector<RenderingResource>& RenderWindow::getRenderingRessources() {
-		return m_renderingResources;
-	}
-
 	Vk::DescriptorSet& RenderWindow::getDescriptor() {
 		return m_descriptor;
 	}
@@ -193,6 +173,10 @@ namespace Nth {
 
 	Vk::Queue& RenderWindow::getGraphicsQueue() {
 		return m_graphicsQueue;
+	}
+
+	Vk::Queue& RenderWindow::getPresentQueue() {
+		return m_presentQueue;
 	}
 
 	bool RenderWindow::createSwapchain() {
@@ -363,32 +347,6 @@ namespace Nth {
 
 		return true;
 
-	}
-
-	bool RenderWindow::createRenderingResources() {
-		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			if (!m_renderingResources[i].create(m_vulkan.getDevice(), m_presentQueue.index())) {
-				std::cerr << "Can't create rendering ressource" << std::endl;
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	bool RenderWindow::createSSBO() {
-		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			if (!m_renderingResources[i].ssbo.create(
-				m_vulkan.getDevice(),
-				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-				10000 * sizeof(ShaderStorageBufferObject))) {
-				std::cerr << "Can't create SSBO" << std::endl;
-				return false;
-			}
-		}
-
-		return true;
 	}
 
 	bool RenderWindow::createDepthRessource() {

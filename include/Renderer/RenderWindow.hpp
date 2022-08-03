@@ -50,12 +50,12 @@ namespace Nth {
 		~RenderWindow();
 
 		bool create(VideoMode const& mode, const std::string_view title);
-		bool draw(std::vector<RenderObject> const& objects);
+		bool draw(RenderingResource& ressource, std::vector<RenderObject> const& objects);
 
-		std::vector<RenderingResource>& getRenderingRessources();
 		Vk::DescriptorSet& getDescriptor();
 		Vk::RenderPass& getRenderPass();
 		Vk::Queue& getGraphicsQueue();
+		Vk::Queue& getPresentQueue();
 
 		static constexpr uint32_t resourceCount = 3;
 
@@ -65,8 +65,6 @@ namespace Nth {
 	private:
 		bool createSwapchain();
 		bool createRenderPass();
-		bool createRenderingResources();
-		bool createSSBO();
 		bool createDepthRessource();
 		void onWindowSizeChanged();
 
@@ -87,10 +85,8 @@ namespace Nth {
 		Vk::RenderPass m_renderPass;
 		DepthImage m_depth;
 		Vk::DescriptorSet m_descriptor;
-		std::vector<RenderingResource> m_renderingResources;
 
 		Vector2ui m_swapchainSize;
-		size_t m_resourceIndex;
 	};
 }
 

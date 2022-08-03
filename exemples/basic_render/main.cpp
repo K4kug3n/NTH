@@ -33,7 +33,7 @@ int main() {
 	while (window.isOpen()) {
 		window.processEvent();
 
-		window.draw({ vikingRoom });
+		renderer.draw({ vikingRoom });
 	}
 
 	renderer.waitIdle();

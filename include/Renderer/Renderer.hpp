@@ -25,6 +25,8 @@ namespace Nth {
 		Material& createMaterial(const std::string_view vertexShaderName, const std::string_view fragmentShaderName);
 		void createMesh(Mesh& mesh);
 
+		void draw(std::vector<RenderObject> const& objects);
+
 		// TODO: review it
 		Vk::DescriptorSetLayout getMainDescriptorLayout() const;
 		Vk::DescriptorSetLayout getSSBODescriptorLayout() const;
@@ -43,6 +45,8 @@ namespace Nth {
 		bool copyUniformBufferData();
 		UniformBufferObject getUniformBufferData() const;
 		bool updateDescriptorSet();
+		bool createRenderingResources();
+		bool createSSBO();
 
 		Vk::VulkanInstance m_vulkan;
 		RenderWindow m_renderWindow;
@@ -58,10 +62,10 @@ namespace Nth {
 		VulkanBuffer m_stagingBuffer;
 		VulkanBuffer m_uniformBuffer;
 		VulkanTexture m_image;
-		VulkanImage m_depth;
+		//VulkanImage m_depth;
 
-		//std::vector<RenderingResource> m_renderingResources;
-		//size_t m_resourceIndex;
+		std::vector<RenderingResource> m_renderingResources;
+		size_t m_resourceIndex;
 	};
 }
 

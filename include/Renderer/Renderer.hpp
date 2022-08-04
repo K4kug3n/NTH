@@ -6,6 +6,8 @@
 #include "Renderer/RenderWindow.hpp"
 #include "Renderer/Material.hpp"
 #include "Renderer/DescriptorAllocator.hpp"
+#include "Renderer/Mesh.hpp"
+#include "Renderer/VulkanTexture.hpp"
 
 #include <vector>
 #include <string_view>
@@ -60,7 +62,6 @@ namespace Nth {
 		Vk::DescriptorSetLayout m_ssboDescriptorLayout;
 
 		VulkanBuffer m_stagingBuffer;
-		VulkanBuffer m_uniformBuffer;
 		VulkanTexture m_image;
 		//VulkanImage m_depth;
 

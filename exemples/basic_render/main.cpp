@@ -22,7 +22,13 @@ int main() {
 	Nth::RenderObject vikingRoom {
 		&vikingRoomMesh,
 		&basicMaterial,
-		glm::rotate(glm::mat4(1.f), glm::radians(45.f), glm::vec3(0.f, 0.f, 1.f))
+		glm::rotate(glm::mat4(1.f), glm::radians(45.f), glm::vec3(0.f, 0.f, 1.f)) * glm::translate(glm::mat4(1.f), glm::vec3(0.f, 1.f, 0.f))
+	};
+
+	Nth::RenderObject vikingRoom2 {
+		&vikingRoomMesh,
+		&basicMaterial,
+		glm::rotate(glm::mat4(1.f), glm::radians(45.f), glm::vec3(0.f, 0.f, 1.f)) * glm::translate(glm::mat4(1.f), glm::vec3(0.f, -1.f, 0.f))
 	};
 
 	Nth::EventHandler& eventHandler{ window.getEventHandler() };
@@ -33,7 +39,7 @@ int main() {
 	while (window.isOpen()) {
 		window.processEvent();
 
-		renderer.draw({ vikingRoom });
+		renderer.draw({ vikingRoom, vikingRoom2 });
 	}
 
 	renderer.waitIdle();

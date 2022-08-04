@@ -405,6 +405,8 @@ namespace Nth {
 				return false;
 			}
 		}
+
+		return true;
 	}
 
 	UniformBufferObject Renderer::getUniformBufferData() const {

@@ -586,7 +586,7 @@ namespace Nth {
 				lastMesh = objects[i].mesh;
 			}
 
-			ressources.commandBuffer.drawIndexed(static_cast<uint32_t>(objects[i].mesh->indices.size()), 1, 0, 0, 0);
+			ressources.commandBuffer.drawIndexed(static_cast<uint32_t>(objects[i].mesh->indices.size()), 1, 0, 0, static_cast<uint32_t>(i));
 		}
 
 		ressources.commandBuffer.endRenderPass();

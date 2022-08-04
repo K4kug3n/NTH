@@ -63,7 +63,6 @@ namespace Nth {
 
 		VulkanBuffer m_stagingBuffer;
 		VulkanTexture m_image;
-		//VulkanImage m_depth;
 
 		std::vector<RenderingResource> m_renderingResources;
 		size_t m_resourceIndex;

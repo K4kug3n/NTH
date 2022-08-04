@@ -41,9 +41,8 @@ namespace Nth {
 
 		m_descriptorAllocator.init(m_vulkan.getDevice());
 
-		m_renderWindow.getDescriptor() = m_descriptorAllocator.allocate(m_mainDescriptorLayout);
-
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
+			m_renderingResources[i].mainDescriptor = m_descriptorAllocator.allocate(m_mainDescriptorLayout);
 			m_renderingResources[i].ssboDescriptor = m_descriptorAllocator.allocate(m_ssboDescriptorLayout);
 		}
 
@@ -374,9 +373,16 @@ namespace Nth {
 	}
 
 	bool Renderer::createUniformBuffer() {
-		if(!m_uniformBuffer.create(m_vulkan.getDevice(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sizeof(UniformBufferObject))) {
-			std::cerr << "Could not create uniform buffer!" << std::endl;
-			return false;
+		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
+			if (!m_renderingResources[i].mainBuffer.create(
+				m_vulkan.getDevice(),
+				VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+				sizeof(UniformBufferObject)
+			)) {
+				std::cerr << "Could not create uniform buffer!" << std::endl;
+				return false;
+			}
 		}
 
 		if (!copyUniformBufferData()) {
@@ -389,9 +395,16 @@ namespace Nth {
 	bool Renderer::copyUniformBufferData() {
 		const UniformBufferObject uniformData = getUniformBufferData();
 
-		return copyBufferByStaging(m_uniformBuffer, m_stagingBuffer, [this, &uniformData](void* mappedPtr) {
-			memcpy(mappedPtr, &uniformData, m_uniformBuffer.handle.getSize());
-		});
+		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
+			RenderingResource& current = m_renderingResources[i];
+
+			if (!copyBufferByStaging(current.mainBuffer, m_stagingBuffer, [&current, &uniformData](void* mappedPtr) {
+				memcpy(mappedPtr, &uniformData, current.mainBuffer.handle.getSize());
+			})) {
+				std::cerr << "Could not copy uniform buffer!" << std::endl;
+				return false;
+			}
+		}
 	}
 
 	UniformBufferObject Renderer::getUniformBufferData() const {
@@ -413,43 +426,44 @@ namespace Nth {
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL    // VkImageLayout                  imageLayout
 		};
 
-		VkDescriptorBufferInfo bufferInfo = {
-			m_uniformBuffer.handle(),                // VkBuffer         buffer
-			0,                                       // VkDeviceSize     offset
-			m_uniformBuffer.handle.getSize()         // VkDeviceSize     range
-		};
-
-		std::vector<VkWriteDescriptorSet> descriptorWrites = {
-			{
-				VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
-				nullptr,                                    // const void                    *pNext
-				m_renderWindow.getDescriptor()(),           // VkDescriptorSet                dstSet
-				0,                                          // uint32_t                       dstBinding
-				0,                                          // uint32_t                       dstArrayElement
-				1,                                          // uint32_t                       descriptorCount
-				VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  // VkDescriptorType               descriptorType
-				&imageInfo,                                 // const VkDescriptorImageInfo   *pImageInfo
-				nullptr,                                    // const VkDescriptorBufferInfo  *pBufferInfo
-				nullptr                                     // const VkBufferView            *pTexelBufferView
-			},
-			{
-				VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,    // VkStructureType     sType
-				nullptr,                                   // const void         *pNext
-				m_renderWindow.getDescriptor()(),          // VkDescriptorSet     dstSet
-				1,                                         // uint32_t            dstBinding
-				0,                                         // uint32_t            dstArrayElement
-				1,                                         // uint32_t            descriptorCount
-				VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         // VkDescriptorType    descriptorType
-				nullptr,                                   // const VkDescriptorImageInfo  *pImageInfo
-				&bufferInfo,                               // const VkDescriptorBufferInfo *pBufferInfo
-				nullptr                                    // const VkBufferView *pTexelBufferView
-			}
-		};
-
-		// TODO: Check if update methode should be in Device class 
-		m_renderWindow.getDescriptor().update(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data());
-
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
+			VkDescriptorBufferInfo bufferInfo = {
+				m_renderingResources[i].mainBuffer.handle(),             // VkBuffer         buffer
+				0,                                                       // VkDeviceSize     offset
+				m_renderingResources[i].mainBuffer.handle.getSize()      // VkDeviceSize     range
+			};
+
+			std::vector<VkWriteDescriptorSet> descriptorWrites = {
+				{
+					VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
+					nullptr,                                    // const void                    *pNext
+					m_renderingResources[i].mainDescriptor(),   // VkDescriptorSet                dstSet
+					0,                                          // uint32_t                       dstBinding
+					0,                                          // uint32_t                       dstArrayElement
+					1,                                          // uint32_t                       descriptorCount
+					VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  // VkDescriptorType               descriptorType
+					&imageInfo,                                 // const VkDescriptorImageInfo   *pImageInfo
+					nullptr,                                    // const VkDescriptorBufferInfo  *pBufferInfo
+					nullptr                                     // const VkBufferView            *pTexelBufferView
+				},
+				{
+					VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,    // VkStructureType     sType
+					nullptr,                                   // const void         *pNext
+					m_renderingResources[i].mainDescriptor(),  // VkDescriptorSet     dstSet
+					1,                                         // uint32_t            dstBinding
+					0,                                         // uint32_t            dstArrayElement
+					1,                                         // uint32_t            descriptorCount
+					VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         // VkDescriptorType    descriptorType
+					nullptr,                                   // const VkDescriptorImageInfo  *pImageInfo
+					&bufferInfo,                               // const VkDescriptorBufferInfo *pBufferInfo
+					nullptr                                    // const VkBufferView *pTexelBufferView
+				}
+			};
+
+			// TODO: Check if update methode should be in Device class 
+			m_renderingResources[i].mainDescriptor.update(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data());
+
+
 			VkDescriptorBufferInfo ssboInfo = {
 				m_renderingResources[i].ssbo.handle(),         // VkBuffer         buffer
 				0,                                             // VkDeviceSize     offset
@@ -495,6 +509,7 @@ namespace Nth {
 				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 				10000 * sizeof(ShaderStorageBufferObject))) {
+
 				std::cerr << "Can't create SSBO" << std::endl;
 				return false;
 			}

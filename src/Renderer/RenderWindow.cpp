@@ -3,6 +3,8 @@
 #include "Renderer/Vulkan/ImageView.hpp"
 #include "Renderer/Vulkan/PhysicalDevice.hpp"
 #include "Renderer/RenderObject.hpp"
+#include "Renderer/Material.hpp"
+#include "Renderer/Mesh.hpp"
 
 #include "Util/Reader.hpp"
 #include "Util/Image.hpp"
@@ -161,10 +163,6 @@ namespace Nth {
 		}
 
 		return true;
-	}
-
-	Vk::DescriptorSet& RenderWindow::getDescriptor() {
-		return m_descriptor;
 	}
 
 	Vk::RenderPass& RenderWindow::getRenderPass() {
@@ -570,7 +568,7 @@ namespace Nth {
 			if (objects[i].material != lastMaterial) {
 				ressources.commandBuffer.bindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, objects[i].material->pipeline());
 
-				VkDescriptorSet vkDescriptorSet = m_descriptor();
+				VkDescriptorSet vkDescriptorSet = ressources.mainDescriptor();
 				ressources.commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 0, 1, &vkDescriptorSet, 0, nullptr);
 
 				VkDescriptorSet vkSsboDescriptorSet = ressources.ssboDescriptor();

@@ -9,11 +9,6 @@
 #include "Renderer/Vulkan/Queue.hpp"
 #include "Renderer/Vulkan/RenderPass.hpp"
 #include "Renderer/RenderingResource.hpp"
-#include "Renderer/Vulkan/DescriptorSet.hpp"
-#include "Renderer/Mesh.hpp"
-#include "Renderer/Material.hpp"
-#include "Renderer/VulkanBuffer.hpp"
-#include "Renderer/VulkanTexture.hpp"
 #include "Renderer/DepthImage.hpp"
 
 #include "Math/Vector2.hpp"
@@ -24,7 +19,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <vector>
-#include <array>
 
 namespace Nth {
 	class RenderObject;
@@ -52,7 +46,6 @@ namespace Nth {
 		bool create(VideoMode const& mode, const std::string_view title);
 		bool draw(RenderingResource& ressource, std::vector<RenderObject> const& objects);
 
-		Vk::DescriptorSet& getDescriptor();
 		Vk::RenderPass& getRenderPass();
 		Vk::Queue& getGraphicsQueue();
 		Vk::Queue& getPresentQueue();
@@ -84,7 +77,6 @@ namespace Nth {
 		Vk::Queue m_graphicsQueue;
 		Vk::RenderPass m_renderPass;
 		DepthImage m_depth;
-		Vk::DescriptorSet m_descriptor;
 
 		Vector2ui m_swapchainSize;
 	};

@@ -5,6 +5,7 @@
 #include "Renderer/Vulkan/CommandBuffer.hpp"
 #include "Renderer/Vulkan/Queue.hpp"
 
+#include <cstring>
 #include <iostream>
 
 namespace Nth {
@@ -64,7 +65,7 @@ namespace Nth {
 
 		void* stagingBufferMemoryPointer = stagingMemory.getMappedPointer();
 
-		memcpy(stagingBufferMemoryPointer, data, size);
+		std::memcpy(stagingBufferMemoryPointer, data, size);
 
 		stagingMemory.flushMappedMemory(0, staging.getSize());
 

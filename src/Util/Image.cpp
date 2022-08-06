@@ -52,7 +52,7 @@ namespace Nth{
 		int size = (width) * (height) * (static_cast<int>(desiredChannel) <= 0 ? components : static_cast<int>(desiredChannel));
 
 		std::vector<char> output(size);
-		memcpy(&output[0], imageData, size);
+		std::memcpy(&output[0], imageData, size);
 
 		stbi_image_free(imageData);
 		return Image{ static_cast<unsigned>(width), static_cast<unsigned>(height), static_cast<unsigned>(desiredChannel), output };

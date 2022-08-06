@@ -203,7 +203,7 @@ namespace Nth {
 		}
 		void* stagingBufferMemoryPointer = m_stagingBuffer.memory.getMappedPointer();
 
-		memcpy(stagingBufferMemoryPointer, textureData, dataSize);
+		std::memcpy(stagingBufferMemoryPointer, textureData, dataSize);
 
 		m_stagingBuffer.memory.flushMappedMemory(0, dataSize);
 

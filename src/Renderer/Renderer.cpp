@@ -2,6 +2,7 @@
 
 #include "Util/Image.hpp"
 
+#include <cstring>
 #include <iostream>
 
 namespace Nth {

@@ -24,9 +24,12 @@ namespace Nth {
 			throw std::runtime_error("Can't create ssbo");
 		}
 
-		if (!m_stagingBuffer.create(m_vulkan.getDevice(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 5000000)) {
-			throw std::runtime_error("Could not staging buffer!");
-		}
+		m_stagingBuffer = VulkanBuffer{
+			m_vulkan.getDevice(),
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+			5000000
+		};
 
 		if (!createTexture()) {
 			throw std::runtime_error("Can't create texture!");
@@ -50,6 +53,8 @@ namespace Nth {
 
 		EventHandler& eventHandler = m_renderWindow.getEventHandler();
 		eventHandler.onResize.connect([this]() {
+			m_vulkan.getDevice().waitIdle();
+
 			if (!copyUniformBufferData()) {
 				throw std::runtime_error("Can't re-copy uniform data");
 			}
@@ -71,9 +76,12 @@ namespace Nth {
 	}
 
 	void Renderer::createMesh(Mesh& mesh) {
-		if (!mesh.vertexBuffer.create(m_vulkan.getDevice(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, static_cast<uint32_t>(mesh.vertices.size() * sizeof(mesh.vertices[0])))) {
-			throw std::runtime_error("Could not create a vertex buffer!");
-		}
+		mesh.vertexBuffer = VulkanBuffer{ 
+			m_vulkan.getDevice(),
+			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			static_cast<uint32_t>(mesh.vertices.size() * sizeof(mesh.vertices[0]))
+		};
 
 		if (!copyBufferByStaging(mesh.vertexBuffer, m_stagingBuffer, [this, &mesh](void* mappedPtr) {
 			memcpy(mappedPtr, mesh.vertices.data(), mesh.vertexBuffer.handle.getSize());
@@ -81,9 +89,12 @@ namespace Nth {
 			throw std::runtime_error("Could not create a vertex buffer!");
 		}
 
-		if (!mesh.indexBuffer.create(m_vulkan.getDevice(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sizeof(mesh.indices[0]) * mesh.indices.size())) {
-			throw std::runtime_error("Can't create index buffer");
-		}
+		mesh.indexBuffer = VulkanBuffer{
+			m_vulkan.getDevice(),
+			VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			sizeof(mesh.indices[0])* mesh.indices.size()
+		};
 
 		if (!copyBufferByStaging(mesh.indexBuffer, m_stagingBuffer, [this, &mesh](void* mappedPtr) {
 			memcpy(mappedPtr, mesh.indices.data(), mesh.indexBuffer.handle.getSize());
@@ -374,15 +385,12 @@ namespace Nth {
 
 	bool Renderer::createUniformBuffer() {
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			if (!m_renderingResources[i].mainBuffer.create(
+			m_renderingResources[i].mainBuffer = VulkanBuffer{
 				m_vulkan.getDevice(),
-				VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 				sizeof(UniformBufferObject)
-			)) {
-				std::cerr << "Could not create uniform buffer!" << std::endl;
-				return false;
-			}
+			};
 		}
 
 		if (!copyUniformBufferData()) {
@@ -506,15 +514,12 @@ namespace Nth {
 
 	bool Renderer::createSSBO() {
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			if (!m_renderingResources[i].ssbo.create(
+			m_renderingResources[i].ssbo = VulkanBuffer{
 				m_vulkan.getDevice(),
 				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-				10000 * sizeof(ShaderStorageBufferObject))) {
-
-				std::cerr << "Can't create SSBO" << std::endl;
-				return false;
-			}
+				10000 * sizeof(ShaderStorageBufferObject)
+			};
 		}
 
 		return true;

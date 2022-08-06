@@ -57,7 +57,7 @@ namespace Nth {
 
 		DescriptorAllocator m_descriptorAllocator;
 
-		// TODO: Maybe move it out ?
+		// TODO: Move it out
 		Vk::DescriptorSetLayout m_mainDescriptorLayout;
 		Vk::DescriptorSetLayout m_ssboDescriptorLayout;
 

@@ -8,7 +8,7 @@
     </a>
   </div>
   <div>
-    <a href="https://github.com/K4kug3n/NTH/blob/master/LICENSE.md">
+    <a href="https://github.com/K4kug3n/NTH/blob/main/LICENSE">
       <img src="https://img.shields.io/github/license/K4kug3n/NTH?style=plastic" alt="license" />
     </a>
   </div>

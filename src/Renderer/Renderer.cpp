@@ -83,11 +83,7 @@ namespace Nth {
 			static_cast<uint32_t>(mesh.vertices.size() * sizeof(mesh.vertices[0]))
 		};
 
-		if (!copyBufferByStaging(mesh.vertexBuffer, m_stagingBuffer, [this, &mesh](void* mappedPtr) {
-			memcpy(mappedPtr, mesh.vertices.data(), mesh.vertexBuffer.handle.getSize());
-			})) {
-			throw std::runtime_error("Could not create a vertex buffer!");
-		}
+		mesh.vertexBuffer.copyByStaging(mesh.vertices.data(), mesh.vertexBuffer.handle.getSize(), m_renderingResources[0].commandBuffer, m_renderWindow.getPresentQueue());
 
 		mesh.indexBuffer = VulkanBuffer{
 			m_vulkan.getDevice(),
@@ -96,12 +92,7 @@ namespace Nth {
 			sizeof(mesh.indices[0])* mesh.indices.size()
 		};
 
-		if (!copyBufferByStaging(mesh.indexBuffer, m_stagingBuffer, [this, &mesh](void* mappedPtr) {
-			memcpy(mappedPtr, mesh.indices.data(), mesh.indexBuffer.handle.getSize());
-			})) {
-			throw std::runtime_error("Can't create index buffer");
-		}
-
+		mesh.indexBuffer.copyByStaging(mesh.indices.data(), mesh.indexBuffer.handle.getSize(), m_renderingResources[0].commandBuffer, m_renderWindow.getPresentQueue());
 	}
 
 	void Renderer::draw(std::vector<RenderObject> const& objects) {
@@ -313,76 +304,6 @@ namespace Nth {
 		return true;
 	}
 
-	bool Renderer::copyBufferByStaging(VulkanBuffer& target, VulkanBuffer& staging, std::function<void(void*)> copyFunction) {
-		if (!staging.memory.map(0, target.handle.getSize(), 0)) {
-			std::cerr << "Could not map memory and upload data to a staging buffer!" << std::endl;
-			return false;
-		}
-
-		void* stagingBufferMemoryPointer = m_stagingBuffer.memory.getMappedPointer();
-
-		copyFunction(stagingBufferMemoryPointer);
-
-		staging.memory.flushMappedMemory(0, target.handle.getSize());
-
-		staging.memory.unmap();
-
-		// Prepare command buffer to copy data from staging buffer to a uniform buffer
-		Vk::CommandBuffer& commandBuffer = m_renderingResources[0].commandBuffer;
-
-		VkCommandBufferBeginInfo commandBufferBeginInfo = {
-			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, // VkStructureType              sType
-			nullptr,                                     // const void                  *pNext
-			VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, // VkCommandBufferUsageFlags    flags
-			nullptr                                      // const VkCommandBufferInheritanceInfo  *pInheritanceInfo
-		};
-
-		commandBuffer.begin(commandBufferBeginInfo);
-
-		VkBufferCopy bufferCopyInfo = {
-			0,                                // VkDeviceSize       srcOffset
-			0,                                // VkDeviceSize       dstOffset
-			target.handle.getSize()  // VkDeviceSize       size
-		};
-		commandBuffer.copyBuffer(staging.handle(), target.handle(), bufferCopyInfo);
-
-		VkBufferMemoryBarrier buffer_memory_barrier = {
-			VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, // VkStructureType    sType;
-			nullptr,                          // const void        *pNext
-			VK_ACCESS_TRANSFER_WRITE_BIT,     // VkAccessFlags      srcAccessMask
-			VK_ACCESS_UNIFORM_READ_BIT,       // VkAccessFlags      dstAccessMask
-			VK_QUEUE_FAMILY_IGNORED,          // uint32_t           srcQueueFamilyIndex
-			VK_QUEUE_FAMILY_IGNORED,          // uint32_t           dstQueueFamilyIndex
-			target.handle(),                  // VkBuffer           buffer
-			0,                                // VkDeviceSize       offset
-			VK_WHOLE_SIZE                     // VkDeviceSize       size
-		};
-		commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr, 1, &buffer_memory_barrier, 0, nullptr);
-
-		commandBuffer.end();
-
-		// Submit command buffer and copy data from staging buffer to a vertex buffer
-		VkSubmitInfo submitInfo = {
-			VK_STRUCTURE_TYPE_SUBMIT_INFO,    // VkStructureType    sType
-			nullptr,                          // const void        *pNext
-			0,                                // uint32_t           waitSemaphoreCount
-			nullptr,                          // const VkSemaphore *pWaitSemaphores
-			nullptr,                          // const VkPipelineStageFlags *pWaitDstStageMask;
-			1,                                // uint32_t           commandBufferCount
-			&commandBuffer(),                 // const VkCommandBuffer *pCommandBuffers
-			0,                                // uint32_t           signalSemaphoreCount
-			nullptr                           // const VkSemaphore *pSignalSemaphores
-		};
-
-		if (!m_renderWindow.getGraphicsQueue().submit(submitInfo, VK_NULL_HANDLE)) {
-			return false;
-		}
-
-		m_vulkan.getDevice().waitIdle();
-
-		return true;
-	}
-
 	bool Renderer::createUniformBuffer() {
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
 			m_renderingResources[i].mainBuffer = VulkanBuffer{
@@ -406,12 +327,7 @@ namespace Nth {
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
 			RenderingResource& current = m_renderingResources[i];
 
-			if (!copyBufferByStaging(current.mainBuffer, m_stagingBuffer, [&current, &uniformData](void* mappedPtr) {
-				memcpy(mappedPtr, &uniformData, current.mainBuffer.handle.getSize());
-			})) {
-				std::cerr << "Could not copy uniform buffer!" << std::endl;
-				return false;
-			}
+			current.mainBuffer.copyByStaging(&uniformData, current.mainBuffer.handle.getSize(), m_renderingResources[0].commandBuffer, m_renderWindow.getPresentQueue());
 		}
 
 		return true;

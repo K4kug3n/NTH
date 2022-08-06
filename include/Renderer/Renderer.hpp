@@ -42,7 +42,6 @@ namespace Nth {
 	private:
 		bool createTexture();
 		bool copyTextureData(char const* textureData, uint32_t dataSize, uint32_t width, uint32_t height);
-		bool copyBufferByStaging(VulkanBuffer& target, VulkanBuffer& staging, std::function<void(void*)> copyFunction);
 		bool createUniformBuffer();
 		bool copyUniformBufferData();
 		UniformBufferObject getUniformBufferData() const;

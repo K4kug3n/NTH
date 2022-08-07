@@ -174,21 +174,18 @@ namespace Nth {
 			return false;
 		}
 
-		if (!m_image.create(
-			m_vulkan.getDevice().getHandle(),
+		m_image.create(
+			m_vulkan.getDevice(),
 			image.width(),
 			image.height(),
+			static_cast<uint32_t>(pixels.size()),
 			VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_TILING_OPTIMAL,
 			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-		)) {
-			return false;
-		}
+		);
 
-		if (!m_image.createView(m_vulkan.getDevice().getHandle(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT)) {
-			return false;
-		}
+		m_image.createView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
 
 		if (!copyTextureData(pixels.data(), static_cast<uint32_t>(pixels.size()), image.width(), image.height())) {
 			return false;

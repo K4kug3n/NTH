@@ -6,8 +6,8 @@
 #include <vector>
 
 namespace Nth {
-	class Vk::Device;
 	template<typename T> class Vector2;
+	class VulkanDevice;
 
 	class DepthImage {
 	public:
@@ -16,7 +16,7 @@ namespace Nth {
 		DepthImage(DepthImage&&) = default;
 		~DepthImage() = default;
 
-		bool create(Vk::Device const& device, Vector2<unsigned int> const& size);
+		bool create(VulkanDevice const& device, Vector2<unsigned int> const& size);
 		
 		Vk::ImageView const& view() const;
 		Vk::Image const& image() const;

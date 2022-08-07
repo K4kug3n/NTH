@@ -13,7 +13,7 @@ namespace Nth {
 
 	class VulkanBuffer {
 	public:
-		VulkanBuffer() = default;
+		VulkanBuffer();
 		VulkanBuffer(VulkanDevice const& device, VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size);
 		VulkanBuffer(VulkanBuffer const&) = delete;
 		VulkanBuffer(VulkanBuffer&&) = default;
@@ -29,8 +29,8 @@ namespace Nth {
 	private:
 		bool allocateBufferMemory(Vk::Device const& device, VkMemoryPropertyFlagBits memoryProperty, Vk::Buffer& buffer, Vk::DeviceMemory& memory);
 
-		Vk::Buffer staging;
-		Vk::DeviceMemory stagingMemory;
+		Vk::Buffer m_staging;
+		Vk::DeviceMemory m_stagingMemory;
 
 		VulkanDevice const* m_device;
 	};

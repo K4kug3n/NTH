@@ -14,18 +14,14 @@
 #include <iostream>
 
 namespace Nth {
-	RenderWindow::RenderWindow(Vk::VulkanInstance& vulkanInstance) :
+	RenderWindow::RenderWindow(VulkanInstance& vulkanInstance) :
 		m_vulkan(vulkanInstance),
-		m_surface(vulkanInstance.getInstance()),
-		m_presentQueue(),
-		m_graphicsQueue(),
+		m_surface(vulkanInstance.getHandle()),
 		m_swapchainSize() { }
 
-	RenderWindow::RenderWindow(Vk::VulkanInstance& vulkanInstance, VideoMode const& mode, const std::string_view title) :
+	RenderWindow::RenderWindow(VulkanInstance& vulkanInstance, VideoMode const& mode, const std::string_view title) :
 		m_vulkan(vulkanInstance),
-		m_surface(vulkanInstance.getInstance()),
-		m_presentQueue(),
-		m_graphicsQueue(),
+		m_surface(vulkanInstance.getHandle()),
 		m_swapchainSize() {
 
 		if (!create(mode, title)) {
@@ -34,8 +30,8 @@ namespace Nth {
 	}
 
 	RenderWindow::~RenderWindow() {
-		if (m_vulkan.getDevice().isValid()) {
-			m_vulkan.getDevice().waitIdle();
+		if (m_vulkan.getDevice().getHandle().isValid()) {
+			m_vulkan.getDevice().getHandle().waitIdle();
 		}
 		
 		m_swapchain.destroy();
@@ -53,18 +49,6 @@ namespace Nth {
 
 		if (!m_vulkan.createDevice(m_surface)) {
 			std::cerr << "Error: Can't create device" << std::endl;
-			return false;
-		}
-
-		Vk::Device& device = m_vulkan.getDevice();
-		
-		if (!m_presentQueue.create(device, device.getPresentQueueFamilyIndex())) {
-			std::cerr << "Error: Can't create present queue" << std::endl;
-			return false;
-		}
-
-		if (!m_graphicsQueue.create(device, device.getGraphicQueueFamilyIndex())) {
-			std::cerr << "Error: Can't create graphics queue" << std::endl;
 			return false;
 		}
 
@@ -134,7 +118,7 @@ namespace Nth {
 			&ressource.finishedRenderingSemaphore()                // const VkSemaphore           *pSignalSemaphores
 		};
 
-		if (!m_graphicsQueue.submit(submitInfo, ressource.fence())) {
+		if (!m_vulkan.getDevice().graphicsQueue().submit(submitInfo, ressource.fence())) {
 			return false;
 		}
 
@@ -148,7 +132,7 @@ namespace Nth {
 			&imageIndex,                                               // const uint32_t              *pImageIndices
 			nullptr                                                    // VkResult                    *pResults
 		};
-		result = m_presentQueue.present(presentInfo);
+		result = m_vulkan.getDevice().presentQueue().present(presentInfo);
 
 		switch (result) {
 		case VK_SUCCESS:
@@ -169,17 +153,9 @@ namespace Nth {
 		return m_renderPass;
 	}
 
-	Vk::Queue& RenderWindow::getGraphicsQueue() {
-		return m_graphicsQueue;
-	}
-
-	Vk::Queue& RenderWindow::getPresentQueue() {
-		return m_presentQueue;
-	}
-
 	bool RenderWindow::createSwapchain() {
 		VkSurfaceCapabilitiesKHR surfaceCapabilities;
-		if (!m_surface.getCapabilities(m_vulkan.getDevice().getPhysicalDevice(), surfaceCapabilities)) {
+		if (!m_surface.getCapabilities(m_vulkan.getDevice().getHandle().getPhysicalDevice(), surfaceCapabilities)) {
 			std::cerr << "Error: Can't get surface capabilities" << std::endl;
 			return false;
 		}
@@ -190,7 +166,7 @@ namespace Nth {
 		VkExtent2D swapchainExtend{ getSwapchainExtent(surfaceCapabilities, size()) };
 
 		std::vector<VkSurfaceFormatKHR> surfaceFormats;
-		if (!m_surface.getFormats(m_vulkan.getDevice().getPhysicalDevice(), surfaceFormats)) {
+		if (!m_surface.getFormats(m_vulkan.getDevice().getHandle().getPhysicalDevice(), surfaceFormats)) {
 			std::cerr << "Error: Can't get surface formats" << std::endl;
 			return false;
 		}
@@ -198,7 +174,7 @@ namespace Nth {
 		VkSurfaceFormatKHR surfaceFormat{ getSwapchainFormat(surfaceFormats) };
 
 		std::vector<VkPresentModeKHR> presentModes;
-		if (!m_surface.getPresentModes(m_vulkan.getDevice().getPhysicalDevice(), presentModes)) {
+		if (!m_surface.getPresentModes(m_vulkan.getDevice().getHandle().getPhysicalDevice(), presentModes)) {
 			std::cerr << "Error: Can't get surface present modes" << std::endl;
 			return false;
 		}
@@ -234,7 +210,7 @@ namespace Nth {
 		};
 
 		Vk::Swapchain newSwapchain;
-		if (!newSwapchain.create(m_vulkan.getDevice(), swapchainCreateInfo)) {
+		if (!newSwapchain.create(m_vulkan.getDevice().getHandle(), swapchainCreateInfo)) {
 			std::cerr << "Error: Can't create swapchain" << std::endl;
 			return false;
 		}
@@ -338,7 +314,7 @@ namespace Nth {
 			dependencies.data()                                   // const VkSubpassDependency     *pDependencies
 		};
 
-		if (!m_renderPass.create(m_vulkan.getDevice(), renderPassCreateInfo)) {
+		if (!m_renderPass.create(m_vulkan.getDevice().getHandle(), renderPassCreateInfo)) {
 			std::cerr << "Could not create render pass !" << std::endl;
 			return false;
 		}
@@ -350,7 +326,7 @@ namespace Nth {
 	bool RenderWindow::createDepthRessource() {
 		DepthImage newDepth;
 
-		if (!newDepth.create(m_vulkan.getDevice(), m_swapchainSize)) {
+		if (!newDepth.create(m_vulkan.getDevice().getHandle(), m_swapchainSize)) {
 			return false;
 		}
 
@@ -360,7 +336,7 @@ namespace Nth {
 	}
 
 	void RenderWindow::onWindowSizeChanged() {
-		m_vulkan.getDevice().waitIdle();
+		m_vulkan.getDevice().getHandle().waitIdle();
 
 		if (!createSwapchain()) {
 			std::cerr << "Error: Can't re-create swapchain" << std::endl;
@@ -497,7 +473,7 @@ namespace Nth {
 			1                                                   // uint32_t                               layerCount
 		};
 
-		if (m_presentQueue() != m_graphicsQueue()) {
+		if (m_vulkan.getDevice().presentQueue() != m_vulkan.getDevice().graphicsQueue()) {
 			VkImageMemoryBarrier barrierFromPresentToDraw = {
 				VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,           // VkStructureType                        sType
 				nullptr,                                          // const void                            *pNext
@@ -505,8 +481,8 @@ namespace Nth {
 				VK_ACCESS_MEMORY_READ_BIT,                        // VkAccessFlags                          dstAccessMask
 				VK_IMAGE_LAYOUT_UNDEFINED,                        // VkImageLayout                          oldLayout
 				VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,                  // VkImageLayout                          newLayout
-				m_presentQueue.index(),                           // uint32_t                               srcQueueFamilyIndex
-				m_graphicsQueue.index(),                          // uint32_t                               dstQueueFamilyIndex
+				m_vulkan.getDevice().presentQueue().index(),      // uint32_t                               srcQueueFamilyIndex
+				m_vulkan.getDevice().graphicsQueue().index(),     // uint32_t                               dstQueueFamilyIndex
 				imageParameters.image,                            // VkImage                                image
 				imageSubresourceRange                             // VkImageSubresourceRange                subresourceRange
 			};
@@ -591,7 +567,7 @@ namespace Nth {
 
 		ressources.commandBuffer.endRenderPass();
 
-		if (m_presentQueue() != m_graphicsQueue()) {
+		if (m_vulkan.getDevice().presentQueue() != m_vulkan.getDevice().graphicsQueue()) {
 			VkImageMemoryBarrier barrierFromDrawToPresent = {
 				VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,           // VkStructureType                        sType
 				nullptr,                                          // const void                            *pNext
@@ -599,8 +575,8 @@ namespace Nth {
 				VK_ACCESS_MEMORY_READ_BIT,                        // VkAccessFlags                          dstAccessMask
 				VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,                  // VkImageLayout                          oldLayout
 				VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,                  // VkImageLayout                          newLayout
-				m_graphicsQueue.index(),                          // uint32_t                               srcQueueFamilyIndex
-				m_presentQueue.index(),                           // uint32_t                               dstQueueFamilyIndex
+				m_vulkan.getDevice().graphicsQueue().index(),     // uint32_t                               srcQueueFamilyIndex
+				m_vulkan.getDevice().presentQueue().index(),      // uint32_t                               dstQueueFamilyIndex
 				imageParameters.image,                            // VkImage                                image
 				imageSubresourceRange                             // VkImageSubresourceRange                subresourceRange
 			};
@@ -633,6 +609,6 @@ namespace Nth {
 			1                                           // uint32_t                       layers
 		};
 
-		return framebuffer.create(m_vulkan.getDevice(), framebufferCreateInfo);
+		return framebuffer.create(m_vulkan.getDevice().getHandle(), framebufferCreateInfo);
 	}
 }

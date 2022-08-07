@@ -31,6 +31,9 @@ namespace Nth {
 			Device const* m_device;
 			uint32_t m_index;
 		};
+
+		bool operator==(Queue& queue1, Queue& queue2);
+		bool operator!=(Queue& queue1, Queue& queue2);
 	}
 }
 

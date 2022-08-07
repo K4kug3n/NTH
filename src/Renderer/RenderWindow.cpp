@@ -326,7 +326,7 @@ namespace Nth {
 	bool RenderWindow::createDepthRessource() {
 		DepthImage newDepth;
 
-		if (!newDepth.create(m_vulkan.getDevice().getHandle(), m_swapchainSize)) {
+		if (!newDepth.create(m_vulkan.getDevice(), m_swapchainSize)) {
 			return false;
 		}
 

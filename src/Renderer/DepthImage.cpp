@@ -2,30 +2,26 @@
 
 #include "Renderer/Vulkan/Device.hpp"
 #include "Renderer/Vulkan/PhysicalDevice.hpp"
+#include "Renderer/VulkanDevice.hpp"
 #include "Math/Vector2.hpp"
 
 #include <iostream>
 
 namespace Nth {
-	bool DepthImage::create(Vk::Device const& device, Vector2<unsigned int> const& size) {
-		m_format = findDepthFormat(device);
+	bool DepthImage::create(VulkanDevice const& device, Vector2<unsigned int> const& size) {
+		m_format = findDepthFormat(device.getHandle());
 
-		if (!m_image.create(
+		m_image.create(
 			device,
 			size.x,
 			size.y,
+			0,
 			m_format,
 			VK_IMAGE_TILING_OPTIMAL,
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
-			std::cerr << "Can't create depth image" << std::endl;
-			return false;
-		}
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-		if (!m_image.createView(device, m_format, VK_IMAGE_ASPECT_DEPTH_BIT)) {
-			std::cerr << "Can't create depth image view" << std::endl;
-			return false;
-		}
+		m_image.createView(m_format, VK_IMAGE_ASPECT_DEPTH_BIT);
 
 		return true;
 	}

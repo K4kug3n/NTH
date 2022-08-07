@@ -5,9 +5,7 @@
 #include "Renderer/Vulkan/Sampler.hpp"
 
 namespace Nth {
-	namespace Vk {
-		class Device;
-	}
+	class VulkanDevice;
 
 	class VulkanTexture {
 	public:
@@ -16,8 +14,8 @@ namespace Nth {
 		VulkanTexture(VulkanTexture&&) = default;
 		~VulkanTexture() = default;
 
-		bool create(Vk::Device const& device, uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties);
-		bool createView(Vk::Device const& device, VkFormat format, VkImageAspectFlags aspectFlags);
+		void create(VulkanDevice const& device, uint32_t width, uint32_t height, size_t size, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties);
+		void createView(VkFormat format, VkImageAspectFlags aspectFlags);
 
 		VulkanImage image;
 		Vk::Sampler sampler;
@@ -25,7 +23,7 @@ namespace Nth {
 		VulkanTexture& operator=(VulkanTexture const&) = delete;
 		VulkanTexture& operator=(VulkanTexture&&) = default;
 	private:
-		bool createSampler(Vk::Device const& device);
+		void createSampler(Vk::Device const& device);
 	};
 }
 

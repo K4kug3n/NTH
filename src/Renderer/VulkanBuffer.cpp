@@ -10,6 +10,9 @@
 #include <cassert>
 
 namespace Nth {
+	VulkanBuffer::VulkanBuffer() :
+		m_device(nullptr) { }
+
 	VulkanBuffer::VulkanBuffer(VulkanDevice const& device, VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size) :
 		m_device(&device) {
 		VkBufferCreateInfo bufferCreateInfo = {
@@ -46,15 +49,15 @@ namespace Nth {
 			nullptr                                           // const uint32_t                *pQueueFamilyIndices
 		};
 
-		if (!staging.create(device.getHandle(), stagingCreateInfo)) {
+		if (!m_staging.create(device.getHandle(), stagingCreateInfo)) {
 			throw std::runtime_error("Could not create staging!");
 		}
 
-		if (!allocateBufferMemory(device.getHandle(), VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, staging, stagingMemory)) {
+		if (!allocateBufferMemory(device.getHandle(), VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, m_staging, m_stagingMemory)) {
 			throw std::runtime_error("Could not allocate staging!");
 		}
 
-		if (!staging.bindBufferMemory(stagingMemory)) {
+		if (!m_staging.bindBufferMemory(m_stagingMemory)) {
 			throw std::runtime_error("Could not bind staging memory!");
 		}
 	}
@@ -62,17 +65,17 @@ namespace Nth {
 	void VulkanBuffer::copyByStaging(const void* data, size_t size, Vk::CommandBuffer& commandBuffer) {
 		assert(m_device != nullptr);
 
-		if (!stagingMemory.map(0, handle.getSize(), 0)) {
+		if (!m_stagingMemory.map(0, handle.getSize(), 0)) {
 			throw std::runtime_error("Could not map memory and upload data to a staging buffer!");
 		}
 
-		void* stagingBufferMemoryPointer = stagingMemory.getMappedPointer();
+		void* stagingBufferMemoryPointer = m_stagingMemory.getMappedPointer();
 
 		std::memcpy(stagingBufferMemoryPointer, data, size);
 
-		stagingMemory.flushMappedMemory(0, staging.getSize());
+		m_stagingMemory.flushMappedMemory(0, m_staging.getSize());
 
-		stagingMemory.unmap();
+		m_stagingMemory.unmap();
 
 		VkCommandBufferBeginInfo commandBufferBeginInfo = {
 			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, // VkStructureType              sType
@@ -88,7 +91,7 @@ namespace Nth {
 			0,                                // VkDeviceSize       dstOffset
 			handle.getSize()                  // VkDeviceSize       size
 		};
-		commandBuffer.copyBuffer(staging(), handle(), bufferCopyInfo);
+		commandBuffer.copyBuffer(m_staging(), handle(), bufferCopyInfo);
 
 		VkBufferMemoryBarrier bufferMemoryBarrier = {
 			VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, // VkStructureType    sType;

@@ -4,11 +4,15 @@
 #include "Renderer/Vulkan/Image.hpp"
 #include "Renderer/Vulkan/ImageView.hpp"
 #include "Renderer/Vulkan/DeviceMemory.hpp"
+#include "Renderer/Vulkan/Buffer.hpp"
 
 namespace Nth {
 	namespace Vk {
+		class CommandBuffer;
 		class Device;
 	}
+
+	class VulkanDevice;
 
 	class VulkanImage {
 	public:
@@ -17,8 +21,10 @@ namespace Nth {
 		VulkanImage(VulkanImage&&) = default;
 		~VulkanImage() = default;
 
-		bool create(Vk::Device const& device, uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties);
-		bool createView(Vk::Device const& device, VkFormat format, VkImageAspectFlags aspectFlags);
+		void create(VulkanDevice const& device, uint32_t width, uint32_t height, size_t stagingSize, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties);
+		void createView(VkFormat format, VkImageAspectFlags aspectFlags);
+
+		void copyByStaging(void const* data, size_t size, uint32_t width, uint32_t height, Vk::CommandBuffer& commandBuffer);
 
 		VulkanImage& operator=(VulkanImage const&) = delete;
 		VulkanImage& operator=(VulkanImage&&) = default;
@@ -28,6 +34,12 @@ namespace Nth {
 		Vk::DeviceMemory memory;
 	private:
 		uint32_t findMemoryType(Vk::Device const& device, uint32_t memoryTypeBit, VkMemoryPropertyFlags properties) const;
+		void createStaging(Vk::Device const& device, size_t size);
+
+		VulkanDevice const* m_device;
+
+		Vk::Buffer m_staging;
+		Vk::DeviceMemory m_stagingMemory;
 	};
 }
 

@@ -26,7 +26,7 @@ namespace Nth {
 		}
 
 		m_stagingBuffer = VulkanBuffer{
-			m_vulkan.getDevice().getHandle(),
+			m_vulkan.getDevice(),
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 			5000000
@@ -78,22 +78,22 @@ namespace Nth {
 
 	void Renderer::createMesh(Mesh& mesh) {
 		mesh.vertexBuffer = VulkanBuffer{ 
-			m_vulkan.getDevice().getHandle(),
+			m_vulkan.getDevice(),
 			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			static_cast<uint32_t>(mesh.vertices.size() * sizeof(mesh.vertices[0]))
 		};
 
-		mesh.vertexBuffer.copyByStaging(mesh.vertices.data(), mesh.vertexBuffer.handle.getSize(), m_renderingResources[0].commandBuffer, m_vulkan.getDevice().presentQueue());
+		mesh.vertexBuffer.copyByStaging(mesh.vertices.data(), mesh.vertexBuffer.handle.getSize(), m_renderingResources[0].commandBuffer);
 
 		mesh.indexBuffer = VulkanBuffer{
-			m_vulkan.getDevice().getHandle(),
+			m_vulkan.getDevice(),
 			VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			sizeof(mesh.indices[0])* mesh.indices.size()
 		};
 
-		mesh.indexBuffer.copyByStaging(mesh.indices.data(), mesh.indexBuffer.handle.getSize(), m_renderingResources[0].commandBuffer, m_vulkan.getDevice().presentQueue());
+		mesh.indexBuffer.copyByStaging(mesh.indices.data(), mesh.indexBuffer.handle.getSize(), m_renderingResources[0].commandBuffer);
 	}
 
 	void Renderer::draw(std::vector<RenderObject> const& objects) {
@@ -308,7 +308,7 @@ namespace Nth {
 	bool Renderer::createUniformBuffer() {
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
 			m_renderingResources[i].mainBuffer = VulkanBuffer{
-				m_vulkan.getDevice().getHandle(),
+				m_vulkan.getDevice(),
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 				sizeof(UniformBufferObject)
@@ -328,7 +328,7 @@ namespace Nth {
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
 			RenderingResource& current = m_renderingResources[i];
 
-			current.mainBuffer.copyByStaging(&uniformData, current.mainBuffer.handle.getSize(), m_renderingResources[0].commandBuffer, m_vulkan.getDevice().presentQueue());
+			current.mainBuffer.copyByStaging(&uniformData, current.mainBuffer.handle.getSize(), m_renderingResources[0].commandBuffer);
 		}
 
 		return true;
@@ -432,7 +432,7 @@ namespace Nth {
 	bool Renderer::createSSBO() {
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
 			m_renderingResources[i].ssbo = VulkanBuffer{
-				m_vulkan.getDevice().getHandle(),
+				m_vulkan.getDevice(),
 				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 				10000 * sizeof(ShaderStorageBufferObject)

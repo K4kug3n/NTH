@@ -6,33 +6,33 @@
 
 namespace Nth {
 	namespace Vk {
-		class Device;
 		class CommandBuffer;
-		class Queue;
 	}
+
+	class VulkanDevice;
 
 	class VulkanBuffer {
 	public:
 		VulkanBuffer() = default;
-		VulkanBuffer(Vk::Device const& device, VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size);
+		VulkanBuffer(VulkanDevice const& device, VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size);
 		VulkanBuffer(VulkanBuffer const&) = delete;
 		VulkanBuffer(VulkanBuffer&&) = default;
 		~VulkanBuffer() = default;
 
-		void copyByStaging(const void* data, size_t size, Vk::CommandBuffer& commandBuffer, Vk::Queue& presentQueue);
+		void copyByStaging(const void* data, size_t size, Vk::CommandBuffer& commandBuffer);
 
 		VulkanBuffer& operator=(VulkanBuffer const&) = delete;
 		VulkanBuffer& operator=(VulkanBuffer&&) = default;
 
 		Vk::Buffer handle;
 		Vk::DeviceMemory memory;
-
-		Vk::Buffer staging;
-		Vk::DeviceMemory stagingMemory;
 	private:
 		bool allocateBufferMemory(Vk::Device const& device, VkMemoryPropertyFlagBits memoryProperty, Vk::Buffer& buffer, Vk::DeviceMemory& memory);
 
-		Vk::Device const* m_device;
+		Vk::Buffer staging;
+		Vk::DeviceMemory stagingMemory;
+
+		VulkanDevice const* m_device;
 	};
 }
 

@@ -29,8 +29,6 @@ namespace Nth {
 
 			PhysicalDevice const& getPhysicalDevice() const;
 			VmaAllocator getAllocator() const;
-			uint32_t getPresentQueueFamilyIndex() const;
-			uint32_t getGraphicQueueFamilyIndex() const;
 
 			void waitIdle() const;
 
@@ -47,8 +45,6 @@ namespace Nth {
 
 			VkDevice m_device;
 			std::unique_ptr<PhysicalDevice> m_physicalDevice;
-			uint32_t m_presentQueueFamilyIndex;
-			uint32_t m_graphicQueueFamilyIndex;
 			Instance const& m_instance;
 			VmaAllocator m_allocator;
 

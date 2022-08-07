@@ -12,8 +12,6 @@ namespace Nth {
 		Device::Device(Instance const& instance) :
 			m_device{ VK_NULL_HANDLE },
 			m_physicalDevice{ nullptr },
-			m_graphicQueueFamilyIndex{ UINT32_MAX },
-			m_presentQueueFamilyIndex{ UINT32_MAX },
 			m_allocator{ VK_NULL_HANDLE },
 			m_instance{ instance } {
 
@@ -32,8 +30,6 @@ namespace Nth {
 			assert(m_instance.isValid());
 			
 			m_physicalDevice = std::make_unique<PhysicalDevice>(std::move(physicalDevice));
-			m_presentQueueFamilyIndex = presentQueueFamilyIndex;
-			m_graphicQueueFamilyIndex = graphicQueueFamilyIndex;
 
 			VkResult result{ m_instance.vkCreateDevice((*m_physicalDevice)(), &infos, nullptr, &m_device) };
 			if (result != VkResult::VK_SUCCESS) {
@@ -114,14 +110,6 @@ namespace Nth {
 
 		VmaAllocator Device::getAllocator() const {
 			return m_allocator;
-		}
-
-		uint32_t Device::getPresentQueueFamilyIndex() const {
-			return m_presentQueueFamilyIndex;
-		}
-
-		uint32_t Device::getGraphicQueueFamilyIndex() const {
-			return m_graphicQueueFamilyIndex;
 		}
 
 		void Device::waitIdle() const {

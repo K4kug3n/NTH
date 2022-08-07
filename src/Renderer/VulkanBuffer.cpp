@@ -1,15 +1,16 @@
 #include "Renderer/VulkanBuffer.hpp"
 
-#include "Renderer/Vulkan/Device.hpp"
+#include "Renderer/VulkanDevice.hpp"
 #include "Renderer/Vulkan/PhysicalDevice.hpp"
 #include "Renderer/Vulkan/CommandBuffer.hpp"
 #include "Renderer/Vulkan/Queue.hpp"
 
 #include <cstring>
-#include <iostream>
+#include <stdexcept>
+#include <cassert>
 
 namespace Nth {
-	VulkanBuffer::VulkanBuffer(Vk::Device const& device, VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size) :
+	VulkanBuffer::VulkanBuffer(VulkanDevice const& device, VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size) :
 		m_device(&device) {
 		VkBufferCreateInfo bufferCreateInfo = {
 			VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,             // VkStructureType                sType
@@ -22,11 +23,11 @@ namespace Nth {
 			nullptr                                           // const uint32_t                *pQueueFamilyIndices
 		};
 
-		if (!handle.create(device, bufferCreateInfo)) {
+		if (!handle.create(device.getHandle(), bufferCreateInfo)) {
 			throw std::runtime_error("Could not create buffer!");
 		}
 
-		if (!allocateBufferMemory(device, memoryProperty, handle, memory)) {
+		if (!allocateBufferMemory(device.getHandle(), memoryProperty, handle, memory)) {
 			throw std::runtime_error("Could not allocate memory for buffer!");
 		}
 
@@ -45,11 +46,11 @@ namespace Nth {
 			nullptr                                           // const uint32_t                *pQueueFamilyIndices
 		};
 
-		if (!staging.create(device, stagingCreateInfo)) {
+		if (!staging.create(device.getHandle(), stagingCreateInfo)) {
 			throw std::runtime_error("Could not create staging!");
 		}
 
-		if (!allocateBufferMemory(device, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, staging, stagingMemory)) {
+		if (!allocateBufferMemory(device.getHandle(), VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, staging, stagingMemory)) {
 			throw std::runtime_error("Could not allocate staging!");
 		}
 
@@ -58,7 +59,9 @@ namespace Nth {
 		}
 	}
 
-	void VulkanBuffer::copyByStaging(const void* data, size_t size, Vk::CommandBuffer& commandBuffer, Vk::Queue& presentQueue) {
+	void VulkanBuffer::copyByStaging(const void* data, size_t size, Vk::CommandBuffer& commandBuffer) {
+		assert(m_device != nullptr);
+
 		if (!stagingMemory.map(0, handle.getSize(), 0)) {
 			throw std::runtime_error("Could not map memory and upload data to a staging buffer!");
 		}
@@ -115,11 +118,11 @@ namespace Nth {
 			nullptr                           // const VkSemaphore *pSignalSemaphores
 		};
 
-		if (!presentQueue.submit(submitInfo, VK_NULL_HANDLE)) {
+		if (!m_device->presentQueue().submit(submitInfo, VK_NULL_HANDLE)) {
 			throw std::runtime_error("Can't submit copy");
 		}
 
-		m_device->waitIdle();
+		m_device->getHandle().waitIdle();
 	}
 
 	bool VulkanBuffer::allocateBufferMemory(Vk::Device const& device, VkMemoryPropertyFlagBits memoryProperty, Vk::Buffer& buffer, Vk::DeviceMemory& memory) {

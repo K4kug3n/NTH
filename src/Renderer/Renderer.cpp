@@ -25,13 +25,6 @@ namespace Nth {
 			throw std::runtime_error("Can't create ssbo");
 		}
 
-		m_stagingBuffer = VulkanBuffer{
-			m_vulkan.getDevice(),
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-			5000000
-		};
-
 		if (!createTexture()) {
 			throw std::runtime_error("Can't create texture!");
 		}
@@ -187,117 +180,7 @@ namespace Nth {
 
 		m_image.createView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
 
-		if (!copyTextureData(pixels.data(), static_cast<uint32_t>(pixels.size()), image.width(), image.height())) {
-			return false;
-		}
-
-		return true;
-	}
-
-	bool Renderer::copyTextureData(char const* textureData, uint32_t dataSize, uint32_t width, uint32_t height) {
-		if (!m_stagingBuffer.memory.map(0, dataSize, 0)) {
-			std::cerr << "Could not map memory and upload texture data to a staging buffer!" << std::endl;
-			return false;
-		}
-		void* stagingBufferMemoryPointer = m_stagingBuffer.memory.getMappedPointer();
-
-		std::memcpy(stagingBufferMemoryPointer, textureData, dataSize);
-
-		m_stagingBuffer.memory.flushMappedMemory(0, dataSize);
-
-		m_stagingBuffer.memory.unmap();
-
-		// Prepare command buffer to copy data from staging buffer to a vertex buffer
-		VkCommandBufferBeginInfo commandBufferBeginInfo = {
-			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,  // VkStructureType                        sType
-			nullptr,                                      // const void                            *pNext
-			VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,  // VkCommandBufferUsageFlags              flags
-			nullptr                                       // const VkCommandBufferInheritanceInfo  *pInheritanceInfo
-		};
-
-		Vk::CommandBuffer& commandBuffer = m_renderingResources[0].commandBuffer;
-
-		commandBuffer.begin(commandBufferBeginInfo);
-
-		VkImageSubresourceRange image_subresource_range = {
-			VK_IMAGE_ASPECT_COLOR_BIT,              // VkImageAspectFlags        aspectMask
-			0,                                      // uint32_t                  baseMipLevel
-			1,                                      // uint32_t                  levelCount
-			0,                                      // uint32_t                  baseArrayLayer
-			1                                       // uint32_t                  layerCount
-		};
-
-		VkImageMemoryBarrier imageMemoryBarrierFromUndefinedToTransferDst = {
-			VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, // VkStructureType           sType
-			nullptr,                                // const void               *pNext
-			0,                                      // VkAccessFlags             srcAccessMask
-			VK_ACCESS_TRANSFER_WRITE_BIT,           // VkAccessFlags             dstAccessMask
-			VK_IMAGE_LAYOUT_UNDEFINED,              // VkImageLayout             oldLayout
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,   // VkImageLayout             newLayout
-			VK_QUEUE_FAMILY_IGNORED,                // uint32_t                  srcQueueFamilyIndex
-			VK_QUEUE_FAMILY_IGNORED,                // uint32_t                  dstQueueFamilyIndex
-			m_image.image.handle(),                 // VkImage                   image
-			image_subresource_range                 // VkImageSubresourceRange   subresourceRange
-		};
-		commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrierFromUndefinedToTransferDst);
-
-		VkBufferImageCopy bufferImageCopyInfo = {
-			0,                                  // VkDeviceSize               bufferOffset
-			0,                                  // uint32_t                   bufferRowLength
-			0,                                  // uint32_t                   bufferImageHeight
-			{                                   // VkImageSubresourceLayers   imageSubresource
-				VK_IMAGE_ASPECT_COLOR_BIT,          // VkImageAspectFlags         aspectMask
-				0,                                  // uint32_t                   mipLevel
-				0,                                  // uint32_t                   baseArrayLayer
-				1                                   // uint32_t                   layerCount
-			},
-			{                                   // VkOffset3D                 imageOffset
-				0,                                  // int32_t                    x
-				0,                                  // int32_t                    y
-				0                                   // int32_t                    z
-			},
-			{                                   // VkExtent3D                 imageExtent
-				width,                              // uint32_t                   width
-				height,                             // uint32_t                   height
-				1                                   // uint32_t                   depth
-			}
-		};
-		commandBuffer.copyBufferToImage(m_stagingBuffer.handle(), m_image.image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &bufferImageCopyInfo);
-
-		VkImageMemoryBarrier imageMemoryBarrierFromTransferToShaderRead = {
-			VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,   // VkStructureType              sType
-			nullptr,                                  // const void                  *pNext
-			VK_ACCESS_TRANSFER_WRITE_BIT,             // VkAccessFlags                srcAccessMask
-			VK_ACCESS_SHADER_READ_BIT,                // VkAccessFlags                dstAccessMask
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,     // VkImageLayout                oldLayout
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, // VkImageLayout                newLayout
-			VK_QUEUE_FAMILY_IGNORED,                  // uint32_t                     srcQueueFamilyIndex
-			VK_QUEUE_FAMILY_IGNORED,                  // uint32_t                     dstQueueFamilyIndex
-			m_image.image.handle(),                   // VkImage                      image
-			image_subresource_range                   // VkImageSubresourceRange      subresourceRange
-		};
-		commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrierFromTransferToShaderRead);
-
-		commandBuffer.end();
-
-		// Submit command buffer and copy data from staging buffer to a vertex buffer
-		VkSubmitInfo submitInfo = {
-			VK_STRUCTURE_TYPE_SUBMIT_INFO,            // VkStructureType              sType
-			nullptr,                                  // const void                  *pNext
-			0,                                        // uint32_t                     waitSemaphoreCount
-			nullptr,                                  // const VkSemaphore           *pWaitSemaphores
-			nullptr,                                  // const VkPipelineStageFlags  *pWaitDstStageMask;
-			1,                                        // uint32_t                     commandBufferCount
-			&commandBuffer(),                         // const VkCommandBuffer       *pCommandBuffers
-			0,                                        // uint32_t                     signalSemaphoreCount
-			nullptr                                   // const VkSemaphore           *pSignalSemaphores
-		};
-
-		if (!m_vulkan.getDevice().graphicsQueue().submit(submitInfo, VK_NULL_HANDLE)) {
-			return false;
-		}
-
-		m_vulkan.getDevice().getHandle().waitIdle();
+		m_image.image.copyByStaging(pixels.data(), static_cast<uint32_t>(pixels.size()), image.width(), image.height(), m_renderingResources[0].commandBuffer);
 
 		return true;
 	}

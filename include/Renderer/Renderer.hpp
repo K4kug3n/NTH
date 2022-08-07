@@ -1,7 +1,7 @@
 #ifndef NTH_RENDERER_RENDERER_HPP
 #define NTH_RENDERER_RENDERER_HPP
 
-#include "Renderer/Vulkan/VulkanInstance.hpp"
+#include "Renderer/VulkanInstance.hpp"
 #include "Renderer/Vulkan/DescriptorSetLayout.hpp"
 #include "Renderer/RenderWindow.hpp"
 #include "Renderer/Material.hpp"
@@ -49,7 +49,7 @@ namespace Nth {
 		bool createRenderingResources();
 		bool createSSBO();
 
-		Vk::VulkanInstance m_vulkan;
+		VulkanInstance m_vulkan;
 		RenderWindow m_renderWindow;
 
 		std::vector<Material> m_materials;

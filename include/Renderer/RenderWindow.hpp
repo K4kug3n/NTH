@@ -3,7 +3,7 @@
 
 #include "Window/Window.hpp"
 
-#include "Renderer/Vulkan/VulkanInstance.hpp"
+#include "Renderer/VulkanInstance.hpp"
 #include "Renderer/Vulkan/Surface.hpp"
 #include "Renderer/Vulkan/Swapchain.hpp"
 #include "Renderer/Vulkan/Queue.hpp"
@@ -37,8 +37,8 @@ namespace Nth {
 
 	class RenderWindow : public Window {
 	public:
-		RenderWindow(Vk::VulkanInstance& vulkanInstance);
-		RenderWindow(Vk::VulkanInstance& vulkanInstance, VideoMode const& mode, const std::string_view title);
+		RenderWindow(VulkanInstance& vulkanInstance);
+		RenderWindow(VulkanInstance& vulkanInstance, VideoMode const& mode, const std::string_view title);
 		RenderWindow(RenderWindow const&) = delete;
 		RenderWindow(RenderWindow&&) = default;
 		~RenderWindow();
@@ -47,8 +47,6 @@ namespace Nth {
 		bool draw(RenderingResource& ressource, std::vector<RenderObject> const& objects);
 
 		Vk::RenderPass& getRenderPass();
-		Vk::Queue& getGraphicsQueue();
-		Vk::Queue& getPresentQueue();
 
 		static constexpr uint32_t resourceCount = 3;
 
@@ -70,11 +68,9 @@ namespace Nth {
 		bool prepareFrame(RenderingResource& ressources, Vk::SwapchainImage const& imageParameters, std::vector<RenderObject> const& objects) const;
 		bool createFramebuffer(Vk::Framebuffer& framebuffer, Vk::SwapchainImage const& swapchainImage) const;
 
-		Vk::VulkanInstance& m_vulkan;
+		VulkanInstance& m_vulkan;
 		Vk::Surface m_surface;
 		Vk::Swapchain m_swapchain;
-		Vk::Queue m_presentQueue;
-		Vk::Queue m_graphicsQueue;
 		Vk::RenderPass m_renderPass;
 		DepthImage m_depth;
 

@@ -36,5 +36,13 @@ namespace Nth {
 		VkQueue const& Queue::operator()() const {
 			return m_queue;
 		}
+
+		bool operator==(Queue& queue1, Queue& queue2) {
+			return queue1() == queue2();
+		}
+
+		bool operator!=(Queue& queue1, Queue& queue2) {
+			return !(queue1 == queue2);
+		}
 	}
 }

@@ -26,7 +26,7 @@ namespace Nth {
 		}
 
 		m_stagingBuffer = VulkanBuffer{
-			m_vulkan.getDevice(),
+			m_vulkan.getDevice().getHandle(),
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 			5000000
@@ -43,7 +43,7 @@ namespace Nth {
 		m_mainDescriptorLayout = getMainDescriptorLayout();
 		m_ssboDescriptorLayout = getSSBODescriptorLayout();
 
-		m_descriptorAllocator.init(m_vulkan.getDevice());
+		m_descriptorAllocator.init(m_vulkan.getDevice().getHandle());
 
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
 			m_renderingResources[i].mainDescriptor = m_descriptorAllocator.allocate(m_mainDescriptorLayout);
@@ -54,7 +54,7 @@ namespace Nth {
 
 		EventHandler& eventHandler = m_renderWindow.getEventHandler();
 		eventHandler.onResize.connect([this]() {
-			m_vulkan.getDevice().waitIdle();
+			m_vulkan.getDevice().getHandle().waitIdle();
 
 			if (!copyUniformBufferData()) {
 				throw std::runtime_error("Can't re-copy uniform data");
@@ -71,29 +71,29 @@ namespace Nth {
 		};
 
 		Material material;
-		material.createPipeline(m_vulkan.getDevice(), m_renderWindow.getRenderPass(), vertexShaderName, fragmentShaderName, vkDescritptorLayouts);
+		material.createPipeline(m_vulkan.getDevice().getHandle(), m_renderWindow.getRenderPass(), vertexShaderName, fragmentShaderName, vkDescritptorLayouts);
 
 		return m_materials.emplace_back(std::move(material));
 	}
 
 	void Renderer::createMesh(Mesh& mesh) {
 		mesh.vertexBuffer = VulkanBuffer{ 
-			m_vulkan.getDevice(),
+			m_vulkan.getDevice().getHandle(),
 			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			static_cast<uint32_t>(mesh.vertices.size() * sizeof(mesh.vertices[0]))
 		};
 
-		mesh.vertexBuffer.copyByStaging(mesh.vertices.data(), mesh.vertexBuffer.handle.getSize(), m_renderingResources[0].commandBuffer, m_renderWindow.getPresentQueue());
+		mesh.vertexBuffer.copyByStaging(mesh.vertices.data(), mesh.vertexBuffer.handle.getSize(), m_renderingResources[0].commandBuffer, m_vulkan.getDevice().presentQueue());
 
 		mesh.indexBuffer = VulkanBuffer{
-			m_vulkan.getDevice(),
+			m_vulkan.getDevice().getHandle(),
 			VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			sizeof(mesh.indices[0])* mesh.indices.size()
 		};
 
-		mesh.indexBuffer.copyByStaging(mesh.indices.data(), mesh.indexBuffer.handle.getSize(), m_renderingResources[0].commandBuffer, m_renderWindow.getPresentQueue());
+		mesh.indexBuffer.copyByStaging(mesh.indices.data(), mesh.indexBuffer.handle.getSize(), m_renderingResources[0].commandBuffer, m_vulkan.getDevice().presentQueue());
 	}
 
 	void Renderer::draw(std::vector<RenderObject> const& objects) {
@@ -129,7 +129,7 @@ namespace Nth {
 		};
 
 		Vk::DescriptorSetLayout layout;
-		if (!layout.create(m_vulkan.getDevice(), descriptorSetLayoutCreateInfo)) {
+		if (!layout.create(m_vulkan.getDevice().getHandle(), descriptorSetLayoutCreateInfo)) {
 			throw std::runtime_error("Could not create descriptor set layout!");
 		}
 
@@ -156,14 +156,14 @@ namespace Nth {
 		};
 
 		Vk::DescriptorSetLayout layout;
-		if (!layout.create(m_vulkan.getDevice(), descriptorSetLayoutCreateInfo)) {
+		if (!layout.create(m_vulkan.getDevice().getHandle(), descriptorSetLayoutCreateInfo)) {
 			throw std::runtime_error("Could not create descriptor set layout!");
 		}
 
 		return layout;
 	}
 	void Renderer::waitIdle() const {
-		m_vulkan.getDevice().waitIdle();
+		m_vulkan.getDevice().getHandle().waitIdle();
 	}
 
 	bool Renderer::createTexture() {
@@ -175,7 +175,7 @@ namespace Nth {
 		}
 
 		if (!m_image.create(
-			m_vulkan.getDevice(),
+			m_vulkan.getDevice().getHandle(),
 			image.width(),
 			image.height(),
 			VK_FORMAT_R8G8B8A8_UNORM,
@@ -186,7 +186,7 @@ namespace Nth {
 			return false;
 		}
 
-		if (!m_image.createView(m_vulkan.getDevice(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT)) {
+		if (!m_image.createView(m_vulkan.getDevice().getHandle(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT)) {
 			return false;
 		}
 
@@ -296,11 +296,11 @@ namespace Nth {
 			nullptr                                   // const VkSemaphore           *pSignalSemaphores
 		};
 
-		if (!m_renderWindow.getGraphicsQueue().submit(submitInfo, VK_NULL_HANDLE)) {
+		if (!m_vulkan.getDevice().graphicsQueue().submit(submitInfo, VK_NULL_HANDLE)) {
 			return false;
 		}
 
-		m_vulkan.getDevice().waitIdle();
+		m_vulkan.getDevice().getHandle().waitIdle();
 
 		return true;
 	}
@@ -308,7 +308,7 @@ namespace Nth {
 	bool Renderer::createUniformBuffer() {
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
 			m_renderingResources[i].mainBuffer = VulkanBuffer{
-				m_vulkan.getDevice(),
+				m_vulkan.getDevice().getHandle(),
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 				sizeof(UniformBufferObject)
@@ -328,7 +328,7 @@ namespace Nth {
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
 			RenderingResource& current = m_renderingResources[i];
 
-			current.mainBuffer.copyByStaging(&uniformData, current.mainBuffer.handle.getSize(), m_renderingResources[0].commandBuffer, m_renderWindow.getPresentQueue());
+			current.mainBuffer.copyByStaging(&uniformData, current.mainBuffer.handle.getSize(), m_renderingResources[0].commandBuffer, m_vulkan.getDevice().presentQueue());
 		}
 
 		return true;
@@ -420,7 +420,7 @@ namespace Nth {
 
 	bool Renderer::createRenderingResources() {
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			if (!m_renderingResources[i].create(m_vulkan.getDevice(), m_renderWindow.getPresentQueue().index())) {
+			if (!m_renderingResources[i].create(m_vulkan.getDevice().getHandle(), m_vulkan.getDevice().presentQueue().index())) {
 				std::cerr << "Can't create rendering ressource" << std::endl;
 				return false;
 			}
@@ -432,7 +432,7 @@ namespace Nth {
 	bool Renderer::createSSBO() {
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
 			m_renderingResources[i].ssbo = VulkanBuffer{
-				m_vulkan.getDevice(),
+				m_vulkan.getDevice().getHandle(),
 				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 				10000 * sizeof(ShaderStorageBufferObject)

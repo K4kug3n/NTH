@@ -5,6 +5,7 @@
 #include "Renderer/VulkanDevice.hpp"
 #include "Renderer/Vulkan/CommandBuffer.hpp"
 
+#include <cstring>
 #include <iostream>
 #include <cassert>
 

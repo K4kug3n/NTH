@@ -41,7 +41,6 @@ namespace Nth {
 
 	private:
 		bool createTexture();
-		bool copyTextureData(char const* textureData, uint32_t dataSize, uint32_t width, uint32_t height);
 		bool createUniformBuffer();
 		bool copyUniformBufferData();
 		UniformBufferObject getUniformBufferData() const;
@@ -60,7 +59,6 @@ namespace Nth {
 		Vk::DescriptorSetLayout m_mainDescriptorLayout;
 		Vk::DescriptorSetLayout m_ssboDescriptorLayout;
 
-		VulkanBuffer m_stagingBuffer;
 		VulkanTexture m_image;
 
 		std::vector<RenderingResource> m_renderingResources;

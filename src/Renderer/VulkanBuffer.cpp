@@ -11,10 +11,12 @@
 
 namespace Nth {
 	VulkanBuffer::VulkanBuffer() :
-		m_device(nullptr) { }
+		m_device(nullptr),
+		m_memoryProperty(VK_MEMORY_PROPERTY_FLAG_BITS_MAX_ENUM) { }
 
 	VulkanBuffer::VulkanBuffer(VulkanDevice const& device, VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size) :
-		m_device(&device) {
+		m_device(&device),
+		m_memoryProperty(memoryProperty) {
 		VkBufferCreateInfo bufferCreateInfo = {
 			VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,             // VkStructureType                sType
 			nullptr,                                          // const void                    *pNext
@@ -38,27 +40,8 @@ namespace Nth {
 			throw std::runtime_error("Could not bind memory to buffer!");
 		}
 
-		VkBufferCreateInfo stagingCreateInfo = {
-			VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,             // VkStructureType                sType
-			nullptr,                                          // const void                    *pNext
-			0,                                                // VkBufferCreateFlags            flags
-			size,                                             // VkDeviceSize                   size
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,                 // VkBufferUsageFlags             usage
-			VK_SHARING_MODE_EXCLUSIVE,                        // VkSharingMode                  sharingMode
-			0,                                                // uint32_t                       queueFamilyIndexCount
-			nullptr                                           // const uint32_t                *pQueueFamilyIndices
-		};
-
-		if (!m_staging.create(device.getHandle(), stagingCreateInfo)) {
-			throw std::runtime_error("Could not create staging!");
-		}
-
-		if (!allocateBufferMemory(device.getHandle(), VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, m_staging, m_stagingMemory)) {
-			throw std::runtime_error("Could not allocate staging!");
-		}
-
-		if (!m_staging.bindBufferMemory(m_stagingMemory)) {
-			throw std::runtime_error("Could not bind staging memory!");
+		if (memoryProperty & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+			createStaging(device.getHandle(), size);
 		}
 	}
 
@@ -150,5 +133,30 @@ namespace Nth {
 		}
 
 		return false;
+	}
+
+	void VulkanBuffer::createStaging(Vk::Device const& device, VkDeviceSize size) {
+		VkBufferCreateInfo stagingCreateInfo = {
+			VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,             // VkStructureType                sType
+			nullptr,                                          // const void                    *pNext
+			0,                                                // VkBufferCreateFlags            flags
+			size,                                             // VkDeviceSize                   size
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,                 // VkBufferUsageFlags             usage
+			VK_SHARING_MODE_EXCLUSIVE,                        // VkSharingMode                  sharingMode
+			0,                                                // uint32_t                       queueFamilyIndexCount
+			nullptr                                           // const uint32_t                *pQueueFamilyIndices
+		};
+
+		if (!m_staging.create(device, stagingCreateInfo)) {
+			throw std::runtime_error("Could not create staging!");
+		}
+
+		if (!allocateBufferMemory(device, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, m_staging, m_stagingMemory)) {
+			throw std::runtime_error("Could not allocate staging!");
+		}
+
+		if (!m_staging.bindBufferMemory(m_stagingMemory)) {
+			throw std::runtime_error("Could not bind staging memory!");
+		}
 	}
 }

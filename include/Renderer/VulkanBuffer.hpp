@@ -28,9 +28,12 @@ namespace Nth {
 		Vk::DeviceMemory memory;
 	private:
 		bool allocateBufferMemory(Vk::Device const& device, VkMemoryPropertyFlagBits memoryProperty, Vk::Buffer& buffer, Vk::DeviceMemory& memory);
+		void createStaging(Vk::Device const& device, VkDeviceSize size);
 
 		Vk::Buffer m_staging;
 		Vk::DeviceMemory m_stagingMemory;
+
+		VkMemoryPropertyFlagBits m_memoryProperty;
 
 		VulkanDevice const* m_device;
 	};

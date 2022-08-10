@@ -23,14 +23,16 @@ namespace Nth {
 		~Renderer() = default;
 
 		RenderWindow& getWindow(VideoMode const& mode, const std::string_view title);
-
+		VulkanTexture& createTexture(const std::string_view name);
 		Material& createMaterial(const std::string_view vertexShaderName, const std::string_view fragmentShaderName);
+
 		void createMesh(Mesh& mesh);
 
 		void draw(std::vector<RenderObject> const& objects);
 
 		// TODO: review it
 		Vk::DescriptorSetLayout getMainDescriptorLayout() const;
+		Vk::DescriptorSetLayout getTextureDescriptorLayout() const;
 		Vk::DescriptorSetLayout getSSBODescriptorLayout() const;
 
 		// TODO: Move out, used for sync destructor
@@ -40,7 +42,6 @@ namespace Nth {
 		Renderer& operator=(Renderer&&) = default;
 
 	private:
-		bool createTexture();
 		bool createUniformBuffer();
 		bool copyUniformBufferData();
 		UniformBufferObject getUniformBufferData() const;
@@ -52,14 +53,14 @@ namespace Nth {
 		RenderWindow m_renderWindow;
 
 		std::vector<Material> m_materials;
+		std::vector<VulkanTexture> m_textures;
 
 		DescriptorAllocator m_descriptorAllocator;
 
 		// TODO: Move it out
 		Vk::DescriptorSetLayout m_mainDescriptorLayout;
+		Vk::DescriptorSetLayout m_textureDescriptorLayout;
 		Vk::DescriptorSetLayout m_ssboDescriptorLayout;
-
-		VulkanTexture m_image;
 
 		std::vector<RenderingResource> m_renderingResources;
 		size_t m_resourceIndex;

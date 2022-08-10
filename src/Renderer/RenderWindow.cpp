@@ -5,6 +5,7 @@
 #include "Renderer/RenderObject.hpp"
 #include "Renderer/Material.hpp"
 #include "Renderer/Mesh.hpp"
+#include "Renderer/VulkanTexture.hpp"
 
 #include "Util/Reader.hpp"
 #include "Util/Image.hpp"
@@ -540,6 +541,7 @@ namespace Nth {
 
 		Mesh* lastMesh = nullptr;
 		Material* lastMaterial = nullptr;
+		VulkanTexture* lastTexture = nullptr;
 		for (size_t i = 0; i < objects.size(); ++i) {
 			if (objects[i].material != lastMaterial) {
 				ressources.commandBuffer.bindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, objects[i].material->pipeline());
@@ -560,6 +562,13 @@ namespace Nth {
 				ressources.commandBuffer.bindIndexBuffer(objects[i].mesh->indexBuffer.handle(), 0, VK_INDEX_TYPE_UINT32);
 
 				lastMesh = objects[i].mesh;
+			}
+
+			if (objects[i].texture != lastTexture) {
+				VkDescriptorSet vkTextureDescriptorSet = objects[i].texture->descriptorSet();
+				ressources.commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 2, 1, &vkTextureDescriptorSet, 0, nullptr);
+
+				lastTexture = objects[i].texture;
 			}
 
 			ressources.commandBuffer.drawIndexed(static_cast<uint32_t>(objects[i].mesh->indices.size()), 1, 0, 0, static_cast<uint32_t>(i));

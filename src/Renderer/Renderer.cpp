@@ -25,16 +25,13 @@ namespace Nth {
 			throw std::runtime_error("Can't create ssbo");
 		}
 
-		if (!createTexture()) {
-			throw std::runtime_error("Can't create texture!");
-		}
-
 		if (!createUniformBuffer()) {
 			throw std::runtime_error("Can't create uniform buffer");
 		}
 
 		m_mainDescriptorLayout = getMainDescriptorLayout();
 		m_ssboDescriptorLayout = getSSBODescriptorLayout();
+		m_textureDescriptorLayout = getTextureDescriptorLayout();
 
 		m_descriptorAllocator.init(m_vulkan.getDevice().getHandle());
 
@@ -57,10 +54,65 @@ namespace Nth {
 		return m_renderWindow;
 	}
 
+	VulkanTexture& Renderer::createTexture(const std::string_view name) {
+		Image image = Image::loadFromFile("viking_room.png", PixelChannel::Rgba);
+
+		std::vector<char> const& pixels = image.pixels();
+		if (pixels.empty()) {
+			throw std::runtime_error("Can't read file");
+		}
+
+		VulkanTexture texture;
+
+		texture.create(
+			m_vulkan.getDevice(),
+			image.width(),
+			image.height(),
+			static_cast<uint32_t>(pixels.size()),
+			VK_FORMAT_R8G8B8A8_UNORM,
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+		);
+
+		texture.createView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+
+		texture.image.copyByStaging(pixels.data(), static_cast<uint32_t>(pixels.size()), image.width(), image.height(), m_renderingResources[0].commandBuffer);
+
+		texture.descriptorSet = m_descriptorAllocator.allocate(m_textureDescriptorLayout);
+
+		VkDescriptorImageInfo textureInfo = {
+			texture.sampler(),                          // VkSampler                      sampler
+			texture.image.view(),                       // VkImageView                    imageView
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL    // VkImageLayout                  imageLayout
+		};
+
+		std::vector<VkWriteDescriptorSet> descriptorWrites = {
+			{
+				VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
+				nullptr,                                    // const void                    *pNext
+				texture.descriptorSet(),                    // VkDescriptorSet                dstSet
+				0,                                          // uint32_t                       dstBinding
+				0,                                          // uint32_t                       dstArrayElement
+				1,                                          // uint32_t                       descriptorCount
+				VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  // VkDescriptorType               descriptorType
+				&textureInfo,                               // const VkDescriptorImageInfo   *pImageInfo
+				nullptr,                                    // const VkDescriptorBufferInfo  *pBufferInfo
+				nullptr                                     // const VkBufferView            *pTexelBufferView
+			}
+		};
+
+		// TODO: Check if update methode should be in Device class 
+		texture.descriptorSet.update(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data());
+
+		return m_textures.emplace_back(std::move(texture));
+	}
+
 	Material& Renderer::createMaterial(const std::string_view vertexShaderName, const std::string_view fragmentShaderName) {		
-		std::vector<VkDescriptorSetLayout> vkDescritptorLayouts {
+		std::vector<VkDescriptorSetLayout> vkDescritptorLayouts{
 			m_mainDescriptorLayout(),
-			m_ssboDescriptorLayout()
+			m_ssboDescriptorLayout(),
+			m_textureDescriptorLayout()
 		};
 
 		Material material;
@@ -98,18 +150,38 @@ namespace Nth {
 	Vk::DescriptorSetLayout Renderer::getMainDescriptorLayout() const {
 		std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {
 			{
+				0,                                         // uint32_t           binding
+				VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         // VkDescriptorType   descriptorType
+				1,                                         // uint32_t           descriptorCount
+				VK_SHADER_STAGE_VERTEX_BIT,                // VkShaderStageFlags stageFlags
+				nullptr                                    // const VkSampler *pImmutableSamplers
+			}
+		};
+
+		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
+			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,  // VkStructureType                      sType
+			nullptr,                                              // const void                          *pNext
+			0,                                                    // VkDescriptorSetLayoutCreateFlags     flags
+			static_cast<uint32_t>(layoutBindings.size()),         // uint32_t                             bindingCount
+			layoutBindings.data()                                 // const VkDescriptorSetLayoutBinding  *pBindings
+		};
+
+		Vk::DescriptorSetLayout layout;
+		if (!layout.create(m_vulkan.getDevice().getHandle(), descriptorSetLayoutCreateInfo)) {
+			throw std::runtime_error("Could not create descriptor set layout!");
+		}
+
+		return layout;
+	}
+
+	Vk::DescriptorSetLayout Renderer::getTextureDescriptorLayout() const {
+		std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {
+			{
 				0,                                          // uint32_t             binding
 				VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  // VkDescriptorType     descriptorType
 				1,                                          // uint32_t             descriptorCount
 				VK_SHADER_STAGE_FRAGMENT_BIT,               // VkShaderStageFlags   stageFlags
 				nullptr                                     // const VkSampler     *pImmutableSamplers
-			},
-			{
-				1,                                         // uint32_t           binding
-				VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         // VkDescriptorType   descriptorType
-				1,                                         // uint32_t           descriptorCount
-				VK_SHADER_STAGE_VERTEX_BIT,                // VkShaderStageFlags stageFlags
-				nullptr                                    // const VkSampler *pImmutableSamplers
 			}
 		};
 
@@ -144,8 +216,8 @@ namespace Nth {
 			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,  // VkStructureType                      sType
 			nullptr,                                              // const void                          *pNext
 			0,                                                    // VkDescriptorSetLayoutCreateFlags     flags
-			static_cast<uint32_t>(layoutBindings.size()),        // uint32_t                             bindingCount
-			layoutBindings.data()                                // const VkDescriptorSetLayoutBinding  *pBindings
+			static_cast<uint32_t>(layoutBindings.size()),         // uint32_t                             bindingCount
+			layoutBindings.data()                                 // const VkDescriptorSetLayoutBinding  *pBindings
 		};
 
 		Vk::DescriptorSetLayout layout;
@@ -157,32 +229,6 @@ namespace Nth {
 	}
 	void Renderer::waitIdle() const {
 		m_vulkan.getDevice().getHandle().waitIdle();
-	}
-
-	bool Renderer::createTexture() {
-		Image image = Image::loadFromFile("viking_room.png", PixelChannel::Rgba);
-
-		std::vector<char> const& pixels = image.pixels();
-		if (pixels.empty()) {
-			return false;
-		}
-
-		m_image.create(
-			m_vulkan.getDevice(),
-			image.width(),
-			image.height(),
-			static_cast<uint32_t>(pixels.size()),
-			VK_FORMAT_R8G8B8A8_UNORM,
-			VK_IMAGE_TILING_OPTIMAL,
-			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-		);
-
-		m_image.createView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
-
-		m_image.image.copyByStaging(pixels.data(), static_cast<uint32_t>(pixels.size()), image.width(), image.height(), m_renderingResources[0].commandBuffer);
-
-		return true;
 	}
 
 	bool Renderer::createUniformBuffer() {
@@ -227,12 +273,6 @@ namespace Nth {
 	}
 
 	bool Renderer::updateDescriptorSet() {
-		VkDescriptorImageInfo imageInfo = {
-			m_image.sampler(),                          // VkSampler                      sampler
-			m_image.image.view(),                       // VkImageView                    imageView
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL    // VkImageLayout                  imageLayout
-		};
-
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
 			VkDescriptorBufferInfo bufferInfo = {
 				m_renderingResources[i].mainBuffer.handle(),             // VkBuffer         buffer
@@ -242,22 +282,10 @@ namespace Nth {
 
 			std::vector<VkWriteDescriptorSet> descriptorWrites = {
 				{
-					VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
-					nullptr,                                    // const void                    *pNext
-					m_renderingResources[i].mainDescriptor(),   // VkDescriptorSet                dstSet
-					0,                                          // uint32_t                       dstBinding
-					0,                                          // uint32_t                       dstArrayElement
-					1,                                          // uint32_t                       descriptorCount
-					VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  // VkDescriptorType               descriptorType
-					&imageInfo,                                 // const VkDescriptorImageInfo   *pImageInfo
-					nullptr,                                    // const VkDescriptorBufferInfo  *pBufferInfo
-					nullptr                                     // const VkBufferView            *pTexelBufferView
-				},
-				{
 					VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,    // VkStructureType     sType
 					nullptr,                                   // const void         *pNext
 					m_renderingResources[i].mainDescriptor(),  // VkDescriptorSet     dstSet
-					1,                                         // uint32_t            dstBinding
+					0,                                         // uint32_t            dstBinding
 					0,                                         // uint32_t            dstArrayElement
 					1,                                         // uint32_t            descriptorCount
 					VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         // VkDescriptorType    descriptorType

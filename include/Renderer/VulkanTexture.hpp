@@ -3,6 +3,7 @@
 
 #include "Renderer/VulkanImage.hpp"
 #include "Renderer/Vulkan/Sampler.hpp"
+#include "Renderer/Vulkan/DescriptorSet.hpp"
 
 namespace Nth {
 	class VulkanDevice;
@@ -19,6 +20,8 @@ namespace Nth {
 
 		VulkanImage image;
 		Vk::Sampler sampler;
+
+		Vk::DescriptorSet descriptorSet;
 
 		VulkanTexture& operator=(VulkanTexture const&) = delete;
 		VulkanTexture& operator=(VulkanTexture&&) = default;

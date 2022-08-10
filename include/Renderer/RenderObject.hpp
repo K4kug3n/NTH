@@ -9,11 +9,14 @@
 namespace Nth {
 	struct Mesh;
 	class Material;
+	class VulkanTexture;
 
 	class RenderObject {
 	public:
 		Mesh* mesh;
 		Material* material;
+		VulkanTexture* texture;
+
 		glm::mat4 transformMatrix;
 	};
 }

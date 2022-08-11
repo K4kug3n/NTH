@@ -445,17 +445,12 @@ namespace Nth {
 			return false;
 		}
 
-		ressources.ssbo.memory.map(0, ressources.ssbo.handle.getSize(), 0);
-		void* mappedPtr = ressources.ssbo.memory.getMappedPointer();
-		ShaderStorageBufferObject* objectSSBO = (ShaderStorageBufferObject*)mappedPtr;
-
-		for (size_t i = 0; i < objects.size(); ++i) {
-			objectSSBO[i].model = objects[i].transformMatrix;
+		std::vector<ShaderStorageBufferObject> storageObjects(objects.size());
+		for (size_t i = 0; i < storageObjects.size(); ++i) {
+			storageObjects[i].model = objects[i].transformMatrix;
 		}
 
-		ressources.ssbo.memory.flushMappedMemory(0, ressources.ssbo.handle.getSize());
-		
-		ressources.ssbo.memory.unmap();
+		ressources.ssbo.copy(storageObjects.data(), storageObjects.size() * sizeof(ShaderStorageBufferObject), ressources.commandBuffer);
 
 		VkCommandBufferBeginInfo commandBufferBeginInfo = {
 			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,        // VkStructureType                        sType

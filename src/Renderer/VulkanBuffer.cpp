@@ -32,16 +32,81 @@ namespace Nth {
 			throw std::runtime_error("Could not create buffer!");
 		}
 
-		if (!allocateBufferMemory(device.getHandle(), memoryProperty, handle, memory)) {
+		if (!allocateBufferMemory(device.getHandle(), memoryProperty, handle, m_memory)) {
 			throw std::runtime_error("Could not allocate memory for buffer!");
 		}
 
-		if (!handle.bindBufferMemory(memory)) {
+		if (!handle.bindBufferMemory(m_memory)) {
 			throw std::runtime_error("Could not bind memory to buffer!");
 		}
 
 		if (memoryProperty & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
 			createStaging(device.getHandle(), size);
+		}
+	}
+
+	void VulkanBuffer::copy(const void* data, size_t size, Vk::CommandBuffer& commandBuffer) {
+		if (m_memoryProperty & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+			copyByStaging(data, size, commandBuffer);
+		}
+		else {
+			m_memory.map(0, size, 0);
+			void* mappedPtr = m_memory.getMappedPointer();
+
+			std::memcpy(mappedPtr, data, size);
+
+			m_memory.flushMappedMemory(0, size);
+
+			m_memory.unmap();
+		}
+	}
+
+	bool VulkanBuffer::allocateBufferMemory(Vk::Device const& device, VkMemoryPropertyFlagBits memoryProperty, Vk::Buffer& buffer, Vk::DeviceMemory& memory) {
+		VkMemoryRequirements bufferMemoryRequirements = buffer.getMemoryRequirements();;
+		VkPhysicalDeviceMemoryProperties memoryProperties = device.getPhysicalDevice().getMemoryProperties();
+
+		for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i) {
+			if ((bufferMemoryRequirements.memoryTypeBits & (1 << i)) &&
+				(memoryProperties.memoryTypes[i].propertyFlags & memoryProperty) == memoryProperty) {
+
+				VkMemoryAllocateInfo memoryAllocateInfo = {
+					VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,     // VkStructureType                        sType
+					nullptr,                                    // const void                            *pNext
+					bufferMemoryRequirements.size,              // VkDeviceSize                           allocationSize
+					i                                           // uint32_t                               memoryTypeIndex
+				};
+
+				if (memory.create(device, memoryAllocateInfo)) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	void VulkanBuffer::createStaging(Vk::Device const& device, VkDeviceSize size) {
+		VkBufferCreateInfo stagingCreateInfo = {
+			VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,             // VkStructureType                sType
+			nullptr,                                          // const void                    *pNext
+			0,                                                // VkBufferCreateFlags            flags
+			size,                                             // VkDeviceSize                   size
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,                 // VkBufferUsageFlags             usage
+			VK_SHARING_MODE_EXCLUSIVE,                        // VkSharingMode                  sharingMode
+			0,                                                // uint32_t                       queueFamilyIndexCount
+			nullptr                                           // const uint32_t                *pQueueFamilyIndices
+		};
+
+		if (!m_staging.create(device, stagingCreateInfo)) {
+			throw std::runtime_error("Could not create staging!");
+		}
+
+		if (!allocateBufferMemory(device, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, m_staging, m_stagingMemory)) {
+			throw std::runtime_error("Could not allocate staging!");
+		}
+
+		if (!m_staging.bindBufferMemory(m_stagingMemory)) {
+			throw std::runtime_error("Could not bind staging memory!");
 		}
 	}
 
@@ -109,54 +174,5 @@ namespace Nth {
 		}
 
 		m_device->getHandle().waitIdle();
-	}
-
-	bool VulkanBuffer::allocateBufferMemory(Vk::Device const& device, VkMemoryPropertyFlagBits memoryProperty, Vk::Buffer& buffer, Vk::DeviceMemory& memory) {
-		VkMemoryRequirements bufferMemoryRequirements = buffer.getMemoryRequirements();;
-		VkPhysicalDeviceMemoryProperties memoryProperties = device.getPhysicalDevice().getMemoryProperties();
-
-		for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i) {
-			if ((bufferMemoryRequirements.memoryTypeBits & (1 << i)) &&
-				(memoryProperties.memoryTypes[i].propertyFlags & memoryProperty) == memoryProperty) {
-
-				VkMemoryAllocateInfo memoryAllocateInfo = {
-					VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,     // VkStructureType                        sType
-					nullptr,                                    // const void                            *pNext
-					bufferMemoryRequirements.size,              // VkDeviceSize                           allocationSize
-					i                                           // uint32_t                               memoryTypeIndex
-				};
-
-				if (memory.create(device, memoryAllocateInfo)) {
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
-
-	void VulkanBuffer::createStaging(Vk::Device const& device, VkDeviceSize size) {
-		VkBufferCreateInfo stagingCreateInfo = {
-			VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,             // VkStructureType                sType
-			nullptr,                                          // const void                    *pNext
-			0,                                                // VkBufferCreateFlags            flags
-			size,                                             // VkDeviceSize                   size
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,                 // VkBufferUsageFlags             usage
-			VK_SHARING_MODE_EXCLUSIVE,                        // VkSharingMode                  sharingMode
-			0,                                                // uint32_t                       queueFamilyIndexCount
-			nullptr                                           // const uint32_t                *pQueueFamilyIndices
-		};
-
-		if (!m_staging.create(device, stagingCreateInfo)) {
-			throw std::runtime_error("Could not create staging!");
-		}
-
-		if (!allocateBufferMemory(device, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, m_staging, m_stagingMemory)) {
-			throw std::runtime_error("Could not allocate staging!");
-		}
-
-		if (!m_staging.bindBufferMemory(m_stagingMemory)) {
-			throw std::runtime_error("Could not bind staging memory!");
-		}
 	}
 }

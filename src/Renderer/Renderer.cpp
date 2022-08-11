@@ -55,7 +55,7 @@ namespace Nth {
 	}
 
 	VulkanTexture& Renderer::createTexture(const std::string_view name) {
-		Image image = Image::loadFromFile("viking_room.png", PixelChannel::Rgba);
+		Image image = Image::loadFromFile(name, PixelChannel::Rgba);
 
 		std::vector<char> const& pixels = image.pixels();
 		if (pixels.empty()) {
@@ -129,7 +129,7 @@ namespace Nth {
 			static_cast<uint32_t>(mesh.vertices.size() * sizeof(mesh.vertices[0]))
 		};
 
-		mesh.vertexBuffer.copyByStaging(mesh.vertices.data(), mesh.vertexBuffer.handle.getSize(), m_renderingResources[0].commandBuffer);
+		mesh.vertexBuffer.copy(mesh.vertices.data(), mesh.vertexBuffer.handle.getSize(), m_renderingResources[0].commandBuffer);
 
 		mesh.indexBuffer = VulkanBuffer{
 			m_vulkan.getDevice(),
@@ -138,7 +138,7 @@ namespace Nth {
 			sizeof(mesh.indices[0])* mesh.indices.size()
 		};
 
-		mesh.indexBuffer.copyByStaging(mesh.indices.data(), mesh.indexBuffer.handle.getSize(), m_renderingResources[0].commandBuffer);
+		mesh.indexBuffer.copy(mesh.indices.data(), mesh.indexBuffer.handle.getSize(), m_renderingResources[0].commandBuffer);
 	}
 
 	void Renderer::draw(std::vector<RenderObject> const& objects) {
@@ -254,7 +254,7 @@ namespace Nth {
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
 			RenderingResource& current = m_renderingResources[i];
 
-			current.mainBuffer.copyByStaging(&uniformData, current.mainBuffer.handle.getSize(), m_renderingResources[0].commandBuffer);
+			current.mainBuffer.copy(&uniformData, current.mainBuffer.handle.getSize(), m_renderingResources[0].commandBuffer);
 		}
 
 		return true;

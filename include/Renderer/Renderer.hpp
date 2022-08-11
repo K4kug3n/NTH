@@ -23,8 +23,8 @@ namespace Nth {
 		~Renderer() = default;
 
 		RenderWindow& getWindow(VideoMode const& mode, const std::string_view title);
-		VulkanTexture& createTexture(const std::string_view name);
-		Material& createMaterial(const std::string_view vertexShaderName, const std::string_view fragmentShaderName);
+		VulkanTexture createTexture(const std::string_view name);
+		Material createMaterial(const std::string_view vertexShaderName, const std::string_view fragmentShaderName);
 
 		void createMesh(Mesh& mesh);
 
@@ -51,9 +51,6 @@ namespace Nth {
 
 		VulkanInstance m_vulkan;
 		RenderWindow m_renderWindow;
-
-		std::vector<Material> m_materials;
-		std::vector<VulkanTexture> m_textures;
 
 		DescriptorAllocator m_descriptorAllocator;
 

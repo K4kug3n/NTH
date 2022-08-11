@@ -54,7 +54,7 @@ namespace Nth {
 		return m_renderWindow;
 	}
 
-	VulkanTexture& Renderer::createTexture(const std::string_view name) {
+	VulkanTexture Renderer::createTexture(const std::string_view name) {
 		Image image = Image::loadFromFile(name, PixelChannel::Rgba);
 
 		std::vector<char> const& pixels = image.pixels();
@@ -105,10 +105,10 @@ namespace Nth {
 		// TODO: Check if update methode should be in Device class 
 		texture.descriptorSet.update(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data());
 
-		return m_textures.emplace_back(std::move(texture));
+		return texture;
 	}
 
-	Material& Renderer::createMaterial(const std::string_view vertexShaderName, const std::string_view fragmentShaderName) {		
+	Material Renderer::createMaterial(const std::string_view vertexShaderName, const std::string_view fragmentShaderName) {		
 		std::vector<VkDescriptorSetLayout> vkDescritptorLayouts{
 			m_mainDescriptorLayout(),
 			m_ssboDescriptorLayout(),
@@ -118,7 +118,7 @@ namespace Nth {
 		Material material;
 		material.createPipeline(m_vulkan.getDevice().getHandle(), m_renderWindow.getRenderPass(), vertexShaderName, fragmentShaderName, vkDescritptorLayouts);
 
-		return m_materials.emplace_back(std::move(material));
+		return material;
 	}
 
 	void Renderer::createMesh(Mesh& mesh) {

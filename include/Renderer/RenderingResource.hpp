@@ -32,8 +32,11 @@ namespace Nth {
 		Vk::DescriptorSet ssboDescriptor;
 		VulkanBuffer ssbo;
 
-		Vk::DescriptorSet mainDescriptor;
-		VulkanBuffer mainBuffer;
+		Vk::DescriptorSet viewerDescriptor;
+		VulkanBuffer viewerBuffer;
+
+		Vk::DescriptorSet lightDescriptor;
+		VulkanBuffer lightBuffer;
 
 		RenderingResource& operator=(RenderingResource const&) = delete;
 		RenderingResource& operator=(RenderingResource&&) = delete;

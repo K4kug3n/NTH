@@ -15,6 +15,10 @@
 namespace Nth {
 	class RenderObject;
 
+	struct LightGpuObject {
+		glm::vec4 color;
+	};
+
 	class Renderer {
 	public:
 		Renderer();
@@ -34,6 +38,7 @@ namespace Nth {
 		Vk::DescriptorSetLayout getMainDescriptorLayout() const;
 		Vk::DescriptorSetLayout getTextureDescriptorLayout() const;
 		Vk::DescriptorSetLayout getSSBODescriptorLayout() const;
+		Vk::DescriptorSetLayout getLightDescriptorLayout() const;
 
 		// TODO: Move out, used for sync destructor
 		void waitIdle() const;
@@ -44,7 +49,8 @@ namespace Nth {
 	private:
 		bool createUniformBuffer();
 		bool copyUniformBufferData();
-		UniformBufferObject getUniformBufferData() const;
+		void copyLightData();
+		ViewerGpuObject getViewerData() const;
 		bool updateDescriptorSet();
 		bool createRenderingResources();
 		bool createSSBO();
@@ -58,6 +64,7 @@ namespace Nth {
 		Vk::DescriptorSetLayout m_mainDescriptorLayout;
 		Vk::DescriptorSetLayout m_textureDescriptorLayout;
 		Vk::DescriptorSetLayout m_ssboDescriptorLayout;
+		Vk::DescriptorSetLayout m_lightDescriptorLayout;
 
 		std::vector<RenderingResource> m_renderingResources;
 		size_t m_resourceIndex;

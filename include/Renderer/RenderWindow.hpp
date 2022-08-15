@@ -25,7 +25,7 @@ namespace Nth {
 
 	// TODO: Move out
 	// TODO: Precalculate VP CPU-side
-	struct UniformBufferObject {
+	struct ViewerGpuObject {
 		glm::mat4 view;
 		glm::mat4 proj;
 	};

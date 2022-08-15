@@ -541,11 +541,14 @@ namespace Nth {
 			if (objects[i].material != lastMaterial) {
 				ressources.commandBuffer.bindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, objects[i].material->pipeline());
 
-				VkDescriptorSet vkDescriptorSet = ressources.mainDescriptor();
+				VkDescriptorSet vkDescriptorSet = ressources.viewerDescriptor();
 				ressources.commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 0, 1, &vkDescriptorSet, 0, nullptr);
 
 				VkDescriptorSet vkSsboDescriptorSet = ressources.ssboDescriptor();
 				ressources.commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 1, 1, &vkSsboDescriptorSet, 0, nullptr);
+
+				VkDescriptorSet vkLightDescriptorSet = ressources.lightDescriptor();
+				ressources.commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 3, 1, &vkLightDescriptorSet, 0, nullptr);
 
 				lastMaterial = objects[i].material;
 			}

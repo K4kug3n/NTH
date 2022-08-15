@@ -32,13 +32,24 @@ namespace Nth {
 		m_mainDescriptorLayout = getMainDescriptorLayout();
 		m_ssboDescriptorLayout = getSSBODescriptorLayout();
 		m_textureDescriptorLayout = getTextureDescriptorLayout();
+		m_lightDescriptorLayout = getLightDescriptorLayout();
 
 		m_descriptorAllocator.init(m_vulkan.getDevice().getHandle());
 
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			m_renderingResources[i].mainDescriptor = m_descriptorAllocator.allocate(m_mainDescriptorLayout);
+			m_renderingResources[i].viewerDescriptor = m_descriptorAllocator.allocate(m_mainDescriptorLayout);
 			m_renderingResources[i].ssboDescriptor = m_descriptorAllocator.allocate(m_ssboDescriptorLayout);
+			m_renderingResources[i].lightDescriptor = m_descriptorAllocator.allocate(m_lightDescriptorLayout);
+
+			m_renderingResources[i].lightBuffer = VulkanBuffer{
+				m_vulkan.getDevice(),
+				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+				sizeof(LightGpuObject)
+			};
 		}
+
+		copyLightData();
 
 		updateDescriptorSet();
 
@@ -112,7 +123,8 @@ namespace Nth {
 		std::vector<VkDescriptorSetLayout> vkDescritptorLayouts{
 			m_mainDescriptorLayout(),
 			m_ssboDescriptorLayout(),
-			m_textureDescriptorLayout()
+			m_textureDescriptorLayout(),
+			m_lightDescriptorLayout()
 		};
 
 		Material material;
@@ -227,17 +239,45 @@ namespace Nth {
 
 		return layout;
 	}
+
+	Vk::DescriptorSetLayout Renderer::getLightDescriptorLayout() const {
+		std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {
+			{
+				0,                                         // uint32_t           binding
+				VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         // VkDescriptorType   descriptorType
+				1,                                         // uint32_t           descriptorCount
+				VK_SHADER_STAGE_FRAGMENT_BIT,                // VkShaderStageFlags stageFlags
+				nullptr                                    // const VkSampler *pImmutableSamplers
+			}
+		};
+
+		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
+			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,  // VkStructureType                      sType
+			nullptr,                                              // const void                          *pNext
+			0,                                                    // VkDescriptorSetLayoutCreateFlags     flags
+			static_cast<uint32_t>(layoutBindings.size()),         // uint32_t                             bindingCount
+			layoutBindings.data()                                 // const VkDescriptorSetLayoutBinding  *pBindings
+		};
+
+		Vk::DescriptorSetLayout layout;
+		if (!layout.create(m_vulkan.getDevice().getHandle(), descriptorSetLayoutCreateInfo)) {
+			throw std::runtime_error("Could not create descriptor set layout!");
+		}
+
+		return layout;
+	}
+
 	void Renderer::waitIdle() const {
 		m_vulkan.getDevice().getHandle().waitIdle();
 	}
 
 	bool Renderer::createUniformBuffer() {
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			m_renderingResources[i].mainBuffer = VulkanBuffer{
+			m_renderingResources[i].viewerBuffer = VulkanBuffer{
 				m_vulkan.getDevice(),
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-				sizeof(UniformBufferObject)
+				sizeof(ViewerGpuObject)
 			};
 		}
 
@@ -249,19 +289,31 @@ namespace Nth {
 	}
 
 	bool Renderer::copyUniformBufferData() {
-		const UniformBufferObject uniformData = getUniformBufferData();
+		const ViewerGpuObject viewerData = getViewerData();
 
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
 			RenderingResource& current = m_renderingResources[i];
 
-			current.mainBuffer.copy(&uniformData, current.mainBuffer.handle.getSize(), m_renderingResources[0].commandBuffer);
+			current.viewerBuffer.copy(&viewerData, current.viewerBuffer.handle.getSize(), m_renderingResources[0].commandBuffer);
 		}
 
 		return true;
 	}
 
-	UniformBufferObject Renderer::getUniformBufferData() const {
-		UniformBufferObject ubo{};
+	void Renderer::copyLightData() {
+		LightGpuObject light = {
+			glm::vec4(1.f, 0.5f, 0.f, 1.f)
+		};
+
+		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
+			RenderingResource& current = m_renderingResources[i];
+
+			current.lightBuffer.copy(&light, current.lightBuffer.handle.getSize(), m_renderingResources[0].commandBuffer);
+		}
+	}
+
+	ViewerGpuObject Renderer::getViewerData() const {
+		ViewerGpuObject ubo{};
 
 		Vector2ui size = m_renderWindow.size();
 
@@ -275,16 +327,16 @@ namespace Nth {
 	bool Renderer::updateDescriptorSet() {
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
 			VkDescriptorBufferInfo bufferInfo = {
-				m_renderingResources[i].mainBuffer.handle(),             // VkBuffer         buffer
+				m_renderingResources[i].viewerBuffer.handle(),             // VkBuffer         buffer
 				0,                                                       // VkDeviceSize     offset
-				m_renderingResources[i].mainBuffer.handle.getSize()      // VkDeviceSize     range
+				m_renderingResources[i].viewerBuffer.handle.getSize()      // VkDeviceSize     range
 			};
 
 			std::vector<VkWriteDescriptorSet> descriptorWrites = {
 				{
 					VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,    // VkStructureType     sType
 					nullptr,                                   // const void         *pNext
-					m_renderingResources[i].mainDescriptor(),  // VkDescriptorSet     dstSet
+					m_renderingResources[i].viewerDescriptor(),  // VkDescriptorSet     dstSet
 					0,                                         // uint32_t            dstBinding
 					0,                                         // uint32_t            dstArrayElement
 					1,                                         // uint32_t            descriptorCount
@@ -296,7 +348,7 @@ namespace Nth {
 			};
 
 			// TODO: Check if update methode should be in Device class 
-			m_renderingResources[i].mainDescriptor.update(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data());
+			m_renderingResources[i].viewerDescriptor.update(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data());
 
 
 			VkDescriptorBufferInfo ssboInfo = {
@@ -321,6 +373,30 @@ namespace Nth {
 			};
 
 			m_renderingResources[i].ssboDescriptor.update(static_cast<uint32_t>(descriptorWrites2.size()), descriptorWrites2.data());
+
+			// Light
+			VkDescriptorBufferInfo lightInfo = {
+				m_renderingResources[i].lightBuffer.handle(),         // VkBuffer         buffer
+				0,                                                    // VkDeviceSize     offset
+				m_renderingResources[i].lightBuffer.handle.getSize()  // VkDeviceSize     range
+			};
+
+			std::vector<VkWriteDescriptorSet> descriptorWrites3 = {
+				{
+					VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
+					nullptr,                                    // const void                    *pNext
+					m_renderingResources[i].lightDescriptor(),  // VkDescriptorSet                dstSet
+					0,                                          // uint32_t                       dstBinding
+					0,                                          // uint32_t                       dstArrayElement
+					1,                                          // uint32_t                       descriptorCount
+					VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,          // VkDescriptorType               descriptorType
+					nullptr,                                    // const VkDescriptorImageInfo   *pImageInfo
+					&lightInfo,                                 // const VkDescriptorBufferInfo  *pBufferInfo
+					nullptr                                     // const VkBufferView            *pTexelBufferView
+				},
+			};
+
+			m_renderingResources[i].lightDescriptor.update(static_cast<uint32_t>(descriptorWrites3.size()), descriptorWrites3.data());
 		}
 
 		return true;

@@ -31,7 +31,7 @@ namespace Nth {
 	};
 
 	// TODO: Move out
-	struct ShaderStorageBufferObject {
+	struct ModelGpuObject {
 		glm::mat4 model;
 	};
 
@@ -47,8 +47,6 @@ namespace Nth {
 		bool draw(RenderingResource& ressource, std::vector<RenderObject> const& objects);
 
 		Vk::RenderPass& getRenderPass();
-
-		static constexpr uint32_t resourceCount = 3;
 
 		RenderWindow& operator=(RenderWindow const&) = delete;
 		RenderWindow& operator=(RenderWindow&&) = default;

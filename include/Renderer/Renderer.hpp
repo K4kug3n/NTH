@@ -35,7 +35,7 @@ namespace Nth {
 		void draw(std::vector<RenderObject> const& objects);
 
 		// TODO: review it
-		Vk::DescriptorSetLayout getMainDescriptorLayout() const;
+		Vk::DescriptorSetLayout getViewerDescriptorLayout() const;
 		Vk::DescriptorSetLayout getTextureDescriptorLayout() const;
 		Vk::DescriptorSetLayout getSSBODescriptorLayout() const;
 		Vk::DescriptorSetLayout getLightDescriptorLayout() const;
@@ -43,17 +43,19 @@ namespace Nth {
 		// TODO: Move out, used for sync destructor
 		void waitIdle() const;
 
+		static constexpr uint32_t resourceCount = 3;
+
 		Renderer& operator=(Renderer const&) = delete;
 		Renderer& operator=(Renderer&&) = default;
 
 	private:
-		bool createUniformBuffer();
-		bool copyUniformBufferData();
+		void createViewerBuffer();
+		void copyViewerData();
 		void copyLightData();
 		ViewerGpuObject getViewerData() const;
 		bool updateDescriptorSet();
 		bool createRenderingResources();
-		bool createSSBO();
+		bool createModelBuffer();
 
 		VulkanInstance m_vulkan;
 		RenderWindow m_renderWindow;

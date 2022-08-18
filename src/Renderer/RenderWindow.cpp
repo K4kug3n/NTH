@@ -445,12 +445,12 @@ namespace Nth {
 			return false;
 		}
 
-		std::vector<ShaderStorageBufferObject> storageObjects(objects.size());
+		std::vector<ModelGpuObject> storageObjects(objects.size());
 		for (size_t i = 0; i < storageObjects.size(); ++i) {
 			storageObjects[i].model = objects[i].transformMatrix;
 		}
 
-		ressources.ssbo.copy(storageObjects.data(), storageObjects.size() * sizeof(ShaderStorageBufferObject), ressources.commandBuffer);
+		ressources.ssbo.copy(storageObjects.data(), storageObjects.size() * sizeof(ModelGpuObject), ressources.commandBuffer);
 
 		VkCommandBufferBeginInfo commandBufferBeginInfo = {
 			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,        // VkStructureType                        sType

@@ -10,7 +10,7 @@ namespace Nth {
 		m_vulkan(),
 		m_renderWindow(m_vulkan),
 		m_resourceIndex(0),
-		m_renderingResources(RenderWindow::resourceCount) { }
+		m_renderingResources(Renderer::resourceCount) { }
 
 	RenderWindow& Renderer::getWindow(VideoMode const& mode, const std::string_view title) {
 		if (!m_renderWindow.create(mode, title)) {
@@ -21,15 +21,13 @@ namespace Nth {
 			throw std::runtime_error("Can't create rendering ressources");
 		}
 
-		if (!createSSBO()) {
+		if (!createModelBuffer()) {
 			throw std::runtime_error("Can't create ssbo");
 		}
 
-		if (!createUniformBuffer()) {
-			throw std::runtime_error("Can't create uniform buffer");
-		}
+		createViewerBuffer();
 
-		m_mainDescriptorLayout = getMainDescriptorLayout();
+		m_mainDescriptorLayout = getViewerDescriptorLayout();
 		m_ssboDescriptorLayout = getSSBODescriptorLayout();
 		m_textureDescriptorLayout = getTextureDescriptorLayout();
 		m_lightDescriptorLayout = getLightDescriptorLayout();
@@ -57,9 +55,7 @@ namespace Nth {
 		eventHandler.onResize.connect([this]() {
 			m_vulkan.getDevice().getHandle().waitIdle();
 
-			if (!copyUniformBufferData()) {
-				throw std::runtime_error("Can't re-copy uniform data");
-			}
+			copyViewerData();
 		});
 
 		return m_renderWindow;
@@ -156,10 +152,10 @@ namespace Nth {
 	void Renderer::draw(std::vector<RenderObject> const& objects) {
 		m_renderWindow.draw(m_renderingResources[m_resourceIndex], objects);
 		
-		m_resourceIndex = (m_resourceIndex + 1) % RenderWindow::resourceCount;
+		m_resourceIndex = (m_resourceIndex + 1) % Renderer::resourceCount;
 	}
 
-	Vk::DescriptorSetLayout Renderer::getMainDescriptorLayout() const {
+	Vk::DescriptorSetLayout Renderer::getViewerDescriptorLayout() const {
 		std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {
 			{
 				0,                                         // uint32_t           binding
@@ -271,7 +267,7 @@ namespace Nth {
 		m_vulkan.getDevice().getHandle().waitIdle();
 	}
 
-	bool Renderer::createUniformBuffer() {
+	void Renderer::createViewerBuffer() {
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
 			m_renderingResources[i].viewerBuffer = VulkanBuffer{
 				m_vulkan.getDevice(),
@@ -281,14 +277,10 @@ namespace Nth {
 			};
 		}
 
-		if (!copyUniformBufferData()) {
-			return false;
-		}
-
-		return true;
+		copyViewerData();
 	}
 
-	bool Renderer::copyUniformBufferData() {
+	void Renderer::copyViewerData() {
 		const ViewerGpuObject viewerData = getViewerData();
 
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
@@ -296,8 +288,6 @@ namespace Nth {
 
 			current.viewerBuffer.copy(&viewerData, current.viewerBuffer.handle.getSize(), m_renderingResources[0].commandBuffer);
 		}
-
-		return true;
 	}
 
 	void Renderer::copyLightData() {
@@ -413,13 +403,13 @@ namespace Nth {
 		return true;
 	}
 
-	bool Renderer::createSSBO() {
+	bool Renderer::createModelBuffer() {
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
 			m_renderingResources[i].ssbo = VulkanBuffer{
 				m_vulkan.getDevice(),
 				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-				10000 * sizeof(ShaderStorageBufferObject)
+				10000 * sizeof(ModelGpuObject)
 			};
 		}
 

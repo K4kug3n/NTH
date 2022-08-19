@@ -28,7 +28,7 @@ namespace Nth {
 		createViewerBuffer();
 
 		m_mainDescriptorLayout = getViewerDescriptorLayout();
-		m_ssboDescriptorLayout = getSSBODescriptorLayout();
+		m_modelDescriptorLayout = geModelDescriptorLayout();
 		m_textureDescriptorLayout = getTextureDescriptorLayout();
 		m_lightDescriptorLayout = getLightDescriptorLayout();
 
@@ -36,7 +36,7 @@ namespace Nth {
 
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
 			m_renderingResources[i].viewerDescriptor = m_descriptorAllocator.allocate(m_mainDescriptorLayout);
-			m_renderingResources[i].ssboDescriptor = m_descriptorAllocator.allocate(m_ssboDescriptorLayout);
+			m_renderingResources[i].ssboDescriptor = m_descriptorAllocator.allocate(m_modelDescriptorLayout);
 			m_renderingResources[i].lightDescriptor = m_descriptorAllocator.allocate(m_lightDescriptorLayout);
 
 			m_renderingResources[i].lightBuffer = VulkanBuffer{
@@ -115,16 +115,16 @@ namespace Nth {
 		return texture;
 	}
 
-	Material Renderer::createMaterial(const std::string_view vertexShaderName, const std::string_view fragmentShaderName) {		
+	Material Renderer::createMaterial(MaterialInfos const& infos) {
 		std::vector<VkDescriptorSetLayout> vkDescritptorLayouts{
 			m_mainDescriptorLayout(),
-			m_ssboDescriptorLayout(),
+			m_modelDescriptorLayout(),
 			m_textureDescriptorLayout(),
 			m_lightDescriptorLayout()
 		};
 
 		Material material;
-		material.createPipeline(m_vulkan.getDevice().getHandle(), m_renderWindow.getRenderPass(), vertexShaderName, fragmentShaderName, vkDescritptorLayouts);
+		material.createPipeline(m_vulkan.getDevice().getHandle(), m_renderWindow.getRenderPass(), infos.vertexShaderName, infos.fragmentShaderName, vkDescritptorLayouts);
 
 		return material;
 	}
@@ -209,7 +209,7 @@ namespace Nth {
 		return layout;
 	}
 
-	Vk::DescriptorSetLayout Renderer::getSSBODescriptorLayout() const {
+	Vk::DescriptorSetLayout Renderer::geModelDescriptorLayout() const {
 		std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {
 			{
 				0,                                          // uint32_t             binding

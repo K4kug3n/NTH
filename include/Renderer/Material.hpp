@@ -8,9 +8,15 @@
 
 #include <string_view>
 #include <vector>
+#include <string>
 
 namespace Nth {
 	class Vk::Device;
+
+	struct MaterialInfos {
+		std::string vertexShaderName;
+		std::string fragmentShaderName;
+	};
 
 	class Material {
 	public:

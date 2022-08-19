@@ -28,7 +28,7 @@ namespace Nth {
 
 		RenderWindow& getWindow(VideoMode const& mode, const std::string_view title);
 		VulkanTexture createTexture(const std::string_view name);
-		Material createMaterial(const std::string_view vertexShaderName, const std::string_view fragmentShaderName);
+		Material createMaterial(MaterialInfos const& infos);
 
 		void createMesh(Mesh& mesh);
 

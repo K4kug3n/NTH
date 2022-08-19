@@ -12,7 +12,12 @@ int main() {
 
 	Nth::RenderWindow& window{ renderer.getWindow(Nth::VideoMode{ 860, 480 }, "Hello world") };
 
-	Nth::Material basicMaterial = renderer.createMaterial("vert.spv", "frag.spv");
+	Nth::MaterialInfos basicMaterialInfos = {
+		"vert.spv",
+		"frag.spv"
+	};
+
+	Nth::Material basicMaterial = renderer.createMaterial(basicMaterialInfos);
 	Nth::VulkanTexture vikingRoomTexture = renderer.createTexture("viking_room.png");
 
 	Nth::Mesh vikingRoomMesh = Nth::Mesh::fromOBJ("viking_room.obj");

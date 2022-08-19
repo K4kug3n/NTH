@@ -37,7 +37,7 @@ namespace Nth {
 		// TODO: review it
 		Vk::DescriptorSetLayout getViewerDescriptorLayout() const;
 		Vk::DescriptorSetLayout getTextureDescriptorLayout() const;
-		Vk::DescriptorSetLayout getSSBODescriptorLayout() const;
+		Vk::DescriptorSetLayout geModelDescriptorLayout() const;
 		Vk::DescriptorSetLayout getLightDescriptorLayout() const;
 
 		// TODO: Move out, used for sync destructor
@@ -65,7 +65,7 @@ namespace Nth {
 		// TODO: Move it out
 		Vk::DescriptorSetLayout m_mainDescriptorLayout;
 		Vk::DescriptorSetLayout m_textureDescriptorLayout;
-		Vk::DescriptorSetLayout m_ssboDescriptorLayout;
+		Vk::DescriptorSetLayout m_modelDescriptorLayout;
 		Vk::DescriptorSetLayout m_lightDescriptorLayout;
 
 		std::vector<RenderingResource> m_renderingResources;

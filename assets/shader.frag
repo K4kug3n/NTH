@@ -1,10 +1,10 @@
 #version 450
 
-layout(set=2, binding=0) uniform sampler2D u_Texture;
-
-layout(set=3, binding=0) uniform LightGpuObject {
+layout(set=2, binding=0) uniform LightGpuObject {
   vec4 color;
 } light;
+
+layout(set=3, binding=0) uniform sampler2D u_Texture;
 
 layout(location = 0) in vec2 v_Texcoord;
 layout(location = 1) in vec3 v_Color;

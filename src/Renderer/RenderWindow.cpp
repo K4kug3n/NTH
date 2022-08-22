@@ -548,7 +548,7 @@ namespace Nth {
 				ressources.commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 1, 1, &vkSsboDescriptorSet, 0, nullptr);
 
 				VkDescriptorSet vkLightDescriptorSet = ressources.lightDescriptor();
-				ressources.commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 3, 1, &vkLightDescriptorSet, 0, nullptr);
+				ressources.commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 2, 1, &vkLightDescriptorSet, 0, nullptr);
 
 				lastMaterial = objects[i].material;
 			}
@@ -564,7 +564,7 @@ namespace Nth {
 
 			if (objects[i].texture != lastTexture) {
 				VkDescriptorSet vkTextureDescriptorSet = objects[i].texture->descriptorSet();
-				ressources.commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 2, 1, &vkTextureDescriptorSet, 0, nullptr);
+				ressources.commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 3, 1, &vkTextureDescriptorSet, 0, nullptr);
 
 				lastTexture = objects[i].texture;
 			}

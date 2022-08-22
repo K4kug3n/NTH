@@ -119,8 +119,8 @@ namespace Nth {
 		std::vector<VkDescriptorSetLayout> vkDescritptorLayouts{
 			m_mainDescriptorLayout(),
 			m_modelDescriptorLayout(),
-			m_textureDescriptorLayout(),
-			m_lightDescriptorLayout()
+			m_lightDescriptorLayout(),
+			m_textureDescriptorLayout()
 		};
 
 		Material material;

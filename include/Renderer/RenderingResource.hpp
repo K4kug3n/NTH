@@ -29,8 +29,8 @@ namespace Nth {
 		Vk::Semaphore finishedRenderingSemaphore;
 		Vk::Fence fence;
 
-		Vk::DescriptorSet ssboDescriptor;
-		VulkanBuffer ssbo;
+		Vk::DescriptorSet modelDescriptor;
+		VulkanBuffer modelBuffer;
 
 		Vk::DescriptorSet viewerDescriptor;
 		VulkanBuffer viewerBuffer;

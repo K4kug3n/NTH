@@ -1,4 +1,5 @@
 #include "Renderer/Renderer.hpp"
+#include <Renderer/RenderingResource.hpp>
 
 #include "Util/Image.hpp"
 
@@ -36,18 +37,16 @@ namespace Nth {
 
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
 			m_renderingResources[i].viewerDescriptor = m_descriptorAllocator.allocate(m_mainDescriptorLayout);
-			m_renderingResources[i].ssboDescriptor = m_descriptorAllocator.allocate(m_modelDescriptorLayout);
+			m_renderingResources[i].modelDescriptor = m_descriptorAllocator.allocate(m_modelDescriptorLayout);
 			m_renderingResources[i].lightDescriptor = m_descriptorAllocator.allocate(m_lightDescriptorLayout);
 
 			m_renderingResources[i].lightBuffer = VulkanBuffer{
 				m_vulkan.getDevice(),
-				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 				sizeof(LightGpuObject)
 			};
 		}
-
-		copyLightData();
 
 		updateDescriptorSet();
 
@@ -150,7 +149,7 @@ namespace Nth {
 	}
 
 	void Renderer::draw(std::vector<RenderObject> const& objects) {
-		m_renderWindow.draw(m_renderingResources[m_resourceIndex], objects);
+		m_renderWindow.draw(m_renderingResources[m_resourceIndex], objects, light);
 		
 		m_resourceIndex = (m_resourceIndex + 1) % Renderer::resourceCount;
 	}
@@ -290,18 +289,6 @@ namespace Nth {
 		}
 	}
 
-	void Renderer::copyLightData() {
-		LightGpuObject light = {
-			glm::vec4(1.f, 0.5f, 0.f, 1.f)
-		};
-
-		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			RenderingResource& current = m_renderingResources[i];
-
-			current.lightBuffer.copy(&light, current.lightBuffer.handle.getSize(), m_renderingResources[0].commandBuffer);
-		}
-	}
-
 	ViewerGpuObject Renderer::getViewerData() const {
 		ViewerGpuObject ubo{};
 
@@ -342,16 +329,16 @@ namespace Nth {
 
 
 			VkDescriptorBufferInfo ssboInfo = {
-				m_renderingResources[i].ssbo.handle(),         // VkBuffer         buffer
+				m_renderingResources[i].modelBuffer.handle(),         // VkBuffer         buffer
 				0,                                             // VkDeviceSize     offset
-				m_renderingResources[i].ssbo.handle.getSize()  // VkDeviceSize     range
+				m_renderingResources[i].modelBuffer.handle.getSize()  // VkDeviceSize     range
 			};
 
 			std::vector<VkWriteDescriptorSet> descriptorWrites2 = {
 				{
 					VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
 					nullptr,                                    // const void                    *pNext
-					m_renderingResources[i].ssboDescriptor(),   // VkDescriptorSet                dstSet
+					m_renderingResources[i].modelDescriptor(),   // VkDescriptorSet                dstSet
 					0,                                          // uint32_t                       dstBinding
 					0,                                          // uint32_t                       dstArrayElement
 					1,                                          // uint32_t                       descriptorCount
@@ -362,7 +349,7 @@ namespace Nth {
 				},
 			};
 
-			m_renderingResources[i].ssboDescriptor.update(static_cast<uint32_t>(descriptorWrites2.size()), descriptorWrites2.data());
+			m_renderingResources[i].modelDescriptor.update(static_cast<uint32_t>(descriptorWrites2.size()), descriptorWrites2.data());
 
 			// Light
 			VkDescriptorBufferInfo lightInfo = {
@@ -405,7 +392,7 @@ namespace Nth {
 
 	bool Renderer::createModelBuffer() {
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			m_renderingResources[i].ssbo = VulkanBuffer{
+			m_renderingResources[i].modelBuffer = VulkanBuffer{
 				m_vulkan.getDevice(),
 				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,

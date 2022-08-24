@@ -40,8 +40,6 @@ namespace Nth {
 					};
 				}
 				
-				vertex.color = { 1.0f, 1.0f, 1.0f };
-
 				newMesh.vertices.push_back(vertex);
 				newMesh.indices.push_back(static_cast<unsigned int>(newMesh.indices.size()));
 			}

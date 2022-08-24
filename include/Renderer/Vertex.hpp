@@ -19,7 +19,6 @@ namespace Nth {
 
 	struct Vertex {
 		Vector3f pos;
-		Vector3f color;
 		Vector2f texturePos;
 		Vector3f normal;
 

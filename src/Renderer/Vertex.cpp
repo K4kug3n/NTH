@@ -16,27 +16,20 @@ namespace Nth {
 		positionAttribute.location = 0;
 		positionAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
 		positionAttribute.offset = 0;
-
-		VkVertexInputAttributeDescription colorAttribute = {};
-		colorAttribute.binding = 0;
-		colorAttribute.location = 1;
-		colorAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
-		colorAttribute.offset = offsetof(Vertex, color);
 		
 		VkVertexInputAttributeDescription textureAttribute = {};
 		textureAttribute.binding = 0;
-		textureAttribute.location = 2;
+		textureAttribute.location = 1;
 		textureAttribute.format = VK_FORMAT_R32G32_SFLOAT;
 		textureAttribute.offset = offsetof(Vertex, texturePos);
 
 		VkVertexInputAttributeDescription normalAttribute = {};
 		normalAttribute.binding = 0;
-		normalAttribute.location = 3;
+		normalAttribute.location = 2;
 		normalAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
 		normalAttribute.offset = offsetof(Vertex, normal);
 
 		description.attributes.push_back(positionAttribute);
-		description.attributes.push_back(colorAttribute);
 		description.attributes.push_back(textureAttribute);
 		description.attributes.push_back(normalAttribute);
 

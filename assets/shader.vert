@@ -8,13 +8,13 @@ layout(set=0, binding=0) uniform UniformBufferObject {
 layout(location = 0) in vec3 i_Position;
 layout(location = 1) in vec3 i_Color;
 layout(location = 2) in vec2 i_Texcoord;
+layout(location = 3) in vec3 i_Normal;
 
-out gl_PerVertex
-{
+out gl_PerVertex {
   vec4 gl_Position;
 };
 
-struct ObjectData{
+struct ObjectData {
   mat4 model;
 };
 

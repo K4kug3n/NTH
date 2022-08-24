@@ -29,9 +29,16 @@ namespace Nth {
 		textureAttribute.format = VK_FORMAT_R32G32_SFLOAT;
 		textureAttribute.offset = offsetof(Vertex, texturePos);
 
+		VkVertexInputAttributeDescription normalAttribute = {};
+		normalAttribute.binding = 0;
+		normalAttribute.location = 3;
+		normalAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
+		normalAttribute.offset = offsetof(Vertex, normal);
+
 		description.attributes.push_back(positionAttribute);
 		description.attributes.push_back(colorAttribute);
 		description.attributes.push_back(textureAttribute);
+		description.attributes.push_back(normalAttribute);
 
 		return description;
 	}

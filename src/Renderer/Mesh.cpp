@@ -25,11 +25,21 @@ namespace Nth {
 					attrib.vertices[3 * index.vertex_index + 2]
 				};
 
-				vertex.texturePos = {
-					attrib.texcoords[2 * index.texcoord_index + 0],
-					1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-				};
+				if (index.texcoord_index >= 0) {
+					vertex.texturePos = {
+						attrib.texcoords[2 * index.texcoord_index + 0],
+						1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+					};
+				}
 
+				if (index.normal_index >= 0) {
+					vertex.normal = {
+						attrib.normals[3 * index.normal_index + 0],
+						attrib.normals[3 * index.normal_index + 1],
+						attrib.normals[3 * index.normal_index + 2],
+					};
+				}
+				
 				vertex.color = { 1.0f, 1.0f, 1.0f };
 
 				newMesh.vertices.push_back(vertex);

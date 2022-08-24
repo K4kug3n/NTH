@@ -8,6 +8,7 @@
 
 struct LightGpuObject {
 	glm::vec4 ambiantColor;
+	float ambientStrength;
 };
 
 // TODO: Precalculate VP CPU-side

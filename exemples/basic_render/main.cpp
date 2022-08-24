@@ -4,6 +4,7 @@
 #include "Renderer/Mesh.hpp"
 
 #include <iostream>
+#include <chrono>
 
 int main() {
 	Nth::Window::initialize();
@@ -22,7 +23,6 @@ int main() {
 
 	Nth::Mesh vikingRoomMesh = Nth::Mesh::fromOBJ("viking_room.obj");
 	
-
 	// TODO: Review this API
 	renderer.createMesh(vikingRoomMesh);
 
@@ -45,7 +45,17 @@ int main() {
 		window.close();
 	});
 
+	renderer.light = {
+		glm::vec4(1.f, 0.5f, 1.f, 1.f)
+	};
+
+	auto start = std::chrono::high_resolution_clock::now();
 	while (window.isOpen()) {
+		auto end = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<float> diff = end - start;
+		start = end;
+
+		window.setTitle(std::to_string(1 / diff.count()) + " FPS");
 		window.processEvent();
 
 		renderer.draw({ vikingRoom, vikingRoom2 });

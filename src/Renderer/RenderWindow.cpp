@@ -6,6 +6,7 @@
 #include "Renderer/Material.hpp"
 #include "Renderer/Mesh.hpp"
 #include "Renderer/VulkanTexture.hpp"
+#include "Renderer/RenderingResource.hpp"
 
 #include "Util/Reader.hpp"
 #include "Util/Image.hpp"
@@ -71,7 +72,7 @@ namespace Nth {
 		return true;
 	}
 
-	bool RenderWindow::draw(RenderingResource& ressource, std::vector<RenderObject> const& objects) {
+	bool RenderWindow::draw(RenderingResource& ressource, std::vector<RenderObject> const& objects, LightGpuObject const& light) {
 		if (m_swapchainSize != size()) {
 			onWindowSizeChanged();
 		}
@@ -102,7 +103,7 @@ namespace Nth {
 			return false;
 		}
 
-		if (!prepareFrame(ressource, m_swapchain.getImages()[imageIndex], objects)) {
+		if (!prepareFrame(ressource, m_swapchain.getImages()[imageIndex], objects, light)) {
 			return false;
 		}
 
@@ -439,7 +440,7 @@ namespace Nth {
 		return static_cast<VkPresentModeKHR>(-1);
 	}
 
-	bool RenderWindow::prepareFrame(RenderingResource& ressources, Vk::SwapchainImage const& imageParameters, std::vector<RenderObject> const& objects) const {
+	bool RenderWindow::prepareFrame(RenderingResource& ressources, Vk::SwapchainImage const& imageParameters, std::vector<RenderObject> const& objects, LightGpuObject const& light) const {
 		ressources.framebuffer.destroy();
 		if (!createFramebuffer(ressources.framebuffer, imageParameters)) {
 			return false;
@@ -450,7 +451,9 @@ namespace Nth {
 			storageObjects[i].model = objects[i].transformMatrix;
 		}
 
-		ressources.ssbo.copy(storageObjects.data(), storageObjects.size() * sizeof(ModelGpuObject), ressources.commandBuffer);
+		ressources.modelBuffer.copy(storageObjects.data(), storageObjects.size() * sizeof(ModelGpuObject), ressources.commandBuffer);
+
+		ressources.lightBuffer.copy(&light, sizeof(LightGpuObject), ressources.commandBuffer);
 
 		VkCommandBufferBeginInfo commandBufferBeginInfo = {
 			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,        // VkStructureType                        sType
@@ -544,7 +547,7 @@ namespace Nth {
 				VkDescriptorSet vkDescriptorSet = ressources.viewerDescriptor();
 				ressources.commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 0, 1, &vkDescriptorSet, 0, nullptr);
 
-				VkDescriptorSet vkSsboDescriptorSet = ressources.ssboDescriptor();
+				VkDescriptorSet vkSsboDescriptorSet = ressources.modelDescriptor();
 				ressources.commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 1, 1, &vkSsboDescriptorSet, 0, nullptr);
 
 				VkDescriptorSet vkLightDescriptorSet = ressources.lightDescriptor();

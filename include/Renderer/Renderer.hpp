@@ -1,23 +1,20 @@
 #ifndef NTH_RENDERER_RENDERER_HPP
 #define NTH_RENDERER_RENDERER_HPP
 
-#include "Renderer/VulkanInstance.hpp"
-#include "Renderer/Vulkan/DescriptorSetLayout.hpp"
-#include "Renderer/RenderWindow.hpp"
-#include "Renderer/Material.hpp"
-#include "Renderer/DescriptorAllocator.hpp"
-#include "Renderer/Mesh.hpp"
-#include "Renderer/VulkanTexture.hpp"
+#include <Renderer/VulkanInstance.hpp>
+#include <Renderer/Vulkan/DescriptorSetLayout.hpp>
+#include <Renderer/RenderWindow.hpp>
+#include <Renderer/Material.hpp>
+#include <Renderer/DescriptorAllocator.hpp>
+#include <Renderer/Mesh.hpp>
+#include <Renderer/VulkanTexture.hpp>
+#include <Renderer/RenderingResource.hpp>
 
 #include <vector>
 #include <string_view>
 
 namespace Nth {
 	class RenderObject;
-
-	struct LightGpuObject {
-		glm::vec4 color;
-	};
 
 	class Renderer {
 	public:
@@ -43,6 +40,9 @@ namespace Nth {
 		// TODO: Move out, used for sync destructor
 		void waitIdle() const;
 
+		// TODO: Move out
+		LightGpuObject light;
+
 		static constexpr uint32_t resourceCount = 3;
 
 		Renderer& operator=(Renderer const&) = delete;
@@ -51,7 +51,6 @@ namespace Nth {
 	private:
 		void createViewerBuffer();
 		void copyViewerData();
-		void copyLightData();
 		ViewerGpuObject getViewerData() const;
 		bool updateDescriptorSet();
 		bool createRenderingResources();

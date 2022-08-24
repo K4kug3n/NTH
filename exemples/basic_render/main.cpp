@@ -47,7 +47,7 @@ int main() {
 
 	renderer.light = {
 		glm::vec4(1.f, 1.f, 1.f, 1.f),
-		0.5f
+		0.1f
 	};
 
 	auto start = std::chrono::high_resolution_clock::now();

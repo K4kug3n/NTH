@@ -31,6 +31,6 @@ void main() {
   gl_Position = ubo.proj * ubo.view * modelMatrix * vec4(i_Position, 1.0);
 
   v_Texcoord = i_Texcoord;
-  v_Normal = i_Normal;
+  v_Normal = mat3(transpose(inverse(modelMatrix))) * i_Normal;  
   v_FragPos = vec3(modelMatrix * vec4(i_Position, 1.0));
 }

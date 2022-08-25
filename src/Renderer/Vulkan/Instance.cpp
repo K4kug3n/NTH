@@ -1,8 +1,8 @@
-#include "Renderer/Vulkan/Instance.hpp"
+#include <Renderer/Vulkan/Instance.hpp>
 
-#include "Renderer/Vulkan/VulkanLoader.hpp"
-#include "Renderer/Vulkan/PhysicalDevice.hpp"
-#include "Renderer/Vulkan/VkUtil.hpp"
+#include <Renderer/Vulkan/VulkanLoader.hpp>
+#include <Renderer/Vulkan/PhysicalDevice.hpp>
+#include <Renderer/Vulkan/VkUtil.hpp>
 
 #include <iostream>
 
@@ -11,7 +11,7 @@ namespace Nth {
 		Instance::Instance() :
 			m_instance{ nullptr } {
 			#define NTH_RENDERER_VK_INSTANCE_FUNCTION(fun) fun = nullptr;
-			#include "Renderer/Vulkan/InstanceFunctions.inl"
+			#include <Renderer/Vulkan/InstanceFunctions.inl>
 		}
 
 		Instance::~Instance() {
@@ -106,7 +106,7 @@ namespace Nth {
 				#define NTH_RENDERER_VK_INSTANCE_EXT_FUNCTION_END() }
 				#define NTH_RENDERER_VK_INSTANCE_FUNCTION(fun) fun = reinterpret_cast<PFN_##fun>(loadInstanceFunction(#fun));
 				
-				#include "Renderer/Vulkan/InstanceFunctions.inl"
+				#include <Renderer/Vulkan/InstanceFunctions.inl>
 			}
 			catch (std::exception& e) {
 				std::cerr << "Error: Can't load " << e.what() << " function" << std::endl;

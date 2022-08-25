@@ -31,6 +31,6 @@ namespace Nth {
 	};
 }
 
-#include "Signal.inl"
+#include <Util/Signal.inl>
 
 #endif

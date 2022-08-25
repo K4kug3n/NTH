@@ -1,6 +1,6 @@
-#include "Util/Image.hpp"
+#include <Util/Image.hpp>
 
-#include "Util/Reader.hpp"
+#include <Util/Reader.hpp>
 
 #include <stb_image.h>
 

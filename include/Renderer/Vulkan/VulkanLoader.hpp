@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "Util/Lib.hpp"
+#include <Util/Lib.hpp>
 
 #include <vulkan/vulkan.h>
 
@@ -38,7 +38,7 @@ namespace Nth {
 
 			#define NTH_RENDERER_VK_GLOBAL_FUNCTION(fun) static PFN_##fun fun;
 			#define NTH_RENDERER_VK_GLOBAL_FUNCTION_OPTIONAL(fun) NTH_RENDERER_VK_GLOBAL_FUNCTION(fun)
-			#include "Renderer/Vulkan/GlobalFunctions.inl"
+			#include <Renderer/Vulkan/GlobalFunctions.inl>
 		private:
 			static PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr;
 

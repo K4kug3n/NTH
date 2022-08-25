@@ -1,9 +1,9 @@
 #ifndef NTH_RENDERER_MESH_HPP
 #define NTH_RENDERER_MESH_HPP
 
-#include "Renderer/Vertex.hpp"
+#include <Renderer/Vertex.hpp>
 
-#include "Renderer/VulkanBuffer.hpp"
+#include <Renderer/VulkanBuffer.hpp>
 
 #include <vector>
 #include <string_view>

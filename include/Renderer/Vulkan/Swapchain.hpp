@@ -3,7 +3,7 @@
 #ifndef NTH_RENDERER_VK_SWAPCHAIN_HPP
 #define NTH_RENDERER_VK_SWAPCHAIN_HPP
 
-#include "Renderer/Vulkan/ImageView.hpp"
+#include <Renderer/Vulkan/ImageView.hpp>
 
 #include <vulkan/vulkan.h>
 

@@ -1,4 +1,4 @@
-#include "Renderer/Mesh.hpp"
+#include <Renderer/Mesh.hpp>
 
 #include <tiny_obj_loader.h>
 

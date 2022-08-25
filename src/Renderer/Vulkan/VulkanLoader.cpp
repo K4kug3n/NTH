@@ -1,7 +1,6 @@
-#include "Renderer/Vulkan/VulkanLoader.hpp"
+#include <Renderer/Vulkan/VulkanLoader.hpp>
 
-#include "Renderer/Vulkan/VkUtil.hpp"
-#include "Util/String.hpp"
+#include <Renderer/Vulkan/VkUtil.hpp>
 
 #include <stdexcept>
 #include <iostream>
@@ -12,7 +11,7 @@ namespace Nth {
 		PFN_vkGetInstanceProcAddr VulkanLoader::vkGetInstanceProcAddr = nullptr;
 		#define NTH_RENDERER_VK_GLOBAL_FUNCTION(fun) PFN_##fun VulkanLoader::fun = nullptr;
 		#define NTH_RENDERER_VK_GLOBAL_FUNCTION_OPTIONAL(fun) NTH_RENDERER_VK_GLOBAL_FUNCTION(fun)
-		#include "Renderer/Vulkan/GlobalFunctions.inl"
+		#include <Renderer/Vulkan/GlobalFunctions.inl>
 
 		bool VulkanLoader::initialize() {
 			#if defined(_WIN32)
@@ -47,7 +46,7 @@ namespace Nth {
 				#define NTH_RENDERER_VK_GLOBAL_FUNCTION(fun) fun = reinterpret_cast<PFN_##fun>(loadGlobalFunction(#fun, false));
 				#define NTH_RENDERER_VK_GLOBAL_FUNCTION_OPTIONAL(fun) fun = reinterpret_cast<PFN_##fun>(loadGlobalFunction(#fun, true));
 
-				#include "Renderer/Vulkan/GlobalFunctions.inl"
+				#include <Renderer/Vulkan/GlobalFunctions.inl>
 			}
 			catch (std::exception& e) {
 				std::cerr << "Error: Can't load " << e.what() << " function" << std::endl;

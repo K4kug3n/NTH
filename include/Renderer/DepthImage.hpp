@@ -1,7 +1,7 @@
 #ifndef NTH_RENDERER_DEPTHIMAGE_HPP
 #define NTH_RENDERER_DEPTHIMAGE_HPP
 
-#include "Renderer/VulkanImage.hpp"
+#include <Renderer/VulkanImage.hpp>
 
 #include <vector>
 

@@ -68,7 +68,7 @@ namespace Nth {
 template<typename T>
 std::ostream& operator<<(std::ostream& out, Nth::Matrix4<T> const& mat);
 
-#include "Math/Matrix4.inl"
+#include <Math/Matrix4.inl>
 
 #endif
 

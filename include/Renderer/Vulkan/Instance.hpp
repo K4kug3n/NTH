@@ -30,7 +30,7 @@ namespace Nth {
 			std::vector<PhysicalDevice> enumeratePhysicalDevices();
 
 			#define NTH_RENDERER_VK_INSTANCE_FUNCTION(fun) PFN_##fun fun;
-			#include "Renderer/Vulkan/InstanceFunctions.inl"
+			#include <Renderer/Vulkan/InstanceFunctions.inl>
 
 			Instance& operator=(Instance const&) = delete;
 			Instance& operator=(Instance&&) = delete;

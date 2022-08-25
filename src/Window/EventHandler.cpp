@@ -1,4 +1,4 @@
-#include "Window/EventHandler.hpp"
+#include <Window/EventHandler.hpp>
 
 namespace Nth {
 

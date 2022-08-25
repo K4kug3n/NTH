@@ -45,13 +45,44 @@ int main() {
 		window.close();
 	});
 
-	renderer.light = {
-		glm::vec4(1.f, 1.f, 1.f, 1.f),
-		0.1f
-	};
+	glm::vec3 camPos{ glm::vec3(0.f, 0.f, 0.f) };
+	eventHandler.onKeyDown.connect([&camPos](SDL_KeyboardEvent key) {
+		float stepSize{ 0.1f };
+
+		switch (key.keysym.sym) {
+		case SDLK_z:
+			camPos.z = camPos.z + stepSize;
+			break;
+		case SDLK_s:
+			camPos.z = camPos.z - stepSize;
+			break;
+		case SDLK_q:
+			camPos.x = camPos.x + stepSize;
+			break;
+		case SDLK_d:
+			camPos.x = camPos.x - stepSize;
+			break;
+		case SDLK_SPACE:
+			camPos.y = camPos.y + stepSize;
+			break;
+		case SDLK_LSHIFT:
+			camPos.y = camPos.y - stepSize;
+			break;
+		default:
+			break;
+		}
+	});
 
 	auto start = std::chrono::high_resolution_clock::now();
 	while (window.isOpen()) {
+
+		renderer.light = {
+			glm::vec4(1.f, 1.f, 1.f, 1.f),
+			0.1f,
+			camPos,
+			glm::vec4(1.f, 1.f, 1.f, 1.f)
+		};
+
 		auto end = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<float> diff = end - start;
 		start = end;

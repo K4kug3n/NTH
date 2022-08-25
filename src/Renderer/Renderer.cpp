@@ -1,7 +1,7 @@
-#include "Renderer/Renderer.hpp"
+#include <Renderer/Renderer.hpp>
 #include <Renderer/RenderingResource.hpp>
 
-#include "Util/Image.hpp"
+#include <Util/Image.hpp>
 
 #include <cstring>
 #include <iostream>

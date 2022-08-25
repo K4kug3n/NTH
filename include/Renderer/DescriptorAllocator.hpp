@@ -1,7 +1,7 @@
 #ifndef NTH_RENDERER_DESCRIPTORALLOCATOR_HPP
 #define NTH_RENDERER_DESCRIPTORALLOCATOR_HPP
 
-#include "Renderer/Vulkan/DescriptorPool.hpp"
+#include <Renderer/Vulkan/DescriptorPool.hpp>
 
 #include <vector>
 

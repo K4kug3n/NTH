@@ -1,4 +1,4 @@
-#include "Window/VideoMode.hpp"
+#include <Window/VideoMode.hpp>
 
 #include <SDL2/SDL_video.h>
 

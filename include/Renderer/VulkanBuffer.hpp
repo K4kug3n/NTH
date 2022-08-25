@@ -1,8 +1,8 @@
 #ifndef NTH_RENDERER_VULKANBUFFER_HPP
 #define NTH_RENDERER_VULKANBUFFER_HPP
 
-#include "Renderer/Vulkan/Buffer.hpp"
-#include "Renderer/Vulkan/DeviceMemory.hpp"
+#include <Renderer/Vulkan/Buffer.hpp>
+#include <Renderer/Vulkan/DeviceMemory.hpp>
 
 namespace Nth {
 	namespace Vk {

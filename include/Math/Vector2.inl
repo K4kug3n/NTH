@@ -1,4 +1,4 @@
-#include "Math/Vector2.hpp"
+#include <Math/Vector2.hpp>
 
 #include <cmath>
 #include <sstream>

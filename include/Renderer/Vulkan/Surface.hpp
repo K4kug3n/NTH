@@ -1,7 +1,7 @@
 #ifndef NTH_RENDERER_VK_SURFACE_HPP
 #define NTH_RENDERER_VK_SURFACE_HPP
 
-#include "Renderer/Vulkan/Instance.hpp"
+#include <Renderer/Vulkan/Instance.hpp>
 
 #include <vulkan/vulkan.h>
 

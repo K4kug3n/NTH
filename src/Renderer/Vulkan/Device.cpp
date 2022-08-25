@@ -1,7 +1,7 @@
-#include "Renderer/Vulkan/Device.hpp"
+#include <Renderer/Vulkan/Device.hpp>
 
-#include "Renderer/Vulkan/VkUtil.hpp"
-#include "Renderer/Vulkan/PhysicalDevice.hpp"
+#include <Renderer/Vulkan/VkUtil.hpp>
+#include <Renderer/Vulkan/PhysicalDevice.hpp>
 
 #include <iostream>
 
@@ -16,7 +16,7 @@ namespace Nth {
 			m_instance{ instance } {
 
 			#define NTH_RENDERER_VK_DEVICE_FUNCTION(fun) fun = nullptr;
-			#include "Renderer/Vulkan/DeviceFunctions.inl"
+			#include <Renderer/Vulkan/DeviceFunctions.inl>
 		}
 
 		Device::~Device() {
@@ -26,7 +26,7 @@ namespace Nth {
 			}
 		}
 
-		bool Device::create(PhysicalDevice physicalDevice, VkDeviceCreateInfo const& infos, uint32_t presentQueueFamilyIndex, uint32_t graphicQueueFamilyIndex) {
+		bool Device::create(PhysicalDevice physicalDevice, VkDeviceCreateInfo const& infos) {
 			assert(m_instance.isValid());
 			
 			m_physicalDevice = std::make_unique<PhysicalDevice>(std::move(physicalDevice));
@@ -50,7 +50,7 @@ namespace Nth {
 				#define NTH_RENDERER_VK_DEVICE_EXT_FUNCTION_END() }
 				#define NTH_RENDERER_VK_DEVICE_FUNCTION(fun) fun = reinterpret_cast<PFN_##fun>(loadDeviceFunction(#fun));
 				
-				#include "Renderer/Vulkan/DeviceFunctions.inl"
+				#include <Renderer/Vulkan/DeviceFunctions.inl>
 			}
 			catch (std::exception& e) {
 				std::cerr << "Error: Can't load " << e.what() << " function" << std::endl;

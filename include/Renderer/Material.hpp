@@ -1,10 +1,10 @@
 #ifndef NTH_RENDERER_MATERIAL_HPP
 #define NTH_RENDERER_MATERIAL_HPP
 
-#include "Renderer/Vulkan/Pipeline.hpp"
-#include "Renderer/Vulkan/PipelineLayout.hpp"
-#include "Renderer/Vulkan/ShaderModule.hpp"
-#include "Renderer/Vulkan/RenderPass.hpp"
+#include <Renderer/Vulkan/Pipeline.hpp>
+#include <Renderer/Vulkan/PipelineLayout.hpp>
+#include <Renderer/Vulkan/ShaderModule.hpp>
+#include <Renderer/Vulkan/RenderPass.hpp>
 
 #include <string_view>
 #include <vector>

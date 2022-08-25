@@ -1,7 +1,7 @@
 #ifndef NTH_RENDERER_VK_DEVICE_HPP
 #define NTH_RENDERER_VK_DEVICE_HPP
 
-#include "Renderer/Vulkan/Instance.hpp"
+#include <Renderer/Vulkan/Instance.hpp>
 
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
@@ -21,7 +21,7 @@ namespace Nth {
 			Device(Device&&) = delete;
 			~Device();
 
-			bool create(PhysicalDevice physicalDevice, VkDeviceCreateInfo const& infos, uint32_t presentQueueFamilyIndex, uint32_t graphicQueueFamilyIndex);
+			bool create(PhysicalDevice physicalDevice, VkDeviceCreateInfo const& infos);
 
 			bool isValid() const;
 			bool isLoadedExtension(const std::string_view name) const;
@@ -33,7 +33,7 @@ namespace Nth {
 			void waitIdle() const;
 
 			#define NTH_RENDERER_VK_DEVICE_FUNCTION(fun) PFN_##fun fun;
-			#include "Renderer/Vulkan/DeviceFunctions.inl"
+			#include <Renderer/Vulkan/DeviceFunctions.inl>
 
 			VkDevice const& operator()() const;
 

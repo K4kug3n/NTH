@@ -1,4 +1,4 @@
-#include "Renderer/Vertex.hpp"
+#include <Renderer/Vertex.hpp>
 
 namespace Nth {
 	VertexInputDescription Vertex::getVertexDescription() {

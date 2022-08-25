@@ -55,7 +55,7 @@ namespace Nth {
 template<typename T>
 std::ostream& operator<<(std::ostream& out, Nth::Vector3<T> const& vec);
 
-#include "Math/Vector3.inl"
+#include <Math/Vector3.inl>
 
 #endif
 

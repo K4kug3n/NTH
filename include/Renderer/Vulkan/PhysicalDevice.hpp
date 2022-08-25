@@ -1,7 +1,7 @@
 #ifndef NTH_RENDERER_VK_PHYSICALDEVICE_HPP
 #define NTH_RENDERER_VK_PHYSICALDEVICE_HPP
 
-#include "Renderer/Vulkan/Instance.hpp"
+#include <Renderer/Vulkan/Instance.hpp>
 
 #include <vulkan/vulkan.h>
 

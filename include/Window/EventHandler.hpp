@@ -1,8 +1,8 @@
 #ifndef NTH_WINDOW_EVENTHANDLER_HPP
 #define NTH_WINDOW_EVENTHANDLER_HPP
 
-#include "Util/Signal.hpp"
-#include "Window/WindowEvent.hpp"
+#include <Util/Signal.hpp>
+#include <Window/WindowEvent.hpp>
 
 namespace Nth {
 	class EventHandler {

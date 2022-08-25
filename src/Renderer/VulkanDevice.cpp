@@ -1,8 +1,8 @@
-#include "Renderer/VulkanDevice.hpp"
-#include "Renderer/VulkanInstance.hpp"
+#include <Renderer/VulkanDevice.hpp>
+#include <Renderer/VulkanInstance.hpp>
 
-#include "Renderer/Vulkan/PhysicalDevice.hpp"
-#include "Renderer/Vulkan/Queue.hpp"
+#include <Renderer/Vulkan/PhysicalDevice.hpp>
+#include <Renderer/Vulkan/Queue.hpp>
 
 #include <stdexcept>
 
@@ -12,7 +12,7 @@ namespace Nth {
 		m_device(instance.getHandle()) { }
 
 	void VulkanDevice::create(Vk::PhysicalDevice physicalDevice, VkDeviceCreateInfo const& infos, uint32_t presentQueueFamilyIndex, uint32_t graphicQueueFamilyIndex) {
-		if (!m_device.create(std::move(physicalDevice), infos, presentQueueFamilyIndex, graphicQueueFamilyIndex)) {
+		if (!m_device.create(std::move(physicalDevice), infos)) {
 			throw std::runtime_error("Can't create device");
 		}
 

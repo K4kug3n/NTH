@@ -7,10 +7,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 struct LightGpuObject {
-	alignas(16) glm::vec4 ambiantColor;
+	alignas(16) glm::vec3 viewPos;
+
+	alignas(16) glm::vec4 lightColor;
+	alignas(16) glm::vec3 lightPos;
 	alignas(4) float ambientStrength;
-	alignas(16) glm::vec3 diffusePos;
-	alignas(16) glm::vec4 diffuseColor;
+	alignas(4) float specularStrength;
 };
 
 // TODO: Precalculate VP CPU-side

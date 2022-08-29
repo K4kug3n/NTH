@@ -72,7 +72,7 @@ namespace Nth {
 		return true;
 	}
 
-	bool RenderWindow::draw(RenderingResource& ressource, std::vector<RenderObject> const& objects, LightGpuObject const& light) {
+	bool RenderWindow::draw(RenderingResource& ressource, std::vector<RenderObject> const& objects, LightGpuObject const& light, ViewerGpuObject const& viewer) {
 		if (m_swapchainSize != size()) {
 			onWindowSizeChanged();
 		}
@@ -103,7 +103,7 @@ namespace Nth {
 			return false;
 		}
 
-		if (!prepareFrame(ressource, m_swapchain.getImages()[imageIndex], objects, light)) {
+		if (!prepareFrame(ressource, m_swapchain.getImages()[imageIndex], objects, light, viewer)) {
 			return false;
 		}
 
@@ -440,7 +440,7 @@ namespace Nth {
 		return static_cast<VkPresentModeKHR>(-1);
 	}
 
-	bool RenderWindow::prepareFrame(RenderingResource& ressources, Vk::SwapchainImage const& imageParameters, std::vector<RenderObject> const& objects, LightGpuObject const& light) const {
+	bool RenderWindow::prepareFrame(RenderingResource& ressources, Vk::SwapchainImage const& imageParameters, std::vector<RenderObject> const& objects, LightGpuObject const& light, ViewerGpuObject const& viewer) const {
 		ressources.framebuffer.destroy();
 		if (!createFramebuffer(ressources.framebuffer, imageParameters)) {
 			return false;
@@ -454,6 +454,8 @@ namespace Nth {
 		ressources.modelBuffer.copy(storageObjects.data(), storageObjects.size() * sizeof(ModelGpuObject), ressources.commandBuffer);
 
 		ressources.lightBuffer.copy(&light, sizeof(LightGpuObject), ressources.commandBuffer);
+
+		ressources.viewerBuffer.copy(&viewer, sizeof(ViewerGpuObject), ressources.commandBuffer);
 
 		VkCommandBufferBeginInfo commandBufferBeginInfo = {
 			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,        // VkStructureType                        sType

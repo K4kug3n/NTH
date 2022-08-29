@@ -32,21 +32,23 @@ int main() {
 		&vikingRoomMesh,
 		&basicMaterial,
 		&vikingRoomTexture,
-		Nth::Matrix4f::Rotation(Nth::toRadians(45.f), { 0.f, 0.f, 1.f }) * Nth::Matrix4f::Translation({ 0.f, 1.f, 0.f })
+		Nth::Matrix4f::Translation({ 0.f, 1.f, 0.f })
 	};
 
 	Nth::RenderObject vikingRoom2 {
 		&vikingRoomMesh,
 		&basicMaterial,
 		&vikingRoomTexture,
-		Nth::Matrix4f::Rotation(Nth::toRadians(45.f), { 0.f, 0.f, 1.f })* Nth::Matrix4f::Translation({ 0.f, -1.f, 0.f })
+		Nth::Matrix4f::Translation({ 0.f, -1.f, 0.f })
 	};
 
 	Nth::EventHandler& eventHandler{ window.getEventHandler() };
 	eventHandler.onQuit.connect([&window]() {
 		window.close();
-	});
+	}); 
 
+	renderer.camera.position = Nth::Vector3f{ 0.f, 0.f, -3.f };
+	renderer.camera.direction = Nth::EulerAngle(0.f, -45.f, -90.f);
 
 	Nth::Vector3f lightPos{ 0.f, 0.f, 0.f };
 	eventHandler.onKeyDown.connect([&lightPos](SDL_KeyboardEvent key) {
@@ -80,7 +82,7 @@ int main() {
 	while (window.isOpen()) {
 
 		renderer.light = {
-			{ 2.f, 2.f, 2.f },
+			renderer.camera.position,
 			{ 1.f, 1.f, 1.f, 1.f },
 			lightPos,
 			0.1f,

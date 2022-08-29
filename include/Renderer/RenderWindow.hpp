@@ -31,7 +31,7 @@ namespace Nth {
 		~RenderWindow();
 
 		bool create(VideoMode const& mode, const std::string_view title);
-		bool draw(RenderingResource& ressource, std::vector<RenderObject> const& objects, LightGpuObject const& light);
+		bool draw(RenderingResource& ressource, std::vector<RenderObject> const& objects, LightGpuObject const& light, ViewerGpuObject const& viewer);
 
 		Vk::RenderPass& getRenderPass();
 
@@ -51,7 +51,7 @@ namespace Nth {
 		VkSurfaceTransformFlagBitsKHR getSwapchainTransform(VkSurfaceCapabilitiesKHR const& capabilities) const;
 		VkPresentModeKHR getSwapchainPresentMode(std::vector<VkPresentModeKHR> const& presentModes) const;
 
-		bool prepareFrame(RenderingResource& ressources, Vk::SwapchainImage const& imageParameters, std::vector<RenderObject> const& objects, LightGpuObject const& light) const;
+		bool prepareFrame(RenderingResource& ressources, Vk::SwapchainImage const& imageParameters, std::vector<RenderObject> const& objects, LightGpuObject const& light, ViewerGpuObject const& viewer) const;
 
 		bool createFramebuffer(Vk::Framebuffer& framebuffer, Vk::SwapchainImage const& swapchainImage) const;
 

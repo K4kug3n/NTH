@@ -2,6 +2,7 @@
 #define NTH_MATH_MATRIX4_HPP
 
 #include <string>
+#include <array>
 
 namespace Nth {
 

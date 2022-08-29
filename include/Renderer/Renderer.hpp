@@ -9,6 +9,7 @@
 #include <Renderer/Mesh.hpp>
 #include <Renderer/VulkanTexture.hpp>
 #include <Renderer/RenderingResource.hpp>
+#include <Renderer/Camera.hpp>
 
 #include <vector>
 #include <string_view>
@@ -42,6 +43,7 @@ namespace Nth {
 
 		// TODO: Move out
 		LightGpuObject light;
+		Camera camera;
 
 		static constexpr uint32_t resourceCount = 3;
 
@@ -49,12 +51,9 @@ namespace Nth {
 		Renderer& operator=(Renderer&&) = default;
 
 	private:
-		void createViewerBuffer();
-		void copyViewerData();
 		ViewerGpuObject getViewerData() const;
 		bool updateDescriptorSet();
 		bool createRenderingResources();
-		bool createModelBuffer();
 
 		VulkanInstance m_vulkan;
 		RenderWindow m_renderWindow;

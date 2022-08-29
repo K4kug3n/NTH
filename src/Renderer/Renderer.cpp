@@ -24,12 +24,6 @@ namespace Nth {
 			throw std::runtime_error("Can't create rendering ressources");
 		}
 
-		if (!createModelBuffer()) {
-			throw std::runtime_error("Can't create ssbo");
-		}
-
-		createViewerBuffer();
-
 		m_mainDescriptorLayout = getViewerDescriptorLayout();
 		m_modelDescriptorLayout = geModelDescriptorLayout();
 		m_textureDescriptorLayout = getTextureDescriptorLayout();
@@ -48,16 +42,23 @@ namespace Nth {
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 				sizeof(LightGpuObject)
 			};
+
+			m_renderingResources[i].viewerBuffer = VulkanBuffer{
+				m_vulkan.getDevice(),
+				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+				sizeof(ViewerGpuObject)
+			};
+
+			m_renderingResources[i].modelBuffer = VulkanBuffer{
+				m_vulkan.getDevice(),
+				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+				10000 * sizeof(ModelGpuObject)
+			};
 		}
 
 		updateDescriptorSet();
-
-		EventHandler& eventHandler = m_renderWindow.getEventHandler();
-		eventHandler.onResize.connect([this]() {
-			m_vulkan.getDevice().getHandle().waitIdle();
-
-			copyViewerData();
-		});
 
 		return m_renderWindow;
 	}
@@ -151,7 +152,7 @@ namespace Nth {
 	}
 
 	void Renderer::draw(std::vector<RenderObject> const& objects) {
-		m_renderWindow.draw(m_renderingResources[m_resourceIndex], objects, light);
+		m_renderWindow.draw(m_renderingResources[m_resourceIndex], objects, light, getViewerData());
 		
 		m_resourceIndex = (m_resourceIndex + 1) % Renderer::resourceCount;
 	}
@@ -268,35 +269,12 @@ namespace Nth {
 		m_vulkan.getDevice().getHandle().waitIdle();
 	}
 
-	void Renderer::createViewerBuffer() {
-		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			m_renderingResources[i].viewerBuffer = VulkanBuffer{
-				m_vulkan.getDevice(),
-				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-				sizeof(ViewerGpuObject)
-			};
-		}
-
-		copyViewerData();
-	}
-
-	void Renderer::copyViewerData() {
-		const ViewerGpuObject viewerData = getViewerData();
-
-		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			RenderingResource& current = m_renderingResources[i];
-
-			current.viewerBuffer.copy(&viewerData, current.viewerBuffer.handle.getSize(), m_renderingResources[0].commandBuffer);
-		}
-	}
-
 	ViewerGpuObject Renderer::getViewerData() const {
 		ViewerGpuObject ubo{};
 
 		Vector2ui size = m_renderWindow.size();
 
-		ubo.view = Matrix4f::Translation({ 0.f, 0.f, -3.f }) * (Matrix4f::Rotation(toRadians(-45.f), { 1.f, 0.f, 0.f }) * Matrix4f::Rotation(toRadians(225.f), { 0.f, 0.f, 1.f }));
+		ubo.view = camera.getViewMatrix();
 		ubo.proj = Matrix4f::Perspective(toRadians(45.0f), static_cast<float>(size.x) / static_cast<float>(size.y), 0.1f, 10.0f);
 		ubo.proj.a22 *= -1;
 
@@ -387,19 +365,6 @@ namespace Nth {
 				std::cerr << "Can't create rendering ressource" << std::endl;
 				return false;
 			}
-		}
-
-		return true;
-	}
-
-	bool Renderer::createModelBuffer() {
-		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			m_renderingResources[i].modelBuffer = VulkanBuffer{
-				m_vulkan.getDevice(),
-				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-				10000 * sizeof(ModelGpuObject)
-			};
 		}
 
 		return true;

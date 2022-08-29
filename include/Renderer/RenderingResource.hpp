@@ -1,5 +1,5 @@
-#ifndef NTH_RENDERER_VK_RENDERINGRESOURCE_HPP
-#define NTH_RENDERER_VK_RENDERINGRESOURCE_HPP
+#ifndef NTH_RENDERER_RENDERINGRESOURCE_HPP
+#define NTH_RENDERER_RENDERINGRESOURCE_HPP
 
 #include <Renderer/Vulkan/Framebuffer.hpp>
 #include <Renderer/Vulkan/CommandPool.hpp>

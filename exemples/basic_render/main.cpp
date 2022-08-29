@@ -3,6 +3,8 @@
 #include <Renderer/RenderObject.hpp>
 #include <Renderer/Mesh.hpp>
 
+#include <Math/Angle.hpp>
+
 #include <iostream>
 #include <chrono>
 
@@ -26,18 +28,18 @@ int main() {
 	// TODO: Review this API
 	renderer.createMesh(vikingRoomMesh);
 
-	Nth::RenderObject vikingRoom {
+	Nth::RenderObject vikingRoom{
 		&vikingRoomMesh,
 		&basicMaterial,
 		&vikingRoomTexture,
-		glm::rotate(glm::mat4(1.f), glm::radians(45.f), glm::vec3(0.f, 0.f, 1.f)) * glm::translate(glm::mat4(1.f), glm::vec3(0.f, 1.f, 0.f))
+		Nth::Matrix4f::Rotation(Nth::toRadians(45.f), { 0.f, 0.f, 1.f }) * Nth::Matrix4f::Translation({ 0.f, 1.f, 0.f })
 	};
 
 	Nth::RenderObject vikingRoom2 {
 		&vikingRoomMesh,
 		&basicMaterial,
 		&vikingRoomTexture,
-		glm::rotate(glm::mat4(1.f), glm::radians(45.f), glm::vec3(0.f, 0.f, 1.f)) * glm::translate(glm::mat4(1.f), glm::vec3(0.f, -1.f, 0.f))
+		Nth::Matrix4f::Rotation(Nth::toRadians(45.f), { 0.f, 0.f, 1.f })* Nth::Matrix4f::Translation({ 0.f, -1.f, 0.f })
 	};
 
 	Nth::EventHandler& eventHandler{ window.getEventHandler() };
@@ -45,7 +47,8 @@ int main() {
 		window.close();
 	});
 
-	glm::vec3 lightPos{ glm::vec3(0.f, 0.f, 0.f) };
+
+	Nth::Vector3f lightPos{ 0.f, 0.f, 0.f };
 	eventHandler.onKeyDown.connect([&lightPos](SDL_KeyboardEvent key) {
 		float stepSize{ 0.1f };
 
@@ -77,8 +80,8 @@ int main() {
 	while (window.isOpen()) {
 
 		renderer.light = {
-			glm::vec3(2.f, 2.f, 2.f),
-			glm::vec4(1.f, 1.f, 1.f, 1.f),
+			{ 2.f, 2.f, 2.f },
+			{ 1.f, 1.f, 1.f, 1.f },
 			lightPos,
 			0.1f,
 			0.5f,

@@ -331,7 +331,6 @@ namespace Nth{
 	Matrix4<T> Matrix4<T>::Rotation(float angle, Vector3<T> axis) {
 		axis.normalise();
 
-		float a = angle;
 		float c = std::cos(angle);
 		float s = std::sin(angle);
 

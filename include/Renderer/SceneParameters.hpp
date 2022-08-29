@@ -1,28 +1,29 @@
 #ifndef NTH_RENDERER_SCENEPARAMETERS_HPP
 #define NTH_RENDERER_SCENEPARAMETERS_HPP
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <Math/Matrix4.hpp>
+#include <Math/Vector3.hpp>
+#include <Math/Vector4.hpp>
 
-struct LightGpuObject {
-	alignas(16) glm::vec3 viewPos;
+namespace Nth {
+	struct LightGpuObject {
+		alignas(16) Vector3f viewPos;
 
-	alignas(16) glm::vec4 lightColor;
-	alignas(16) glm::vec3 lightPos;
-	alignas(4) float ambientStrength;
-	alignas(4) float specularStrength;
-};
+		alignas(16) Vector4f lightColor;
+		alignas(16) Vector3f lightPos;
+		alignas(4) float ambientStrength;
+		alignas(4) float specularStrength;
+	};
 
-// TODO: Precalculate VP CPU-side
-struct ViewerGpuObject {
-	glm::mat4 view;
-	glm::mat4 proj;
-};
+	// TODO: Precalculate VP CPU-side
+	struct ViewerGpuObject {
+		Matrix4f view;
+		Matrix4f proj;
+	};
 
-struct ModelGpuObject {
-	glm::mat4 model;
-};
+	struct ModelGpuObject {
+		Matrix4f model;
+	};
+}
 
 #endif

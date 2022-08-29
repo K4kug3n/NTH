@@ -25,10 +25,10 @@ target("basic_render")
 
 	set_rundir("assets")
 
-	add_packages("vulkan-memory-allocator", "vulkan-headers", "libsdl", "tinyobjloader", "stb", "glm")
+	add_packages("vulkan-memory-allocator", "vulkan-headers", "libsdl", "tinyobjloader", "stb")
 
 
 target("test")
 	add_files("tests/**.cpp")
 
-	add_packages("catch2", "vulkan-memory-allocator", "vulkan-headers", "libsdl", "tinyobjloader", "stb", "glm")
+	add_packages("catch2", "vulkan-memory-allocator", "vulkan-headers", "libsdl", "tinyobjloader", "stb")

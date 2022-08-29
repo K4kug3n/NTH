@@ -1,6 +1,8 @@
 #include <Renderer/Renderer.hpp>
 #include <Renderer/RenderingResource.hpp>
 
+#include <Math/Angle.hpp>
+
 #include <Util/Image.hpp>
 
 #include <cstring>
@@ -294,9 +296,9 @@ namespace Nth {
 
 		Vector2ui size = m_renderWindow.size();
 
-		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(size.x) / static_cast<float>(size.y), 0.1f, 10.0f);
-		ubo.proj[1][1] *= -1;
+		ubo.view = Matrix4f::Translation({ 0.f, 0.f, -3.f }) * (Matrix4f::Rotation(toRadians(-45.f), { 1.f, 0.f, 0.f }) * Matrix4f::Rotation(toRadians(225.f), { 0.f, 0.f, 1.f }));
+		ubo.proj = Matrix4f::Perspective(toRadians(45.0f), static_cast<float>(size.x) / static_cast<float>(size.y), 0.1f, 10.0f);
+		ubo.proj.a22 *= -1;
 
 		return ubo;
 	}

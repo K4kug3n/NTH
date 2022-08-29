@@ -1,10 +1,7 @@
 #ifndef NTH_RENDERER_RENDEROBJECT_HPP
 #define NTH_RENDERER_RENDEROBJECT_HPP
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <Math/Matrix4.hpp>
 
 namespace Nth {
 	struct Mesh;
@@ -17,7 +14,7 @@ namespace Nth {
 		Material* material;
 		VulkanTexture* texture;
 
-		glm::mat4 transformMatrix;
+		Matrix4f transformMatrix;
 	};
 }
 

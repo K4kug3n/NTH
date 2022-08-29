@@ -51,25 +51,25 @@ namespace Nth{
 	template<typename T>
 	Matrix4<T> Matrix4<T>::operator*(Matrix4 const& mat) const {
 		return Matrix4<T>{ 
-			a11 * mat.a11 + a12 * mat.a21 + a13 * mat.a31 + a14 * mat.a41,
-			a11 * mat.a12 + a12 * mat.a22 + a13 * mat.a32 + a14 * mat.a42,
-			a11 * mat.a13 + a12 * mat.a23 + a13 * mat.a33 + a14 * mat.a43,
-			a11 * mat.a14 + a12 * mat.a24 + a13 * mat.a34 + a14 * mat.a44,
+			mat.a11 * a11 + mat.a12 * a21 + mat.a13 * a31 + mat.a14 * a41,
+			mat.a11 * a12 + mat.a12 * a22 + mat.a13 * a32 + mat.a14 * a42,
+			mat.a11 * a13 + mat.a12 * a23 + mat.a13 * a33 + mat.a14 * a43,
+			mat.a11 * a14 + mat.a12 * a24 + mat.a13 * a34 + mat.a14 * a44,
 
-			a21* mat.a11 + a22 * mat.a21 + a23 * mat.a31 + a24 * mat.a41,
-			a21* mat.a12 + a22 * mat.a22 + a23 * mat.a32 + a24 * mat.a42,
-			a21* mat.a13 + a22 * mat.a23 + a23 * mat.a33 + a24 * mat.a43,
-			a21* mat.a14 + a22 * mat.a24 + a23 * mat.a34 + a24 * mat.a44,
+			mat.a21 * a11 + mat.a22 * a21 + mat.a23 * a31 + mat.a24 * a41,
+			mat.a21 * a12 + mat.a22 * a22 + mat.a23 * a32 + mat.a24 * a42,
+			mat.a21 * a13 + mat.a22 * a23 + mat.a23 * a33 + mat.a24 * a43,
+			mat.a21 * a14 + mat.a22 * a24 + mat.a23 * a34 + mat.a24 * a44,
 
-			a31* mat.a11 + a32 * mat.a21 + a33 * mat.a31 + a34 * mat.a41,
-			a31* mat.a12 + a32 * mat.a22 + a33 * mat.a32 + a34 * mat.a42,
-			a31* mat.a13 + a32 * mat.a23 + a33 * mat.a33 + a34 * mat.a43,
-			a31* mat.a14 + a32 * mat.a24 + a33 * mat.a34 + a34 * mat.a44,
+			mat.a31 * a11 + mat.a32 * a21 + mat.a33 * a31 + mat.a34 * a41,
+			mat.a31 * a12 + mat.a32 * a22 + mat.a33 * a32 + mat.a34 * a42,
+			mat.a31 * a13 + mat.a32 * a23 + mat.a33 * a33 + mat.a34 * a43,
+			mat.a31 * a14 + mat.a32 * a24 + mat.a33 * a34 + mat.a34 * a44,
 
-			a41* mat.a11 + a42 * mat.a21 + a43 * mat.a31 + a44 * mat.a41,
-			a41* mat.a12 + a42 * mat.a22 + a43 * mat.a32 + a44 * mat.a42,
-			a41* mat.a13 + a42 * mat.a23 + a43 * mat.a33 + a44 * mat.a43,
-			a41* mat.a14 + a42 * mat.a24 + a43 * mat.a34 + a44 * mat.a44,
+			mat.a41 * a11 + mat.a42 * a21 + mat.a43 * a31 + mat.a44 * a41,
+			mat.a41 * a12 + mat.a42 * a22 + mat.a43 * a32 + mat.a44 * a42,
+			mat.a41 * a13 + mat.a42 * a23 + mat.a43 * a33 + mat.a44 * a43,
+			mat.a41 * a14 + mat.a42 * a24 + mat.a43 * a34 + mat.a44 * a44,
 		};
 	}
 
@@ -295,10 +295,10 @@ namespace Nth{
 		T const scale{ std::tan(fov) };
 
 		return Matrix4<T>{
-			static_cast<T>(1.0) / (aspectRatio * scale), static_cast<T>(0.0),         static_cast<T>(0.0),                                                              static_cast<T>(0.0),
-			static_cast<T>(0.0),                         static_cast<T>(1.0) / scale, static_cast<T>(0.0),                                                              static_cast<T>(0.0),
-			static_cast<T>(0.0),                         static_cast<T>(0.0),         -(farClipping + nearClipping) / (farClipping - nearClipping),                     -static_cast<T>(1.0),
-			static_cast<T>(0.0),                         static_cast<T>(0.0),         -(static_cast<T>(2) * farClipping * nearClipping) / (farClipping - nearClipping),  static_cast<T>(0.0),
+			static_cast<T>(1.0) / (aspectRatio * scale), static_cast<T>(0.0),          static_cast<T>(0.0),                                          static_cast<T>(0.0),
+			static_cast<T>(0.0),                         static_cast<T>(1.0) / scale,  static_cast<T>(0.0),                                          static_cast<T>(0.0),
+			static_cast<T>(0.0),                         static_cast<T>(0.0),         -(farClipping) / (farClipping - nearClipping),                -static_cast<T>(1.0),
+			static_cast<T>(0.0),                         static_cast<T>(0.0),         -(farClipping * nearClipping) / (farClipping - nearClipping),  static_cast<T>(0.0),
 		};
 	}
 

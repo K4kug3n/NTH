@@ -10,6 +10,7 @@
 
 int main() {
 	Nth::Window::initialize();
+	Nth::Window::setRelativeMouseMode(true);
 
 	Nth::Renderer renderer;
 
@@ -50,44 +51,54 @@ int main() {
 	renderer.camera.position = Nth::Vector3f{ 0.f, 0.f, -3.f };
 	renderer.camera.direction = Nth::EulerAngle(0.f, -45.f, -90.f);
 
-	Nth::Vector3f lightPos{ 0.f, 0.f, 0.f };
-	eventHandler.onKeyDown.connect([&lightPos](SDL_KeyboardEvent key) {
+	eventHandler.onKeyDown.connect([&renderer, &window](SDL_KeyboardEvent key) {
 		float stepSize{ 0.1f };
 
 		switch (key.keysym.sym) {
 		case SDLK_z:
-			lightPos.z += stepSize;
+			renderer.camera.position.z += stepSize;
 			break;
 		case SDLK_s:
-			lightPos.z -= stepSize;
+			renderer.camera.position.z -= stepSize;
 			break;
 		case SDLK_q:
-			lightPos.x += stepSize;
+			renderer.camera.position.x += stepSize;
 			break;
 		case SDLK_d:
-			lightPos.x -= stepSize;
+			renderer.camera.position.x -= stepSize;
 			break;
 		case SDLK_SPACE:
-			lightPos.y += stepSize;
+			renderer.camera.position.y -= stepSize;
 			break;
 		case SDLK_LSHIFT:
-			lightPos.y -= stepSize;
+			renderer.camera.position.y += stepSize;
+			break;
+		case SDLK_ESCAPE:
+			window.close();
 			break;
 		default:
 			break;
 		}
 	});
 
+	eventHandler.onMouseMove.connect([&renderer](Sint32 x, Sint32 y, Sint32 xrel, Sint32 yrel) {
+		float sensitivity{ 0.1f };
+
+		renderer.camera.direction.yaw += xrel * sensitivity;
+		renderer.camera.direction.pitch += yrel * sensitivity;
+	});
+
+	renderer.light = {
+		renderer.camera.position,
+		{ 1.f, 1.f, 1.f, 1.f },
+		{ 0.f, 0.f, 0.f },
+		0.1f,
+		0.5f,
+	};
+
 	auto start = std::chrono::high_resolution_clock::now();
 	while (window.isOpen()) {
-
-		renderer.light = {
-			renderer.camera.position,
-			{ 1.f, 1.f, 1.f, 1.f },
-			lightPos,
-			0.1f,
-			0.5f,
-		};
+		renderer.light.viewPos = renderer.camera.position;
 
 		auto end = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<float> diff = end - start;

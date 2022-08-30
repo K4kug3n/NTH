@@ -16,6 +16,7 @@ namespace Nth {
 		Signal<> onResize;
 		Signal<SDL_KeyboardEvent> onKeyDown;
 		Signal<SDL_KeyboardEvent> onKeyUp;
+		Signal<Sint32, Sint32, Sint32, Sint32> onMouseMove;
 	};
 }
 

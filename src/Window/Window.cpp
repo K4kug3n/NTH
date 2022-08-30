@@ -34,6 +34,15 @@ namespace Nth {
 		SDL_Quit();
 	}
 
+	void Window::setRelativeMouseMode(bool enabled) {
+		if (enabled) {
+			SDL_SetRelativeMouseMode(SDL_TRUE);
+		}
+		else {
+			SDL_SetRelativeMouseMode(SDL_FALSE);
+		}
+	}
+
 	bool Window::create(VideoMode const& mode, const std::string_view title) {
 		m_handle = SDL_CreateWindow(title.data(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, mode.width, mode.height, SDL_WINDOW_RESIZABLE);
 
@@ -169,6 +178,12 @@ namespace Nth {
 				break;
 
 			case SDL_MOUSEMOTION:
+				wEvent.type = WindowEventType::MouseMove;
+
+				wEvent.x = event->motion.x;
+				wEvent.y = event->motion.y;
+				wEvent.xrel = event->motion.xrel;
+				wEvent.yrel = event->motion.yrel;
 				break;
 			}
 

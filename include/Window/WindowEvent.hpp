@@ -9,6 +9,7 @@ namespace Nth {
 		Resized,
 		KeyDown,
 		KeyUp,
+		MouseMove,
 
 		Max
 	};
@@ -16,6 +17,10 @@ namespace Nth {
 	struct WindowEvent {
 		WindowEventType type;
 		SDL_KeyboardEvent key;
+		Sint32 x;
+		Sint32 y;
+		Sint32 xrel;
+		Sint32 yrel;
 	};
 }
 

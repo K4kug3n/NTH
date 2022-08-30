@@ -24,6 +24,7 @@ namespace Nth {
 
 		static bool initialize();
 		static void uninitialize();
+		static void setRelativeMouseMode(bool enabled);
 
 		bool create(VideoMode const& mode, const std::string_view title);
 		void close();

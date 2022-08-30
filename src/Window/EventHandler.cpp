@@ -16,6 +16,9 @@ namespace Nth {
 		case WindowEventType::KeyUp:
 			onKeyUp(event.key);
 			break;
+		case WindowEventType::MouseMove:
+			onMouseMove(event.x, event.y, event.xrel, event.yrel);
+			break;
 		}
 	}
 

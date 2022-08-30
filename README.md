@@ -15,6 +15,7 @@
 
 </div>
 
-# N-th Renderer
+# Nth
 
-N-th Renderer is a toy renderer created to learn Vulkan and Render practice in general.
+Nth (for "N-th project") is a toy project for learning purpose. Currently include a simple Vulkan renderer in real time with work in progress architecture.  
+May include other tool help scene creation in future.

@@ -32,12 +32,6 @@ namespace Nth {
 
 		void draw(std::vector<RenderObject> const& objects);
 
-		// TODO: review it
-		Vk::DescriptorSetLayout getViewerDescriptorLayout() const;
-		Vk::DescriptorSetLayout getTextureDescriptorLayout() const;
-		Vk::DescriptorSetLayout geModelDescriptorLayout() const;
-		Vk::DescriptorSetLayout getLightDescriptorLayout() const;
-
 		// TODO: Move out, used for sync destructor
 		void waitIdle() const;
 
@@ -60,11 +54,9 @@ namespace Nth {
 
 		DescriptorAllocator m_descriptorAllocator;
 
-		// TODO: Move it out
-		Vk::DescriptorSetLayout m_mainDescriptorLayout;
-		Vk::DescriptorSetLayout m_textureDescriptorLayout;
-		Vk::DescriptorSetLayout m_modelDescriptorLayout;
-		Vk::DescriptorSetLayout m_lightDescriptorLayout;
+		// TODO: May move it in dedicated class
+		size_t addDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> const& layoutBindings);
+		std::vector<Vk::DescriptorSetLayout> m_descriptorSetLayouts;
 
 		std::vector<RenderingResource> m_renderingResources;
 		size_t m_resourceIndex;

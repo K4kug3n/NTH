@@ -24,17 +24,52 @@ namespace Nth {
 			throw std::runtime_error("Can't create rendering ressources");
 		}
 
-		m_mainDescriptorLayout = getViewerDescriptorLayout();
-		m_modelDescriptorLayout = geModelDescriptorLayout();
-		m_textureDescriptorLayout = getTextureDescriptorLayout();
-		m_lightDescriptorLayout = getLightDescriptorLayout();
+		size_t viewLayoutIndex = addDescriptorSetLayout({ 
+			{
+				0,                                         // uint32_t            binding
+				VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         // VkDescriptorType    descriptorType
+				1,                                         // uint32_t            descriptorCount
+				VK_SHADER_STAGE_VERTEX_BIT,                // VkShaderStageFlags  stageFlags
+				nullptr                                    // const VkSampler    *pImmutableSamplers
+			}
+		});
+
+		size_t modelLayoutIndex = addDescriptorSetLayout({
+			{
+				0,                                          // uint32_t             binding
+				VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ,         // VkDescriptorType     descriptorType
+				1,                                          // uint32_t             descriptorCount
+				VK_SHADER_STAGE_VERTEX_BIT,                 // VkShaderStageFlags   stageFlags
+				nullptr                                     // const VkSampler     *pImmutableSamplers
+			}
+		});
+
+		size_t lightLayoutIndex = addDescriptorSetLayout({
+			{
+				0,                                         // uint32_t            binding
+				VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         // VkDescriptorType    descriptorType
+				1,                                         // uint32_t            descriptorCount
+				VK_SHADER_STAGE_FRAGMENT_BIT,              // VkShaderStageFlags  stageFlags
+				nullptr                                    // const VkSampler    *pImmutableSamplers
+			}
+		});
+
+		addDescriptorSetLayout({
+			{
+				0,                                          // uint32_t             binding
+				VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  // VkDescriptorType     descriptorType
+				1,                                          // uint32_t             descriptorCount
+				VK_SHADER_STAGE_FRAGMENT_BIT,               // VkShaderStageFlags   stageFlags
+				nullptr                                     // const VkSampler     *pImmutableSamplers
+			}
+		});
 
 		m_descriptorAllocator.init(m_vulkan.getDevice().getHandle());
 
 		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			m_renderingResources[i].viewerDescriptor = m_descriptorAllocator.allocate(m_mainDescriptorLayout);
-			m_renderingResources[i].modelDescriptor = m_descriptorAllocator.allocate(m_modelDescriptorLayout);
-			m_renderingResources[i].lightDescriptor = m_descriptorAllocator.allocate(m_lightDescriptorLayout);
+			m_renderingResources[i].viewerDescriptor = m_descriptorAllocator.allocate(m_descriptorSetLayouts[viewLayoutIndex]);
+			m_renderingResources[i].modelDescriptor = m_descriptorAllocator.allocate(m_descriptorSetLayouts[modelLayoutIndex]);
+			m_renderingResources[i].lightDescriptor = m_descriptorAllocator.allocate(m_descriptorSetLayouts[lightLayoutIndex]);
 
 			m_renderingResources[i].lightBuffer = VulkanBuffer{
 				m_vulkan.getDevice(),
@@ -88,7 +123,8 @@ namespace Nth {
 
 		texture.image.copyByStaging(pixels.data(), static_cast<uint32_t>(pixels.size()), image.width(), image.height(), m_renderingResources[0].commandBuffer);
 
-		texture.descriptorSet = m_descriptorAllocator.allocate(m_textureDescriptorLayout);
+		// TODO: descriptor set layout index hardcoded
+		texture.descriptorSet = m_descriptorAllocator.allocate(m_descriptorSetLayouts[3]);
 
 		VkDescriptorImageInfo textureInfo = {
 			texture.sampler(),                          // VkSampler                      sampler
@@ -118,12 +154,10 @@ namespace Nth {
 	}
 
 	Material Renderer::createMaterial(MaterialInfos const& infos) {
-		std::vector<VkDescriptorSetLayout> vkDescritptorLayouts{
-			m_mainDescriptorLayout(),
-			m_modelDescriptorLayout(),
-			m_lightDescriptorLayout(),
-			m_textureDescriptorLayout()
-		};
+		std::vector<VkDescriptorSetLayout> vkDescritptorLayouts(m_descriptorSetLayouts.size());
+		for (size_t i = 0; i < m_descriptorSetLayouts.size(); ++i) {
+			vkDescritptorLayouts[i] = m_descriptorSetLayouts[i]();
+		}
 
 		Material material;
 		material.createPipeline(m_vulkan.getDevice().getHandle(), m_renderWindow.getRenderPass(), infos.vertexShaderName, infos.fragmentShaderName, vkDescritptorLayouts);
@@ -155,114 +189,6 @@ namespace Nth {
 		m_renderWindow.draw(m_renderingResources[m_resourceIndex], objects, light, getViewerData());
 		
 		m_resourceIndex = (m_resourceIndex + 1) % Renderer::resourceCount;
-	}
-
-	Vk::DescriptorSetLayout Renderer::getViewerDescriptorLayout() const {
-		std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {
-			{
-				0,                                         // uint32_t           binding
-				VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         // VkDescriptorType   descriptorType
-				1,                                         // uint32_t           descriptorCount
-				VK_SHADER_STAGE_VERTEX_BIT,                // VkShaderStageFlags stageFlags
-				nullptr                                    // const VkSampler *pImmutableSamplers
-			}
-		};
-
-		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
-			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,  // VkStructureType                      sType
-			nullptr,                                              // const void                          *pNext
-			0,                                                    // VkDescriptorSetLayoutCreateFlags     flags
-			static_cast<uint32_t>(layoutBindings.size()),         // uint32_t                             bindingCount
-			layoutBindings.data()                                 // const VkDescriptorSetLayoutBinding  *pBindings
-		};
-
-		Vk::DescriptorSetLayout layout;
-		if (!layout.create(m_vulkan.getDevice().getHandle(), descriptorSetLayoutCreateInfo)) {
-			throw std::runtime_error("Could not create descriptor set layout!");
-		}
-
-		return layout;
-	}
-
-	Vk::DescriptorSetLayout Renderer::getTextureDescriptorLayout() const {
-		std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {
-			{
-				0,                                          // uint32_t             binding
-				VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  // VkDescriptorType     descriptorType
-				1,                                          // uint32_t             descriptorCount
-				VK_SHADER_STAGE_FRAGMENT_BIT,               // VkShaderStageFlags   stageFlags
-				nullptr                                     // const VkSampler     *pImmutableSamplers
-			}
-		};
-
-		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
-			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,  // VkStructureType                      sType
-			nullptr,                                              // const void                          *pNext
-			0,                                                    // VkDescriptorSetLayoutCreateFlags     flags
-			static_cast<uint32_t>(layoutBindings.size()),         // uint32_t                             bindingCount
-			layoutBindings.data()                                 // const VkDescriptorSetLayoutBinding  *pBindings
-		};
-
-		Vk::DescriptorSetLayout layout;
-		if (!layout.create(m_vulkan.getDevice().getHandle(), descriptorSetLayoutCreateInfo)) {
-			throw std::runtime_error("Could not create descriptor set layout!");
-		}
-
-		return layout;
-	}
-
-	Vk::DescriptorSetLayout Renderer::geModelDescriptorLayout() const {
-		std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {
-			{
-				0,                                          // uint32_t             binding
-				VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ,         // VkDescriptorType     descriptorType
-				1,                                          // uint32_t             descriptorCount
-				VK_SHADER_STAGE_VERTEX_BIT,                 // VkShaderStageFlags   stageFlags
-				nullptr                                     // const VkSampler     *pImmutableSamplers
-			}
-		};
-
-		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
-			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,  // VkStructureType                      sType
-			nullptr,                                              // const void                          *pNext
-			0,                                                    // VkDescriptorSetLayoutCreateFlags     flags
-			static_cast<uint32_t>(layoutBindings.size()),         // uint32_t                             bindingCount
-			layoutBindings.data()                                 // const VkDescriptorSetLayoutBinding  *pBindings
-		};
-
-		Vk::DescriptorSetLayout layout;
-		if (!layout.create(m_vulkan.getDevice().getHandle(), descriptorSetLayoutCreateInfo)) {
-			throw std::runtime_error("Could not create descriptor set layout!");
-		}
-
-		return layout;
-	}
-
-	Vk::DescriptorSetLayout Renderer::getLightDescriptorLayout() const {
-		std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {
-			{
-				0,                                         // uint32_t           binding
-				VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         // VkDescriptorType   descriptorType
-				1,                                         // uint32_t           descriptorCount
-				VK_SHADER_STAGE_FRAGMENT_BIT,                // VkShaderStageFlags stageFlags
-				nullptr                                    // const VkSampler *pImmutableSamplers
-			}
-		};
-
-		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
-			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,  // VkStructureType                      sType
-			nullptr,                                              // const void                          *pNext
-			0,                                                    // VkDescriptorSetLayoutCreateFlags     flags
-			static_cast<uint32_t>(layoutBindings.size()),         // uint32_t                             bindingCount
-			layoutBindings.data()                                 // const VkDescriptorSetLayoutBinding  *pBindings
-		};
-
-		Vk::DescriptorSetLayout layout;
-		if (!layout.create(m_vulkan.getDevice().getHandle(), descriptorSetLayoutCreateInfo)) {
-			throw std::runtime_error("Could not create descriptor set layout!");
-		}
-
-		return layout;
 	}
 
 	void Renderer::waitIdle() const {
@@ -310,7 +236,7 @@ namespace Nth {
 
 			VkDescriptorBufferInfo ssboInfo = {
 				m_renderingResources[i].modelBuffer.handle(),         // VkBuffer         buffer
-				0,                                             // VkDeviceSize     offset
+				0,                                                    // VkDeviceSize     offset
 				m_renderingResources[i].modelBuffer.handle.getSize()  // VkDeviceSize     range
 			};
 
@@ -318,7 +244,7 @@ namespace Nth {
 				{
 					VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
 					nullptr,                                    // const void                    *pNext
-					m_renderingResources[i].modelDescriptor(),   // VkDescriptorSet                dstSet
+					m_renderingResources[i].modelDescriptor(),  // VkDescriptorSet                dstSet
 					0,                                          // uint32_t                       dstBinding
 					0,                                          // uint32_t                       dstArrayElement
 					1,                                          // uint32_t                       descriptorCount
@@ -368,5 +294,24 @@ namespace Nth {
 		}
 
 		return true;
+	}
+
+	size_t Renderer::addDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> const& layoutBindings) {
+		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
+			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,  // VkStructureType                      sType
+			nullptr,                                              // const void                          *pNext
+			0,                                                    // VkDescriptorSetLayoutCreateFlags     flags
+			static_cast<uint32_t>(layoutBindings.size()),         // uint32_t                             bindingCount
+			layoutBindings.data()                                 // const VkDescriptorSetLayoutBinding  *pBindings
+		};
+
+		Vk::DescriptorSetLayout layout;
+		if (!layout.create(m_vulkan.getDevice().getHandle(), descriptorSetLayoutCreateInfo)) {
+			throw std::runtime_error("Could not create descriptor set layout!");
+		}
+
+		m_descriptorSetLayouts.push_back(std::move(layout));
+
+		return m_descriptorSetLayouts.size() - 1;
 	}
 }

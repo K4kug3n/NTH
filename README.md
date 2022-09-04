@@ -15,7 +15,7 @@
 
 </div>
 
-# Nth
+# NTH
 
-Nth (for "N-th project") is a toy project for learning purpose. Currently include a simple Vulkan renderer in real time with work in progress architecture.  
-May include other tool help scene creation in future.
+NTH (for "N-th project") include a simple Vulkan renderer in real time with work in progress architecture. It's a toy project for learning purpose.  
+May include other tool to help scene creation in future.

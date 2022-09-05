@@ -21,6 +21,10 @@ namespace Nth {
 		Matrix4(Matrix4<T>&&) = default;
 		~Matrix4() = default;
 
+		float det() const;
+		Matrix4<float> adj() const;
+		Matrix4<float> inv() const;
+
 		Matrix4 operator+(Matrix4 const& mat) const;
 		Matrix4 operator+(T scale) const;
 		Matrix4 operator-(Matrix4 const& mat) const;

@@ -46,4 +46,22 @@ TEST_CASE("Matrix4", "[Mat4]") {
 
 		REQUIRE(A * B == Matrix4f{ 650.f, 740.f, 830.f, 920.f, 762.f, 868.f, 974.f, 1080.f, 874.f, 996.f, 1118.f, 1240.f, 986.f, 1124.f, 1262.f, 1400.f });
 	}
+
+	SECTION("Properties") {
+		Matrix4f mat{ 2.f, 3.f, 1.f, 4.f,
+					7.f, 11.f, 2.f, -1.f,
+					5.f, 7.f, -11.f, 2.f,
+					3.f, 4.f, 5.f, 6.f };
+
+		REQUIRE(Matrix4f::Identity().det() == Approx(1.f));
+		REQUIRE(mat.det() == Approx(271.0f));
+
+		REQUIRE(Matrix4f::Identity().adj() == Matrix4f::Identity());
+		REQUIRE(mat.adj() == Matrix4f{ -983.f, -54.f, 169.f, 590.f, 638.f, 56.f, -105.f, -381.f, -25.f, 8.f, -15.f, 23.f, 87.f, -17.f, -2.f, -15.f });
+
+		Matrix4f mat_inv{ mat.inv() };
+
+		REQUIRE(mat_inv.a11 == Approx(-983.f / 271.f));
+		REQUIRE(mat_inv.a23 == Approx(-105.f / 271.f));
+	}
 }

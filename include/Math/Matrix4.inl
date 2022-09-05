@@ -4,8 +4,16 @@
 #include <Math/Vector4.hpp>
 
 #include <sstream>
+#include <cassert>
 
 namespace Nth{
+	// TODO: Dedicated class
+	template<typename T>
+	inline float det_mat3(T a11, T a12, T a13, T a21, T a22, T a23, T a31, T a32, T a33) {
+		return a11 * a22 * a33 + a13 * a21 * a32 + a12 * a23 * a31
+			- (a13 * a22 * a31) - (a12 * a21 * a33) - (a11 * a23 * a32);
+	}
+
 	template<typename T>
 	Matrix4<T>::Matrix4(T a11, T a12, T a13, T a14,
 						T a21, T a22, T a23, T a24,
@@ -15,6 +23,51 @@ namespace Nth{
 		a21(a21), a22(a22), a23(a23), a24(a24),
 		a31(a31), a32(a32), a33(a33), a34(a34),
 		a41(a41), a42(a42), a43(a43), a44(a44) {}
+
+	template<typename T>
+	inline float Matrix4<T>::det() const {
+		return a11 * (a22 * a33 * a44 - a22 * a34 * a43 - a23 * a32 * a44 + a23 * a34 * a42 + a24 * a32 * a43 - a24 * a33 * a42)
+			- a12 * (a21 * a33 * a44 - a21 * a34 * a43 - a23 * a31 * a44 + a23 * a34 * a41 + a24 * a31 * a43 - a24 * a33 * a41)
+			+ a13 * (a21 * a32 * a44 - a21 * a34 * a42 - a22 * a31 * a44 + a22 * a34 * a41 + a24 * a31 * a42 - a24 * a32 * a41)
+			- a14 * (a21 * a32 * a43 - a21 * a33 * a42 - a22 * a31 * a43 + a22 * a33 * a41 + a23 * a31 * a42 - a23 * a32 * a41);
+
+	}
+
+	template<typename T>
+	inline Matrix4<float> Matrix4<T>::adj() const {
+		float m11 = det_mat3(a22, a23, a24, a32, a33, a34, a42, a43, a44);
+		float m12 = det_mat3(a21, a23, a24, a31, a33, a34, a41, a43, a44);
+		float m13 = det_mat3(a21, a22, a24, a31, a32, a34, a41, a42, a44);
+		float m14 = det_mat3(a21, a22, a23, a31, a32, a33, a41, a42, a43);
+
+		float m21 = det_mat3(a12, a13, a14, a32, a33, a34, a42, a43, a44);
+		float m22 = det_mat3(a11, a13, a14, a31, a33, a34, a41, a43, a44);
+		float m23 = det_mat3(a11, a12, a14, a31, a32, a34, a41, a42, a44);
+		float m24 = det_mat3(a11, a12, a13, a31, a32, a33, a41, a42, a43);
+
+		float m31 = det_mat3(a12, a13, a14, a22, a23, a24, a42, a43, a44);
+		float m32 = det_mat3(a11, a13, a14, a21, a23, a24, a41, a43, a44);
+		float m33 = det_mat3(a11, a12, a14, a21, a22, a24, a41, a42, a44);
+		float m34 = det_mat3(a11, a12, a13, a21, a22, a23, a41, a42, a43);
+
+		float m41 = det_mat3(a12, a13, a14, a22, a23, a24, a32, a33, a34);
+		float m42 = det_mat3(a11, a13, a14, a21, a23, a24, a31, a33, a34);
+		float m43 = det_mat3(a11, a12, a14, a21, a22, a24, a31, a32, a34);
+		float m44 = det_mat3(a11, a12, a13, a21, a22, a23, a31, a32, a33);
+
+		return Matrix4f{
+			m11, -m21, m31, -m41,
+			-m12, m22, -m32, m42,
+			m13, -m23, m33, -m43,
+			-m14, m24, -m34, m44,
+		};
+	}
+
+	template<typename T>
+	inline Matrix4<float> Matrix4<T>::inv() const {
+		assert(det() != 0);
+		return (1 / det()) * adj();
+	}
 
 	template<typename T>
 	Matrix4<T> Matrix4<T>::operator+(Matrix4 const& mat) const {

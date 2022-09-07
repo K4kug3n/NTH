@@ -1,4 +1,5 @@
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
 
 #include <Math/Matrix4.hpp>
 #include <Math/Angle.hpp>
@@ -53,15 +54,15 @@ TEST_CASE("Matrix4", "[Mat4]") {
 					5.f, 7.f, -11.f, 2.f,
 					3.f, 4.f, 5.f, 6.f };
 
-		REQUIRE(Matrix4f::Identity().det() == Approx(1.f));
-		REQUIRE(mat.det() == Approx(271.0f));
+		REQUIRE(Matrix4f::Identity().det() == Catch::Approx(1.f));
+		REQUIRE(mat.det() == Catch::Approx(271.0f));
 
 		REQUIRE(Matrix4f::Identity().adj() == Matrix4f::Identity());
 		REQUIRE(mat.adj() == Matrix4f{ -983.f, -54.f, 169.f, 590.f, 638.f, 56.f, -105.f, -381.f, -25.f, 8.f, -15.f, 23.f, 87.f, -17.f, -2.f, -15.f });
 
 		Matrix4f mat_inv{ mat.inv() };
 
-		REQUIRE(mat_inv.a11 == Approx(-983.f / 271.f));
-		REQUIRE(mat_inv.a23 == Approx(-105.f / 271.f));
+		REQUIRE(mat_inv.a11 == Catch::Approx(-983.f / 271.f));
+		REQUIRE(mat_inv.a23 == Catch::Approx(-105.f / 271.f));
 	}
 }

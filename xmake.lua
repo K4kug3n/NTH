@@ -1,5 +1,5 @@
 set_project("NTH")
-add_requires("vulkan-memory-allocator", "vulkan-headers", "libsdl", "tinyobjloader", "stb", "catch2 2.13.*")
+add_requires("vulkan-memory-allocator", "vulkan-headers", "libsdl", "tinyobjloader", "stb", "catch2")
 add_rules("mode.debug", "mode.release")
 add_rules("plugin.vsxmake.autoupdate")
 

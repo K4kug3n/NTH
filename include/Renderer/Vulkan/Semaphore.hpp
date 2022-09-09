@@ -19,7 +19,7 @@ namespace Nth {
 			VkSemaphore const& operator()() const;
 
 			Semaphore& operator=(Semaphore const&) = delete;
-			Semaphore& operator=(Semaphore&&) = delete;
+			Semaphore& operator=(Semaphore&& object) noexcept;
 
 		private:
 			VkSemaphore m_sempahore;

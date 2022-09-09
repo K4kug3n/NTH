@@ -48,5 +48,14 @@ namespace Nth {
 		VkFramebuffer const& Framebuffer::operator()() const {
 			return m_framebuffer;
 		}
+
+		Framebuffer& Framebuffer::operator=(Framebuffer&& object) noexcept {
+			m_framebuffer = object.m_framebuffer;
+			m_device= object.m_device;
+
+			object.m_framebuffer = VK_NULL_HANDLE;
+
+			return *this;
+		}
 	}
 }

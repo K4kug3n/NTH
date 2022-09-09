@@ -22,6 +22,7 @@ namespace Nth {
 			~Device();
 
 			bool create(PhysicalDevice physicalDevice, VkDeviceCreateInfo const& infos);
+			void destroy();
 
 			bool isValid() const;
 			bool isLoadedExtension(const std::string_view name) const;

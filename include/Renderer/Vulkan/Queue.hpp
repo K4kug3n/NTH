@@ -32,8 +32,8 @@ namespace Nth {
 			uint32_t m_index;
 		};
 
-		bool operator==(Queue& queue1, Queue& queue2);
-		bool operator!=(Queue& queue1, Queue& queue2);
+		bool operator==(Queue const& queue1, Queue const& queue2);
+		bool operator!=(Queue const& queue1, Queue const& queue2);
 	}
 }
 

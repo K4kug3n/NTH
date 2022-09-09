@@ -14,10 +14,10 @@ namespace Nth {
 		public:
 			CommandPool();
 			CommandPool(CommandPool const&) = delete;
-			CommandPool(CommandPool&&) = delete;
+			CommandPool(CommandPool&& object) noexcept;
 			~CommandPool();
 
-			bool create(Device const& device, uint32_t index, VkCommandPoolCreateFlags flags);
+			bool create(Device const& device, uint32_t familyIndex, VkCommandPoolCreateFlags flags);
 			void destroy();
 
 			bool allocateCommandBuffer(VkCommandBufferLevel level, CommandBuffer& commandBuffer) const;
@@ -27,7 +27,7 @@ namespace Nth {
 			VkCommandPool const& operator()() const;
 
 			CommandPool& operator=(CommandPool const&) = delete;
-			CommandPool& operator=(CommandPool&&) = delete;
+			CommandPool& operator=(CommandPool&& object) noexcept;
 
 		private:
 			VkCommandPool m_commandPool;

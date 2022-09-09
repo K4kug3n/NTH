@@ -67,5 +67,14 @@ namespace Nth {
 		VkFence Fence::operator()() const {
 			return m_fence;
 		}
+
+		Fence& Fence::operator=(Fence&& object) noexcept {
+			m_fence = object.m_fence;
+			m_device = object.m_device;
+
+			object.m_fence = VK_NULL_HANDLE;
+
+			return *this;
+		}
 	}
 }

@@ -21,7 +21,7 @@ namespace Nth {
 			VkFence operator()() const;
 
 			Fence& operator=(Fence const&) = delete;
-			Fence& operator=(Fence&&) = delete;
+			Fence& operator=(Fence&& object) noexcept;
 
 		private:
 			VkFence m_fence;

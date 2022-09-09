@@ -2,6 +2,7 @@
 
 #include <Renderer/Vulkan/VkUtil.hpp>
 #include <Renderer/Vulkan/PhysicalDevice.hpp>
+#include <Renderer/Vulkan/VulkanLoader.hpp>
 
 #include <iostream>
 
@@ -20,15 +21,13 @@ namespace Nth {
 		}
 
 		Device::~Device() {
-			if (isValid()) {
-				vmaDestroyAllocator(m_allocator);
-				vkDestroyDevice(m_device, nullptr);
-			}
+			destroy();
 		}
 
 		bool Device::create(PhysicalDevice physicalDevice, VkDeviceCreateInfo const& infos) {
 			assert(m_instance.isValid());
 			
+			// TODO: Review
 			m_physicalDevice = std::make_unique<PhysicalDevice>(std::move(physicalDevice));
 
 			VkResult result{ m_instance.vkCreateDevice((*m_physicalDevice)(), &infos, nullptr, &m_device) };
@@ -60,6 +59,8 @@ namespace Nth {
 			VmaVulkanFunctions vulkanFunctions{};
 			vulkanFunctions.vkGetPhysicalDeviceProperties = m_instance.vkGetPhysicalDeviceProperties;
 			vulkanFunctions.vkGetPhysicalDeviceMemoryProperties = m_instance.vkGetPhysicalDeviceMemoryProperties;
+			vulkanFunctions.vkGetInstanceProcAddr = VulkanLoader::vkGetInstanceProcAddr;
+			vulkanFunctions.vkGetDeviceProcAddr = m_instance.vkGetDeviceProcAddr;
 			vulkanFunctions.vkAllocateMemory = vkAllocateMemory;
 			vulkanFunctions.vkFreeMemory = vkFreeMemory;
 			vulkanFunctions.vkMapMemory = vkMapMemory;
@@ -90,6 +91,15 @@ namespace Nth {
 			}
 
 			return true;
+		}
+
+		void Device::destroy() {
+			if (isValid()) {
+				vmaDestroyAllocator(m_allocator);
+				vkDestroyDevice(m_device, nullptr);
+
+				m_device = VK_NULL_HANDLE;
+			}
 		}
 
 		bool Device::isValid() const {

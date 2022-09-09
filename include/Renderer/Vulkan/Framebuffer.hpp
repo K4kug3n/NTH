@@ -22,7 +22,7 @@ namespace Nth {
 			VkFramebuffer const& operator()() const;
 
 			Framebuffer& operator=(Framebuffer const&) = delete;
-			Framebuffer& operator=(Framebuffer&&) = delete;
+			Framebuffer& operator=(Framebuffer&& object) noexcept;
 
 		private:
 			VkFramebuffer m_framebuffer;

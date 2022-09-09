@@ -13,16 +13,22 @@ namespace Nth {
 			m_device(nullptr) {
 		}
 
+		CommandPool::CommandPool(CommandPool&& object) noexcept :
+			m_commandPool(object.m_commandPool),
+			m_device(object.m_device){
+			object.m_commandPool = VK_NULL_HANDLE;
+		}
+
 		CommandPool::~CommandPool() {
 			destroy();
 		}
 
-		bool CommandPool::create(Device const& device, uint32_t index, VkCommandPoolCreateFlags flags) {
+		bool CommandPool::create(Device const& device, uint32_t familyIndex, VkCommandPoolCreateFlags flags) {
 			VkCommandPoolCreateInfo cmdPoolCreateInfo = {
 				VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,     // VkStructureType              sType
 				nullptr,                                        // const void*                  pNext
 				flags,                                          // VkCommandPoolCreateFlags     flags
-				index                                           // uint32_t                     queueFamilyIndex
+				familyIndex                                           // uint32_t                     queueFamilyIndex
 			};
 
 			VkResult result{ device.vkCreateCommandPool(device(), &cmdPoolCreateInfo, nullptr, &m_commandPool) };
@@ -81,6 +87,14 @@ namespace Nth {
 
 		VkCommandPool const& CommandPool::operator()() const {
 			return m_commandPool;
+		}
+
+		CommandPool& CommandPool::operator=(CommandPool&& object) noexcept {
+			m_commandPool = object.m_commandPool;
+			m_device = object.m_device;
+			object.m_commandPool = VK_NULL_HANDLE;
+
+			return *this;
 		}
 	}
 }

@@ -44,5 +44,13 @@ namespace Nth {
 		VkSemaphore const& Semaphore::operator()() const {
 			return m_sempahore;
 		}
+
+		Semaphore& Semaphore::operator=(Semaphore&& object) noexcept {
+			m_sempahore = object.m_sempahore;
+			m_device = object.m_device;
+			object.m_sempahore = VK_NULL_HANDLE;
+
+			return *this;
+		}
 	}
 }

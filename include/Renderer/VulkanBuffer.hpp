@@ -19,7 +19,7 @@ namespace Nth {
 		VulkanBuffer(VulkanBuffer&&) = default;
 		~VulkanBuffer() = default;
 
-		void copy(const void* data, size_t size, Vk::CommandBuffer& commandBuffer);
+		void copy(const void* data, size_t size);
 
 		VulkanBuffer& operator=(VulkanBuffer const&) = delete;
 		VulkanBuffer& operator=(VulkanBuffer&&) = default;
@@ -28,7 +28,7 @@ namespace Nth {
 	private:
 		bool allocateBufferMemory(Vk::Device const& device, VkMemoryPropertyFlagBits memoryProperty, Vk::Buffer& buffer, Vk::DeviceMemory& memory);
 		void createStaging(Vk::Device const& device, VkDeviceSize size);
-		void copyByStaging(const void* data, size_t size, Vk::CommandBuffer& commandBuffer);
+		void copyByStaging(const void* data, size_t size);
 
 		Vk::Buffer m_staging;
 		Vk::DeviceMemory m_stagingMemory;

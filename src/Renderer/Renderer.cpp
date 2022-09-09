@@ -121,7 +121,7 @@ namespace Nth {
 
 		texture.createView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
 
-		texture.image.copyByStaging(pixels.data(), static_cast<uint32_t>(pixels.size()), image.width(), image.height(), m_renderingResources[0].commandBuffer);
+		texture.image.copy(pixels.data(), static_cast<uint32_t>(pixels.size()), image.width(), image.height());
 
 		// TODO: descriptor set layout index hardcoded
 		texture.descriptorSet = m_descriptorAllocator.allocate(m_descriptorSetLayouts[3]);
@@ -173,7 +173,7 @@ namespace Nth {
 			static_cast<uint32_t>(mesh.vertices.size() * sizeof(mesh.vertices[0]))
 		};
 
-		mesh.vertexBuffer.copy(mesh.vertices.data(), mesh.vertexBuffer.handle.getSize(), m_renderingResources[0].commandBuffer);
+		mesh.vertexBuffer.copy(mesh.vertices.data(), mesh.vertexBuffer.handle.getSize());
 
 		mesh.indexBuffer = VulkanBuffer{
 			m_vulkan.getDevice(),
@@ -182,7 +182,7 @@ namespace Nth {
 			sizeof(mesh.indices[0])* mesh.indices.size()
 		};
 
-		mesh.indexBuffer.copy(mesh.indices.data(), mesh.indexBuffer.handle.getSize(), m_renderingResources[0].commandBuffer);
+		mesh.indexBuffer.copy(mesh.indices.data(), mesh.indexBuffer.handle.getSize());
 	}
 
 	void Renderer::draw(std::vector<RenderObject> const& objects) {

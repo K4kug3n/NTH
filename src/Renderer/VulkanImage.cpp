@@ -91,7 +91,7 @@ namespace Nth {
 		}
 	}
 
-	void VulkanImage::copyByStaging(void const* data, size_t size, uint32_t width, uint32_t height, Vk::CommandBuffer& commandBuffer) {
+	void VulkanImage::copy(void const* data, size_t size, uint32_t width, uint32_t height) {
 		assert(m_device != nullptr);
 
 		if (!m_stagingMemory.map(0, size, 0)) {
@@ -115,6 +115,7 @@ namespace Nth {
 			nullptr                                       // const VkCommandBufferInheritanceInfo  *pInheritanceInfo
 		};
 
+		Vk::CommandBuffer commandBuffer{ m_device->allocateCommandBuffer() };
 		commandBuffer.begin(commandBufferBeginInfo);
 
 		VkImageSubresourceRange image_subresource_range = {

@@ -24,7 +24,7 @@ namespace Nth {
 		void create(VulkanDevice const& device, uint32_t width, uint32_t height, size_t stagingSize, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties);
 		void createView(VkFormat format, VkImageAspectFlags aspectFlags);
 
-		void copyByStaging(void const* data, size_t size, uint32_t width, uint32_t height, Vk::CommandBuffer& commandBuffer);
+		void copy(void const* data, size_t size, uint32_t width, uint32_t height);
 
 		VulkanImage& operator=(VulkanImage const&) = delete;
 		VulkanImage& operator=(VulkanImage&&) = default;

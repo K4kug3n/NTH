@@ -45,9 +45,9 @@ namespace Nth {
 		}
 	}
 
-	void VulkanBuffer::copy(const void* data, size_t size, Vk::CommandBuffer& commandBuffer) {
+	void VulkanBuffer::copy(const void* data, size_t size) {
 		if (m_memoryProperty & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
-			copyByStaging(data, size, commandBuffer);
+			copyByStaging(data, size);
 		}
 		else {
 			m_memory.map(0, size, 0);
@@ -110,7 +110,7 @@ namespace Nth {
 		}
 	}
 
-	void VulkanBuffer::copyByStaging(const void* data, size_t size, Vk::CommandBuffer& commandBuffer) {
+	void VulkanBuffer::copyByStaging(const void* data, size_t size) {
 		assert(m_device != nullptr);
 
 		if (!m_stagingMemory.map(0, handle.getSize(), 0)) {
@@ -132,6 +132,7 @@ namespace Nth {
 			nullptr                                      // const VkCommandBufferInheritanceInfo  *pInheritanceInfo
 		};
 
+		Vk::CommandBuffer commandBuffer{ m_device->allocateCommandBuffer() };
 		commandBuffer.begin(commandBufferBeginInfo);
 
 		VkBufferCopy bufferCopyInfo = {

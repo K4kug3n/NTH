@@ -16,6 +16,7 @@ namespace Nth {
 		class Surface;
 	}
 
+	// TODO: Clean this imple
 	class VulkanInstance {
 	public:
 		VulkanInstance();

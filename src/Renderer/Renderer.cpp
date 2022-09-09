@@ -1,5 +1,6 @@
 #include <Renderer/Renderer.hpp>
 #include <Renderer/RenderingResource.hpp>
+#include <Renderer/RenderObject.hpp>
 
 #include <Math/Angle.hpp>
 
@@ -12,16 +13,11 @@ namespace Nth {
 	Renderer::Renderer() :
 		m_vulkan(),
 		m_renderWindow(m_vulkan),
-		m_resourceIndex(0),
-		m_renderingResources(Renderer::resourceCount) { }
+		m_resourceIndex(0) { }
 
 	RenderWindow& Renderer::getWindow(VideoMode const& mode, const std::string_view title) {
 		if (!m_renderWindow.create(mode, title)) {
 			throw std::runtime_error("Can't create render window");
-		}
-
-		if (!createRenderingResources()) {
-			throw std::runtime_error("Can't create rendering ressources");
 		}
 
 		size_t viewLayoutIndex = addDescriptorSetLayout({ 
@@ -66,26 +62,26 @@ namespace Nth {
 
 		m_descriptorAllocator.init(m_vulkan.getDevice().getHandle());
 
-		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			m_renderingResources[i].viewerDescriptor = m_descriptorAllocator.allocate(m_descriptorSetLayouts[viewLayoutIndex]);
-			m_renderingResources[i].modelDescriptor = m_descriptorAllocator.allocate(m_descriptorSetLayouts[modelLayoutIndex]);
-			m_renderingResources[i].lightDescriptor = m_descriptorAllocator.allocate(m_descriptorSetLayouts[lightLayoutIndex]);
+		for (size_t i = 0; i < Renderer::resourceCount; ++i) {
+			m_viewerDescriptors[i] = m_descriptorAllocator.allocate(m_descriptorSetLayouts[viewLayoutIndex]);
+			m_modelDescriptors[i] = m_descriptorAllocator.allocate(m_descriptorSetLayouts[modelLayoutIndex]);
+			m_lightDescriptors[i] = m_descriptorAllocator.allocate(m_descriptorSetLayouts[lightLayoutIndex]);
 
-			m_renderingResources[i].lightBuffer = VulkanBuffer{
+			m_lightBuffers[i] = VulkanBuffer{
 				m_vulkan.getDevice(),
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 				sizeof(LightGpuObject)
 			};
 
-			m_renderingResources[i].viewerBuffer = VulkanBuffer{
+			m_viewerBuffers[i] = VulkanBuffer{
 				m_vulkan.getDevice(),
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 				sizeof(ViewerGpuObject)
 			};
 
-			m_renderingResources[i].modelBuffer = VulkanBuffer{
+			m_modelBuffers[i] = VulkanBuffer{
 				m_vulkan.getDevice(),
 				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
@@ -186,7 +182,63 @@ namespace Nth {
 	}
 
 	void Renderer::draw(std::vector<RenderObject> const& objects) {
-		m_renderWindow.draw(m_renderingResources[m_resourceIndex], objects, light, getViewerData());
+		RenderingResource& image = m_renderWindow.aquireNextImage();
+
+		ViewerGpuObject viewer = getViewerData();
+
+		// TODO: Move this logic
+		image.prepare([this, &objects, &viewer](Vk::CommandBuffer& commandBuffer) {
+			std::vector<ModelGpuObject> storageObjects(objects.size());
+			for (size_t i = 0; i < storageObjects.size(); ++i) {
+				storageObjects[i].model = objects[i].transformMatrix;
+			}
+
+			m_modelBuffers[m_resourceIndex].copy(storageObjects.data(), storageObjects.size() * sizeof(ModelGpuObject));
+
+			m_lightBuffers[m_resourceIndex].copy(&light, sizeof(LightGpuObject));
+
+			m_viewerBuffers[m_resourceIndex].copy(&viewer, sizeof(ViewerGpuObject));
+
+			Mesh* lastMesh = nullptr;
+			Material* lastMaterial = nullptr;
+			VulkanTexture* lastTexture = nullptr;
+			for (size_t i = 0; i < objects.size(); ++i) {
+				if (objects[i].material != lastMaterial) {
+					commandBuffer.bindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, objects[i].material->pipeline());
+
+					VkDescriptorSet vkDescriptorSet = m_viewerDescriptors[m_resourceIndex]();
+					commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 0, 1, &vkDescriptorSet, 0, nullptr);
+
+					VkDescriptorSet vkSsboDescriptorSet = m_modelDescriptors[m_resourceIndex]();
+					commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 1, 1, &vkSsboDescriptorSet, 0, nullptr);
+
+					VkDescriptorSet vkLightDescriptorSet = m_lightDescriptors[m_resourceIndex]();
+					commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 2, 1, &vkLightDescriptorSet, 0, nullptr);
+
+					lastMaterial = objects[i].material;
+				}
+
+				if (objects[i].mesh != lastMesh) {
+					VkDeviceSize offset = 0;
+					commandBuffer.bindVertexBuffer(objects[i].mesh->vertexBuffer.handle(), offset);
+
+					commandBuffer.bindIndexBuffer(objects[i].mesh->indexBuffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+
+					lastMesh = objects[i].mesh;
+				}
+
+				if (objects[i].texture != lastTexture) {
+					VkDescriptorSet vkTextureDescriptorSet = objects[i].texture->descriptorSet();
+					commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 3, 1, &vkTextureDescriptorSet, 0, nullptr);
+
+					lastTexture = objects[i].texture;
+				}
+
+				commandBuffer.drawIndexed(static_cast<uint32_t>(objects[i].mesh->indices.size()), 1, 0, 0, static_cast<uint32_t>(i));
+			}
+		});
+
+		image.present();
 		
 		m_resourceIndex = (m_resourceIndex + 1) % Renderer::resourceCount;
 	}
@@ -208,18 +260,18 @@ namespace Nth {
 	}
 
 	bool Renderer::updateDescriptorSet() {
-		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
+		for (size_t i = 0; i < Renderer::resourceCount; ++i) {
 			VkDescriptorBufferInfo bufferInfo = {
-				m_renderingResources[i].viewerBuffer.handle(),             // VkBuffer         buffer
-				0,                                                       // VkDeviceSize     offset
-				m_renderingResources[i].viewerBuffer.handle.getSize()      // VkDeviceSize     range
+				m_viewerBuffers[i].handle(),           // VkBuffer         buffer
+				0,                                     // VkDeviceSize     offset
+				m_viewerBuffers[i].handle.getSize()    // VkDeviceSize     range
 			};
 
 			std::vector<VkWriteDescriptorSet> descriptorWrites = {
 				{
 					VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,    // VkStructureType     sType
 					nullptr,                                   // const void         *pNext
-					m_renderingResources[i].viewerDescriptor(),  // VkDescriptorSet     dstSet
+					m_viewerDescriptors[i](),                  // VkDescriptorSet     dstSet
 					0,                                         // uint32_t            dstBinding
 					0,                                         // uint32_t            dstArrayElement
 					1,                                         // uint32_t            descriptorCount
@@ -231,20 +283,20 @@ namespace Nth {
 			};
 
 			// TODO: Check if update methode should be in Device class 
-			m_renderingResources[i].viewerDescriptor.update(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data());
+			m_viewerDescriptors[i].update(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data());
 
 
 			VkDescriptorBufferInfo ssboInfo = {
-				m_renderingResources[i].modelBuffer.handle(),         // VkBuffer         buffer
-				0,                                                    // VkDeviceSize     offset
-				m_renderingResources[i].modelBuffer.handle.getSize()  // VkDeviceSize     range
+				m_modelBuffers[i].handle(),         // VkBuffer         buffer
+				0,                                  // VkDeviceSize     offset
+				m_modelBuffers[i].handle.getSize()  // VkDeviceSize     range
 			};
 
 			std::vector<VkWriteDescriptorSet> descriptorWrites2 = {
 				{
 					VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
 					nullptr,                                    // const void                    *pNext
-					m_renderingResources[i].modelDescriptor(),  // VkDescriptorSet                dstSet
+					m_modelDescriptors[i](),                    // VkDescriptorSet                dstSet
 					0,                                          // uint32_t                       dstBinding
 					0,                                          // uint32_t                       dstArrayElement
 					1,                                          // uint32_t                       descriptorCount
@@ -255,20 +307,20 @@ namespace Nth {
 				},
 			};
 
-			m_renderingResources[i].modelDescriptor.update(static_cast<uint32_t>(descriptorWrites2.size()), descriptorWrites2.data());
+			m_modelDescriptors[i].update(static_cast<uint32_t>(descriptorWrites2.size()), descriptorWrites2.data());
 
 			// Light
 			VkDescriptorBufferInfo lightInfo = {
-				m_renderingResources[i].lightBuffer.handle(),         // VkBuffer         buffer
-				0,                                                    // VkDeviceSize     offset
-				m_renderingResources[i].lightBuffer.handle.getSize()  // VkDeviceSize     range
+				m_lightBuffers[i].handle(),          // VkBuffer         buffer
+				0,                                   // VkDeviceSize     offset
+				m_lightBuffers[i].handle.getSize()   // VkDeviceSize     range
 			};
 
 			std::vector<VkWriteDescriptorSet> descriptorWrites3 = {
 				{
 					VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
 					nullptr,                                    // const void                    *pNext
-					m_renderingResources[i].lightDescriptor(),  // VkDescriptorSet                dstSet
+					m_lightDescriptors[i](),                    // VkDescriptorSet                dstSet
 					0,                                          // uint32_t                       dstBinding
 					0,                                          // uint32_t                       dstArrayElement
 					1,                                          // uint32_t                       descriptorCount
@@ -279,18 +331,7 @@ namespace Nth {
 				},
 			};
 
-			m_renderingResources[i].lightDescriptor.update(static_cast<uint32_t>(descriptorWrites3.size()), descriptorWrites3.data());
-		}
-
-		return true;
-	}
-
-	bool Renderer::createRenderingResources() {
-		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			if (!m_renderingResources[i].create(m_vulkan.getDevice().getHandle(), m_vulkan.getDevice().presentQueue().index())) {
-				std::cerr << "Can't create rendering ressource" << std::endl;
-				return false;
-			}
+			m_lightDescriptors[i].update(static_cast<uint32_t>(descriptorWrites3.size()), descriptorWrites3.data());
 		}
 
 		return true;

@@ -6,7 +6,6 @@
 #include <Renderer/Material.hpp>
 #include <Renderer/Mesh.hpp>
 #include <Renderer/VulkanTexture.hpp>
-#include <Renderer/RenderingResource.hpp>
 
 #include <Util/Reader.hpp>
 #include <Util/Image.hpp>
@@ -19,11 +18,13 @@ namespace Nth {
 	RenderWindow::RenderWindow(VulkanInstance& vulkanInstance) :
 		m_vulkan(vulkanInstance),
 		m_surface(vulkanInstance.getHandle()),
+		m_ressourceIndex(0),
 		m_swapchainSize() { }
 
 	RenderWindow::RenderWindow(VulkanInstance& vulkanInstance, VideoMode const& mode, const std::string_view title) :
 		m_vulkan(vulkanInstance),
 		m_surface(vulkanInstance.getHandle()),
+		m_ressourceIndex(0),
 		m_swapchainSize() {
 
 		if (!create(mode, title)) {
@@ -69,26 +70,30 @@ namespace Nth {
 			return false;
 		}
 
+		if (!createRenderingResources()) {
+			std::cerr << "Can't create rendering ressources" << std::endl;
+			return false;
+		}
+
 		return true;
 	}
 
-	bool RenderWindow::draw(RenderingResource& ressource, std::vector<RenderObject> const& objects, LightGpuObject const& light, ViewerGpuObject const& viewer) {
+	RenderingResource& RenderWindow::aquireNextImage() {
 		if (m_swapchainSize != size()) {
 			onWindowSizeChanged();
 		}
-		VkSwapchainKHR vkSwapchain = m_swapchain();
-	
+
+		RenderingResource& ressource = m_renderingResources[m_ressourceIndex];
+		m_ressourceIndex = (m_ressourceIndex + 1) % m_renderingResources.size();
 
 		if (!ressource.fence.wait(1000000000)) {
-			std::cerr << "Waiting for fence takes too long !" << std::endl;
-			return false;
+			std::runtime_error("Waiting for fence takes too long !");
 		}
 
 		if (!ressource.fence.reset()) {
-			std::cerr << "Can't reset fence !" << std::endl;
-			return false;
+			std::runtime_error("Can't reset fence !");
 		}
-		
+
 		uint32_t imageIndex;
 		VkResult result = m_swapchain.aquireNextImage(ressource.imageAvailableSemaphore(), VK_NULL_HANDLE, imageIndex);
 		switch (result) {
@@ -97,44 +102,35 @@ namespace Nth {
 			break;
 		case VK_ERROR_OUT_OF_DATE_KHR:
 			onWindowSizeChanged();
-			return true;
 		default:
-			std::cerr << "Problem occurred during swap chain image acquisition!" << std::endl;
-			return false;
+			throw std::runtime_error("Problem occurred during swap chain image acquisition!");
 		}
 
-		if (!prepareFrame(ressource, m_swapchain.getImages()[imageIndex], objects, light, viewer)) {
-			return false;
+		Vk::SwapchainImage const& swpachainImage = m_swapchain.getImages()[imageIndex];
+
+		ressource.framebuffer.destroy();
+		if (!createFramebuffer(ressource.framebuffer, swpachainImage)) {
+			throw std::runtime_error("Can't create framebiuffer");
 		}
+		ressource.swapchainImage = swpachainImage.image;
+		ressource.imageIndex = imageIndex;
 
-		VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		VkSubmitInfo submitInfo = {
-			VK_STRUCTURE_TYPE_SUBMIT_INFO,                         // VkStructureType              sType
-			nullptr,                                               // const void                  *pNext
-			1,                                                     // uint32_t                     waitSemaphoreCount
-			&ressource.imageAvailableSemaphore(),                  // const VkSemaphore           *pWaitSemaphores
-			&waitDstStageMask,                                     // const VkPipelineStageFlags  *pWaitDstStageMask;
-			1,                                                     // uint32_t                     commandBufferCount
-			&ressource.commandBuffer(),                            // const VkCommandBuffer       *pCommandBuffers
-			1,                                                     // uint32_t                     signalSemaphoreCount
-			&ressource.finishedRenderingSemaphore()                // const VkSemaphore           *pSignalSemaphores
-		};
+		return ressource;
+	}
 
-		if (!m_vulkan.getDevice().graphicsQueue().submit(submitInfo, ressource.fence())) {
-			return false;
-		}
-
+	void RenderWindow::present(uint32_t imageIndex, Vk::Semaphore const& semaphore) {
+		VkSwapchainKHR vkSwapchain = m_swapchain();
 		VkPresentInfoKHR presentInfo = {
 			VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,                        // VkStructureType              sType
 			nullptr,                                                   // const void                  *pNext
 			1,                                                         // uint32_t                     waitSemaphoreCount
-			&ressource.finishedRenderingSemaphore(),                   // const VkSemaphore           *pWaitSemaphores
+			&semaphore(),                                              // const VkSemaphore           *pWaitSemaphores
 			1,                                                         // uint32_t                     swapchainCount
 			&vkSwapchain,                                              // const VkSwapchainKHR        *pSwapchains
 			&imageIndex,                                               // const uint32_t              *pImageIndices
 			nullptr                                                    // VkResult                    *pResults
 		};
-		result = m_vulkan.getDevice().presentQueue().present(presentInfo);
+		VkResult result = m_vulkan.getDevice().presentQueue().present(presentInfo);
 
 		switch (result) {
 		case VK_SUCCESS:
@@ -142,17 +138,17 @@ namespace Nth {
 		case VK_ERROR_OUT_OF_DATE_KHR:
 		case VK_SUBOPTIMAL_KHR:
 			onWindowSizeChanged();
-			return true;
 		default:
-			std::cerr << "Problem occurred during image presentation!" << std::endl;
-			return false;
+			throw std::runtime_error("Problem occurred during image presentation!");
 		}
-
-		return true;
 	}
 
 	Vk::RenderPass& RenderWindow::getRenderPass() {
 		return m_renderPass;
+	}
+
+	VulkanDevice const& RenderWindow::getDevice() const {
+		return m_vulkan.getDevice();
 	}
 
 	bool RenderWindow::createSwapchain() {
@@ -341,11 +337,11 @@ namespace Nth {
 		m_vulkan.getDevice().getHandle().waitIdle();
 
 		if (!createSwapchain()) {
-			std::cerr << "Error: Can't re-create swapchain" << std::endl;
+			throw std::runtime_error("Can't re-create swapchain");
 		}
 
 		if (!createDepthRessource()) {
-			std::cerr << "Error: Can't re-create depth ressource" << std::endl;
+			throw std::runtime_error("Can't re-create depth ressource");
 		}
 
 	}
@@ -440,169 +436,6 @@ namespace Nth {
 		return static_cast<VkPresentModeKHR>(-1);
 	}
 
-	bool RenderWindow::prepareFrame(RenderingResource& ressources, Vk::SwapchainImage const& imageParameters, std::vector<RenderObject> const& objects, LightGpuObject const& light, ViewerGpuObject const& viewer) const {
-		ressources.framebuffer.destroy();
-		if (!createFramebuffer(ressources.framebuffer, imageParameters)) {
-			return false;
-		}
-
-		std::vector<ModelGpuObject> storageObjects(objects.size());
-		for (size_t i = 0; i < storageObjects.size(); ++i) {
-			storageObjects[i].model = objects[i].transformMatrix;
-		}
-
-		ressources.modelBuffer.copy(storageObjects.data(), storageObjects.size() * sizeof(ModelGpuObject), ressources.commandBuffer);
-
-		ressources.lightBuffer.copy(&light, sizeof(LightGpuObject), ressources.commandBuffer);
-
-		ressources.viewerBuffer.copy(&viewer, sizeof(ViewerGpuObject), ressources.commandBuffer);
-
-		VkCommandBufferBeginInfo commandBufferBeginInfo = {
-			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,        // VkStructureType                        sType
-			nullptr,                                            // const void                            *pNext
-			VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,        // VkCommandBufferUsageFlags              flags
-			nullptr                                             // const VkCommandBufferInheritanceInfo  *pInheritanceInfo
-		};
-
-		ressources.commandBuffer.begin(commandBufferBeginInfo);
-
-		VkImageSubresourceRange imageSubresourceRange = {
-			VK_IMAGE_ASPECT_COLOR_BIT,                          // VkImageAspectFlags                     aspectMask
-			0,                                                  // uint32_t                               baseMipLevel
-			1,                                                  // uint32_t                               levelCount
-			0,                                                  // uint32_t                               baseArrayLayer
-			1                                                   // uint32_t                               layerCount
-		};
-
-		if (m_vulkan.getDevice().presentQueue() != m_vulkan.getDevice().graphicsQueue()) {
-			VkImageMemoryBarrier barrierFromPresentToDraw = {
-				VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,           // VkStructureType                        sType
-				nullptr,                                          // const void                            *pNext
-				VK_ACCESS_MEMORY_READ_BIT,                        // VkAccessFlags                          srcAccessMask
-				VK_ACCESS_MEMORY_READ_BIT,                        // VkAccessFlags                          dstAccessMask
-				VK_IMAGE_LAYOUT_UNDEFINED,                        // VkImageLayout                          oldLayout
-				VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,                  // VkImageLayout                          newLayout
-				m_vulkan.getDevice().presentQueue().index(),      // uint32_t                               srcQueueFamilyIndex
-				m_vulkan.getDevice().graphicsQueue().index(),     // uint32_t                               dstQueueFamilyIndex
-				imageParameters.image,                            // VkImage                                image
-				imageSubresourceRange                             // VkImageSubresourceRange                subresourceRange
-			};
-
-			ressources.commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrierFromPresentToDraw);
-		}
-
-		std::vector<VkClearValue> clearValues(2);
-		clearValues[0].color = { 1.0f, 0.8f, 0.4f, 0.0f };
-		clearValues[1].depthStencil = { 1.0f, 0 };
-
-		VkRenderPassBeginInfo renderPassBeginInfo = {
-			VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,           // VkStructureType                        sType
-			nullptr,                                            // const void                            *pNext
-			m_renderPass(),                                     // VkRenderPass                           renderPass
-			ressources.framebuffer(),                           // VkFramebuffer                          framebuffer
-			{                                                   // VkRect2D                               renderArea
-				{                                                 // VkOffset2D                             offset
-					0,                                                // int32_t                                x
-					0                                                 // int32_t                                y
-				},
-				{                                               // VkExtent2D                             extent;
-					m_swapchainSize.x,
-					m_swapchainSize.y
-				}
-			},
-			static_cast<uint32_t>(clearValues.size()),         // uint32_t                               clearValueCount
-			clearValues.data()                                 // const VkClearValue                    *pClearValues
-		};
-
-		ressources.commandBuffer.beginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-		VkViewport viewport = {
-			0.0f,                                               // float                                  x
-			0.0f,                                               // float                                  y
-			static_cast<float>(m_swapchainSize.x),              // float                                  width
-			static_cast<float>(m_swapchainSize.y),              // float                                  height
-			0.0f,                                               // float                                  minDepth
-			1.0f                                                // float                                  maxDepth
-		};
-
-		VkRect2D scissor = {
-			{                                                   // VkOffset2D                             offset
-				0,                                                  // int32_t                                x
-				0                                                   // int32_t                                y
-			},
-			{                                                   // VkExtent2D                             extent
-				m_swapchainSize.x,                                  // uint32_t                               width
-				m_swapchainSize.y                                   // uint32_t                               height
-			}
-		};
-
-		ressources.commandBuffer.setViewport(viewport);
-		ressources.commandBuffer.setScissor(scissor);
-
-		Mesh* lastMesh = nullptr;
-		Material* lastMaterial = nullptr;
-		VulkanTexture* lastTexture = nullptr;
-		for (size_t i = 0; i < objects.size(); ++i) {
-			if (objects[i].material != lastMaterial) {
-				ressources.commandBuffer.bindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, objects[i].material->pipeline());
-
-				VkDescriptorSet vkDescriptorSet = ressources.viewerDescriptor();
-				ressources.commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 0, 1, &vkDescriptorSet, 0, nullptr);
-
-				VkDescriptorSet vkSsboDescriptorSet = ressources.modelDescriptor();
-				ressources.commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 1, 1, &vkSsboDescriptorSet, 0, nullptr);
-
-				VkDescriptorSet vkLightDescriptorSet = ressources.lightDescriptor();
-				ressources.commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 2, 1, &vkLightDescriptorSet, 0, nullptr);
-
-				lastMaterial = objects[i].material;
-			}
-
-			if (objects[i].mesh != lastMesh) {
-				VkDeviceSize offset = 0;
-				ressources.commandBuffer.bindVertexBuffer(objects[i].mesh->vertexBuffer.handle(), offset);
-
-				ressources.commandBuffer.bindIndexBuffer(objects[i].mesh->indexBuffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-
-				lastMesh = objects[i].mesh;
-			}
-
-			if (objects[i].texture != lastTexture) {
-				VkDescriptorSet vkTextureDescriptorSet = objects[i].texture->descriptorSet();
-				ressources.commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 3, 1, &vkTextureDescriptorSet, 0, nullptr);
-
-				lastTexture = objects[i].texture;
-			}
-
-			ressources.commandBuffer.drawIndexed(static_cast<uint32_t>(objects[i].mesh->indices.size()), 1, 0, 0, static_cast<uint32_t>(i));
-		}
-
-		ressources.commandBuffer.endRenderPass();
-
-		if (m_vulkan.getDevice().presentQueue() != m_vulkan.getDevice().graphicsQueue()) {
-			VkImageMemoryBarrier barrierFromDrawToPresent = {
-				VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,           // VkStructureType                        sType
-				nullptr,                                          // const void                            *pNext
-				VK_ACCESS_MEMORY_READ_BIT,                        // VkAccessFlags                          srcAccessMask
-				VK_ACCESS_MEMORY_READ_BIT,                        // VkAccessFlags                          dstAccessMask
-				VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,                  // VkImageLayout                          oldLayout
-				VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,                  // VkImageLayout                          newLayout
-				m_vulkan.getDevice().graphicsQueue().index(),     // uint32_t                               srcQueueFamilyIndex
-				m_vulkan.getDevice().presentQueue().index(),      // uint32_t                               dstQueueFamilyIndex
-				imageParameters.image,                            // VkImage                                image
-				imageSubresourceRange                             // VkImageSubresourceRange                subresourceRange
-			};
-			ressources.commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrierFromDrawToPresent);
-		}
-
-		if (!ressources.commandBuffer.end()) {
-			std::cerr << "Could not record command buffer !" << std::endl;
-			return false;
-		}
-
-		return true;
-	}
-
 	bool RenderWindow::createFramebuffer(Vk::Framebuffer& framebuffer, Vk::SwapchainImage const& swapchainImage) const {
 		std::vector<VkImageView> attachements{
 			swapchainImage.view(),
@@ -622,5 +455,20 @@ namespace Nth {
 		};
 
 		return framebuffer.create(m_vulkan.getDevice().getHandle(), framebufferCreateInfo);
+	}
+
+	bool RenderWindow::createRenderingResources() {
+		m_renderingResources.emplace_back(RenderingResource{ *this });
+		m_renderingResources.emplace_back(RenderingResource{ *this });
+		m_renderingResources.emplace_back(RenderingResource{ *this });
+
+		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
+			if (!m_renderingResources[i].create(m_vulkan.getDevice().graphicsQueue().index())) {
+				std::cerr << "Can't create rendering ressource" << std::endl;
+				return false;
+			}
+		}
+
+		return true;
 	}
 }

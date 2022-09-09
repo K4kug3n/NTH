@@ -8,10 +8,12 @@
 #include <Renderer/DescriptorAllocator.hpp>
 #include <Renderer/Mesh.hpp>
 #include <Renderer/VulkanTexture.hpp>
-#include <Renderer/RenderingResource.hpp>
 #include <Renderer/Camera.hpp>
+#include <Renderer/Vulkan/DescriptorSet.hpp>
+#include <Renderer/VulkanBuffer.hpp>
 
 #include <vector>
+#include <array>
 #include <string_view>
 
 namespace Nth {
@@ -47,7 +49,6 @@ namespace Nth {
 	private:
 		ViewerGpuObject getViewerData() const;
 		bool updateDescriptorSet();
-		bool createRenderingResources();
 
 		VulkanInstance m_vulkan;
 		RenderWindow m_renderWindow;
@@ -58,8 +59,16 @@ namespace Nth {
 		size_t addDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> const& layoutBindings);
 		std::vector<Vk::DescriptorSetLayout> m_descriptorSetLayouts;
 
-		std::vector<RenderingResource> m_renderingResources;
 		size_t m_resourceIndex;
+
+		std::array<Vk::DescriptorSet, Renderer::resourceCount> m_modelDescriptors;
+		std::array<VulkanBuffer, Renderer::resourceCount> m_modelBuffers;
+
+		std::array<Vk::DescriptorSet, Renderer::resourceCount> m_viewerDescriptors;
+		std::array<VulkanBuffer, Renderer::resourceCount> m_viewerBuffers;
+
+		std::array<Vk::DescriptorSet, Renderer::resourceCount> m_lightDescriptors;
+		std::array<VulkanBuffer, Renderer::resourceCount> m_lightBuffers;
 	};
 }
 

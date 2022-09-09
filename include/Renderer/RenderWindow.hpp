@@ -10,6 +10,7 @@
 #include <Renderer/Vulkan/RenderPass.hpp>
 #include <Renderer/DepthImage.hpp>
 #include <Renderer/SceneParameters.hpp>
+#include <Renderer/RenderingResource.hpp>
 
 #include <Math/Vector2.hpp>
 
@@ -20,7 +21,6 @@ namespace Nth {
 		class Framebuffer;
 	}
 	class RenderObject;
-	class RenderingResource;
 
 	class RenderWindow : public Window {
 	public:
@@ -31,9 +31,12 @@ namespace Nth {
 		~RenderWindow();
 
 		bool create(VideoMode const& mode, const std::string_view title);
-		bool draw(RenderingResource& ressource, std::vector<RenderObject> const& objects, LightGpuObject const& light, ViewerGpuObject const& viewer);
+
+		RenderingResource& aquireNextImage();
+		void present(uint32_t imageIndex, Vk::Semaphore const& semaphore);
 
 		Vk::RenderPass& getRenderPass();
+		VulkanDevice const& getDevice() const;
 
 		RenderWindow& operator=(RenderWindow const&) = delete;
 		RenderWindow& operator=(RenderWindow&&) = default;
@@ -51,15 +54,17 @@ namespace Nth {
 		VkSurfaceTransformFlagBitsKHR getSwapchainTransform(VkSurfaceCapabilitiesKHR const& capabilities) const;
 		VkPresentModeKHR getSwapchainPresentMode(std::vector<VkPresentModeKHR> const& presentModes) const;
 
-		bool prepareFrame(RenderingResource& ressources, Vk::SwapchainImage const& imageParameters, std::vector<RenderObject> const& objects, LightGpuObject const& light, ViewerGpuObject const& viewer) const;
-
 		bool createFramebuffer(Vk::Framebuffer& framebuffer, Vk::SwapchainImage const& swapchainImage) const;
+		bool createRenderingResources();
 
 		VulkanInstance& m_vulkan;
 		Vk::Surface m_surface;
 		Vk::Swapchain m_swapchain;
 		Vk::RenderPass m_renderPass;
 		DepthImage m_depth;
+
+		size_t m_ressourceIndex;
+		std::vector<RenderingResource> m_renderingResources;
 
 		Vector2ui m_swapchainSize;
 	};

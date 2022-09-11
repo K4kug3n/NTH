@@ -10,6 +10,12 @@ namespace Nth {
 	class Vector3;
 
 	template<typename T>
+	class Vector4;
+
+	template<typename T>
+	class Vector3;
+
+	template<typename T>
 	class Matrix4 {
 	public:
 		Matrix4() = default;
@@ -63,6 +69,18 @@ namespace Nth {
 
 	template<typename T>
 	Matrix4<T> operator*(T scalar, const Matrix4<T>& mat);
+
+	template<typename T>
+	Vector4<T> operator*(const Matrix4<T>& mat, const Vector4<T>& vec);
+
+	template<typename T>
+	Vector4<T> operator*(const Vector4<T>& vec, const Matrix4<T>& mat);
+
+	template<typename T>
+	Vector3<T> operator*(const Matrix4<T>& mat, const Vector3<T>& vec);
+
+	template<typename T>
+	Vector3<T> operator*(const Vector3<T>& vec, const Matrix4<T>& mat);
 
 	using Matrix4i = Matrix4<int>;
 	using Matrix4ui = Matrix4<unsigned int>;

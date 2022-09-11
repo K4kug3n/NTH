@@ -3,14 +3,10 @@
 
 #include <Renderer/Texture.hpp>
 
+#include <assimp/scene.h>
+
 #include <vector>
 #include <string_view>
-
-struct aiNode;
-struct aiScene;
-struct aiMesh;
-struct aiMaterial;
-enum aiTextureType : int;
 
 namespace Nth {
 	struct Mesh;

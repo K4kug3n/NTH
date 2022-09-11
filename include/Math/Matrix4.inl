@@ -443,6 +443,39 @@ namespace Nth{
 	Matrix4<T> operator*(T scalar, const Matrix4<T>& mat) {
 		return mat * scalar;
 	}
+
+	template<typename T>
+	Vector4<T> operator*(const Matrix4<T>& mat, const Vector4<T>& vec) {
+		return Vector4<T>{
+			mat.a11 * vec.x + mat.a12 * vec.y + mat.a13 * vec.z + mat.a14 * vec.w,
+			mat.a21 * vec.x + mat.a22 * vec.y + mat.a23 * vec.z + mat.a24 * vec.w,
+			mat.a31 * vec.x + mat.a32 * vec.y + mat.a33 * vec.z + mat.a34 * vec.w,
+			mat.a41 * vec.x + mat.a42 * vec.y + mat.a43 * vec.z + mat.a44 * vec.w,
+		};
+	}
+
+	template<typename T>
+	Vector4<T> operator*(const Vector4<T>& vec, const Matrix4<T>& mat) {
+		return Vector4<T>{
+			vec.x * mat.a11 + vec.y * mat.a21 + vec.z * mat.a31 + vec.w * mat.a41,
+			vec.x * mat.a12 + vec.y * mat.a22 + vec.z * mat.a32 + vec.w * mat.a42,
+			vec.x * mat.a13 + vec.y * mat.a23 + vec.z * mat.a33 + vec.w * mat.a43,
+			vec.x * mat.a14 + vec.y * mat.a24 + vec.z * mat.a34 + vec.w * mat.a44,
+		};
+	}
+	template<typename T>
+	Vector3<T> operator*(const Matrix4<T>& mat, const Vector3<T>& vec) {
+		Vector4<T> result{ mat * Vector4<T>{ vec.x, vec.y, vec.z, static_cast<T>(1.f) } };
+
+		return Vector3<T>{ result.x, result.y, result.z };
+	}
+
+	template<typename T>
+	Vector3<T> operator*(const Vector3<T>& vec, const Matrix4<T>& mat) {
+		Vector4<T> result{ Vector4<T>{ vec.x, vec.y, vec.z, static_cast<T>(1.f) } * mat };
+
+		return Vector3<T>{ result.x, result.y, result.z };
+	}
 }
 
 template<typename T>

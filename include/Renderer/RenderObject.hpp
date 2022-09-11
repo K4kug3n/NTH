@@ -4,15 +4,12 @@
 #include <Math/Matrix4.hpp>
 
 namespace Nth {
-	struct Mesh;
 	class Material;
-	class VulkanTexture;
 
 	class RenderObject {
 	public:
-		Mesh* mesh;
+		size_t modelIndex;
 		Material* material;
-		VulkanTexture* texture;
 
 		Matrix4f transformMatrix;
 	};

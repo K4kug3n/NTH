@@ -11,6 +11,7 @@
 #include <Renderer/Camera.hpp>
 #include <Renderer/Vulkan/DescriptorSet.hpp>
 #include <Renderer/VulkanBuffer.hpp>
+#include <Renderer/RenderableModel.hpp>
 
 #include <vector>
 #include <array>
@@ -18,6 +19,8 @@
 
 namespace Nth {
 	class RenderObject;
+	class Model;
+	struct Texture;
 
 	class Renderer {
 	public:
@@ -27,10 +30,11 @@ namespace Nth {
 		~Renderer() = default;
 
 		RenderWindow& getWindow(VideoMode const& mode, const std::string_view title);
-		VulkanTexture createTexture(const std::string_view name);
+
+		// TODO: Review this API
 		Material createMaterial(MaterialInfos const& infos);
 
-		void createMesh(Mesh& mesh);
+		size_t registerModel(Model const& model);
 
 		void draw(std::vector<RenderObject> const& objects);
 
@@ -69,6 +73,12 @@ namespace Nth {
 
 		std::array<Vk::DescriptorSet, Renderer::resourceCount> m_lightDescriptors;
 		std::array<VulkanBuffer, Renderer::resourceCount> m_lightBuffers;
+
+		// TODO: Review this
+		RenderableMesh registerMesh(Mesh const& mesh) const;
+		VulkanTexture registerTexture(Texture const& texture);
+
+		std::vector<RenderableModel> m_renderables;
 	};
 }
 

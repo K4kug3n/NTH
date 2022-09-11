@@ -1,8 +1,15 @@
 #include <Renderer/Mesh.hpp>
 
+#include <Renderer/Texture.hpp>
+
 #include <tiny_obj_loader.h>
 
 namespace Nth {
+	Mesh::Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices, std::vector<size_t> texturesIndex) :
+		vertices(std::move(vertices)),
+		indices(std::move(indices)),
+		texturesIndex(std::move(texturesIndex)) { }
+
 	Mesh Mesh::fromOBJ(const std::string_view filename) {
 		tinyobj::attrib_t attrib;
 		std::vector<tinyobj::shape_t> shapes;

@@ -1,6 +1,8 @@
 #include <Renderer/Renderer.hpp>
 #include <Renderer/RenderingResource.hpp>
 #include <Renderer/RenderObject.hpp>
+#include <Renderer/Model.hpp>
+#include <Renderer/Texture.hpp>
 
 #include <Math/Angle.hpp>
 
@@ -94,61 +96,6 @@ namespace Nth {
 		return m_renderWindow;
 	}
 
-	VulkanTexture Renderer::createTexture(const std::string_view name) {
-		Image image = Image::loadFromFile(name, PixelChannel::Rgba);
-
-		std::vector<char> const& pixels = image.pixels();
-		if (pixels.empty()) {
-			throw std::runtime_error("Can't read file");
-		}
-
-		VulkanTexture texture;
-
-		texture.create(
-			m_vulkan.getDevice(),
-			image.width(),
-			image.height(),
-			static_cast<uint32_t>(pixels.size()),
-			VK_FORMAT_R8G8B8A8_UNORM,
-			VK_IMAGE_TILING_OPTIMAL,
-			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-		);
-
-		texture.createView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
-
-		texture.image.copy(pixels.data(), static_cast<uint32_t>(pixels.size()), image.width(), image.height());
-
-		// TODO: descriptor set layout index hardcoded
-		texture.descriptorSet = m_descriptorAllocator.allocate(m_descriptorSetLayouts[3]);
-
-		VkDescriptorImageInfo textureInfo = {
-			texture.sampler(),                          // VkSampler                      sampler
-			texture.image.view(),                       // VkImageView                    imageView
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL    // VkImageLayout                  imageLayout
-		};
-
-		std::vector<VkWriteDescriptorSet> descriptorWrites = {
-			{
-				VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
-				nullptr,                                    // const void                    *pNext
-				texture.descriptorSet(),                    // VkDescriptorSet                dstSet
-				0,                                          // uint32_t                       dstBinding
-				0,                                          // uint32_t                       dstArrayElement
-				1,                                          // uint32_t                       descriptorCount
-				VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  // VkDescriptorType               descriptorType
-				&textureInfo,                               // const VkDescriptorImageInfo   *pImageInfo
-				nullptr,                                    // const VkDescriptorBufferInfo  *pBufferInfo
-				nullptr                                     // const VkBufferView            *pTexelBufferView
-			}
-		};
-
-		// TODO: Check if update methode should be in Device class 
-		texture.descriptorSet.update(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data());
-
-		return texture;
-	}
-
 	Material Renderer::createMaterial(MaterialInfos const& infos) {
 		std::vector<VkDescriptorSetLayout> vkDescritptorLayouts(m_descriptorSetLayouts.size());
 		for (size_t i = 0; i < m_descriptorSetLayouts.size(); ++i) {
@@ -161,24 +108,31 @@ namespace Nth {
 		return material;
 	}
 
-	void Renderer::createMesh(Mesh& mesh) {
-		mesh.vertexBuffer = VulkanBuffer{ 
-			m_vulkan.getDevice(),
-			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			static_cast<uint32_t>(mesh.vertices.size() * sizeof(mesh.vertices[0]))
-		};
+	size_t Renderer::registerModel(Model const& model) {
+		std::vector<VulkanTexture> textures;
+		for (auto const& texture : model.textures()) {
+			textures.push_back(registerTexture(texture));
+		}
 
-		mesh.vertexBuffer.copy(mesh.vertices.data(), mesh.vertexBuffer.handle.getSize());
+		std::vector<RenderableMesh> meshes;
+		for (auto const& mesh : model.meshes) {
+			RenderableMesh renderableMesh{ registerMesh(mesh) };
 
-		mesh.indexBuffer = VulkanBuffer{
-			m_vulkan.getDevice(),
-			VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			sizeof(mesh.indices[0])* mesh.indices.size()
-		};
+			// TODO: Cleanup
+			renderableMesh.textureIndex = 0;
+			for (size_t textureIndex : mesh.texturesIndex) {
+				if (model.textures()[textureIndex].type == "texture_diffuse") {
+					renderableMesh.textureIndex = textureIndex;
+					break;
+				}
+			}
 
-		mesh.indexBuffer.copy(mesh.indices.data(), mesh.indexBuffer.handle.getSize());
+			meshes.emplace_back(std::move(renderableMesh));
+		}
+
+		m_renderables.emplace_back(RenderableModel{ std::move(meshes), std::move(textures) });
+
+		return m_renderables.size() - 1;
 	}
 
 	void Renderer::draw(std::vector<RenderObject> const& objects) {
@@ -199,9 +153,7 @@ namespace Nth {
 
 			m_viewerBuffers[m_resourceIndex].copy(&viewer, sizeof(ViewerGpuObject));
 
-			Mesh* lastMesh = nullptr;
 			Material* lastMaterial = nullptr;
-			VulkanTexture* lastTexture = nullptr;
 			for (size_t i = 0; i < objects.size(); ++i) {
 				if (objects[i].material != lastMaterial) {
 					commandBuffer.bindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, objects[i].material->pipeline());
@@ -218,23 +170,24 @@ namespace Nth {
 					lastMaterial = objects[i].material;
 				}
 
-				if (objects[i].mesh != lastMesh) {
+				VulkanTexture const* lastTexture = nullptr;
+				RenderableModel const& model = m_renderables[objects[i].modelIndex];
+				for (RenderableMesh const& mesh : model.meshes) {
 					VkDeviceSize offset = 0;
-					commandBuffer.bindVertexBuffer(objects[i].mesh->vertexBuffer.handle(), offset);
+					commandBuffer.bindVertexBuffer(mesh.vertexBuffer.handle(), offset);
 
-					commandBuffer.bindIndexBuffer(objects[i].mesh->indexBuffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+					commandBuffer.bindIndexBuffer(mesh.indexBuffer.handle(), 0, VK_INDEX_TYPE_UINT32);
 
-					lastMesh = objects[i].mesh;
+					VulkanTexture const& texture{ model.textures[mesh.textureIndex] };
+					if (&texture != lastTexture) {
+						VkDescriptorSet vkTextureDescriptorSet = texture.descriptorSet();
+						commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 3, 1, &vkTextureDescriptorSet, 0, nullptr);
+
+						lastTexture = &texture;
+					}
+
+					commandBuffer.drawIndexed(static_cast<uint32_t>(mesh.indices.size()), 1, 0, 0, static_cast<uint32_t>(i));
 				}
-
-				if (objects[i].texture != lastTexture) {
-					VkDescriptorSet vkTextureDescriptorSet = objects[i].texture->descriptorSet();
-					commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 3, 1, &vkTextureDescriptorSet, 0, nullptr);
-
-					lastTexture = objects[i].texture;
-				}
-
-				commandBuffer.drawIndexed(static_cast<uint32_t>(objects[i].mesh->indices.size()), 1, 0, 0, static_cast<uint32_t>(i));
 			}
 		});
 
@@ -354,5 +307,79 @@ namespace Nth {
 		m_descriptorSetLayouts.push_back(std::move(layout));
 
 		return m_descriptorSetLayouts.size() - 1;
+	}
+
+	RenderableMesh Renderer::registerMesh(Mesh const& mesh) const {
+		RenderableMesh registeredMesh;
+
+		registeredMesh.vertexBuffer = VulkanBuffer{
+			m_vulkan.getDevice(),
+			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			static_cast<uint32_t>(mesh.vertices.size() * sizeof(mesh.vertices[0]))
+		};
+
+		registeredMesh.vertexBuffer.copy(mesh.vertices.data(), registeredMesh.vertexBuffer.handle.getSize());
+
+		registeredMesh.indexBuffer = VulkanBuffer{
+			m_vulkan.getDevice(),
+			VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			sizeof(mesh.indices[0]) * mesh.indices.size()
+		};
+
+		registeredMesh.indexBuffer.copy(mesh.indices.data(), registeredMesh.indexBuffer.handle.getSize());
+
+		registeredMesh.indices = mesh.indices;
+
+		return registeredMesh;
+	}
+
+	VulkanTexture Renderer::registerTexture(Texture const& texture) {
+		VulkanTexture registeredTexture;
+
+		registeredTexture.create(
+			m_vulkan.getDevice(),
+			texture.width,
+			texture.height,
+			static_cast<uint32_t>(texture.data.size()),
+			VK_FORMAT_R8G8B8A8_UNORM,
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+		);
+
+		registeredTexture.createView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+
+		registeredTexture.image.copy(texture.data.data(), static_cast<uint32_t>(texture.data.size()), texture.width, texture.height);
+
+		// TODO: descriptor set layout index hardcoded
+		registeredTexture.descriptorSet = m_descriptorAllocator.allocate(m_descriptorSetLayouts[3]);
+
+		VkDescriptorImageInfo textureInfo = {
+			registeredTexture.sampler(),                          // VkSampler                      sampler
+			registeredTexture.image.view(),                       // VkImageView                    imageView
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL              // VkImageLayout                  imageLayout
+		};
+
+		std::vector<VkWriteDescriptorSet> descriptorWrites = {
+			{
+				VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
+				nullptr,                                    // const void                    *pNext
+				registeredTexture.descriptorSet(),          // VkDescriptorSet                dstSet
+				0,                                          // uint32_t                       dstBinding
+				0,                                          // uint32_t                       dstArrayElement
+				1,                                          // uint32_t                       descriptorCount
+				VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  // VkDescriptorType               descriptorType
+				&textureInfo,                               // const VkDescriptorImageInfo   *pImageInfo
+				nullptr,                                    // const VkDescriptorBufferInfo  *pBufferInfo
+				nullptr                                     // const VkBufferView            *pTexelBufferView
+			}
+		};
+
+		// TODO: Check if update methode should be in Device class 
+		registeredTexture.descriptorSet.update(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data());
+
+		return registeredTexture;
 	}
 }

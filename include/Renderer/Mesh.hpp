@@ -3,19 +3,19 @@
 
 #include <Renderer/Vertex.hpp>
 
-#include <Renderer/VulkanBuffer.hpp>
-
 #include <vector>
 #include <string_view>
 
 namespace Nth {
+	struct Texture;
 
 	struct Mesh {
+		Mesh() = default;
+		Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices, std::vector<size_t> texturesIndex);
+
 		std::vector<Vertex> vertices;
 		std::vector<uint32_t> indices;
-
-		VulkanBuffer vertexBuffer;
-		VulkanBuffer indexBuffer;
+		std::vector<size_t> texturesIndex;
 
 		static Mesh fromOBJ(const std::string_view filename);
 	};

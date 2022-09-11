@@ -2,6 +2,9 @@
 #include <Renderer/RenderWindow.hpp>
 #include <Renderer/RenderObject.hpp>
 #include <Renderer/Mesh.hpp>
+#include <Renderer/Model.hpp>
+
+#include <Renderer/Texture.hpp>
 
 #include <Math/Angle.hpp>
 
@@ -22,25 +25,28 @@ int main() {
 	};
 
 	Nth::Material basicMaterial = renderer.createMaterial(basicMaterialInfos);
-	Nth::VulkanTexture vikingRoomTexture = renderer.createTexture("viking_room.png");
 
-	Nth::Mesh vikingRoomMesh = Nth::Mesh::fromOBJ("viking_room.obj");
+	Nth::Model model;
+	try {
+		//model.loadFromFile("./scene.gltf"); viking_room.obj
+		model.loadFromFile("./viking_room.obj");
+	}
+	catch (const std::exception& e) {
+		std::cout << e.what() << std::endl;
+	}
+
+	Nth::Texture texture = model.textureFromFile("viking_room.png", "./");
+	texture.type = "texture_diffuse";
+	model.m_textures_loaded.push_back(texture);
+	model.meshes[0].texturesIndex.push_back(0);
+
+	size_t modelIndex = renderer.registerModel(model);
 	
-	// TODO: Review this API
-	renderer.createMesh(vikingRoomMesh);
-
-	Nth::RenderObject vikingRoom{
-		&vikingRoomMesh,
+	Nth::RenderObject obj1{
+		modelIndex,
 		&basicMaterial,
-		&vikingRoomTexture,
-		Nth::Matrix4f::Translation({ 0.f, 1.f, 0.f })
-	};
-
-	Nth::RenderObject vikingRoom2 {
-		&vikingRoomMesh,
-		&basicMaterial,
-		&vikingRoomTexture,
-		Nth::Matrix4f::Translation({ 0.f, -1.f, 0.f })
+		Nth::Matrix4f::Identity()
+		//Nth::Matrix4f::Translation({ 0.f, 0.f, 0.f }) * Nth::Matrix4f::Scale({ 0.5f, 0.5f, 0.5f })
 	};
 
 	Nth::EventHandler& eventHandler{ window.getEventHandler() };
@@ -107,7 +113,7 @@ int main() {
 		window.setTitle(std::to_string(1 / diff.count()) + " FPS");
 		window.processEvent();
 
-		renderer.draw({ vikingRoom, vikingRoom2 });
+		renderer.draw({ obj1 });
 	}
 
 	renderer.waitIdle();

@@ -24,8 +24,8 @@ namespace Nth {
 
 		void loadFromFile(std::string_view path);
 	private:
-		void processNode(aiNode* node, const aiScene* scene);
-		Mesh processMesh(aiMesh* mesh, const aiScene* scene);
+		void processNode(aiNode* node, const aiScene* scene, aiMatrix4x4 const& parentTransformation);
+		Mesh processMesh(aiMesh* mesh, const aiScene* scene, aiMatrix4x4 const& transformation);
 		std::vector<size_t> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string_view typeName);
 
 		std::string_view m_directory;

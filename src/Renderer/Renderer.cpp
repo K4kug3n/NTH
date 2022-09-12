@@ -130,7 +130,7 @@ namespace Nth {
 			meshes.emplace_back(std::move(renderableMesh));
 		}
 
-		m_renderables.emplace_back(RenderableModel{ std::move(meshes), std::move(textures) });
+		m_renderables.emplace_back(std::move(meshes), std::move(textures));
 
 		return m_renderables.size() - 1;
 	}

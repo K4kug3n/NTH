@@ -28,25 +28,18 @@ int main() {
 
 	Nth::Model model;
 	try {
-		//model.loadFromFile("./scene.gltf"); viking_room.obj
-		model.loadFromFile("./viking_room.obj");
+		model.loadFromFile("./guitare/scene.gltf");
 	}
 	catch (const std::exception& e) {
 		std::cout << e.what() << std::endl;
 	}
-
-	Nth::Texture texture = model.textureFromFile("viking_room.png", "./");
-	texture.type = "texture_diffuse";
-	model.m_textures_loaded.push_back(texture);
-	model.meshes[0].texturesIndex.push_back(0);
 
 	size_t modelIndex = renderer.registerModel(model);
 	
 	Nth::RenderObject obj1{
 		modelIndex,
 		&basicMaterial,
-		Nth::Matrix4f::Identity()
-		//Nth::Matrix4f::Translation({ 0.f, 0.f, 0.f }) * Nth::Matrix4f::Scale({ 0.5f, 0.5f, 0.5f })
+		Nth::Matrix4f::Translation({ 0.f, -1.f, 0.f }) * Nth::Matrix4f::Scale({ 0.01f, 0.01f, 0.01f })
 	};
 
 	Nth::EventHandler& eventHandler{ window.getEventHandler() };
@@ -55,7 +48,7 @@ int main() {
 	}); 
 
 	renderer.camera.position = Nth::Vector3f{ 0.f, 0.f, -3.f };
-	renderer.camera.direction = Nth::EulerAngle(0.f, -45.f, -90.f);
+	renderer.camera.direction = Nth::EulerAngle(0.f, 0.f, 0.f);
 
 	eventHandler.onKeyDown.connect([&renderer, &window](SDL_KeyboardEvent key) {
 		float stepSize{ 0.1f };
@@ -98,7 +91,7 @@ int main() {
 		renderer.camera.position,
 		{ 1.f, 1.f, 1.f, 1.f },
 		{ 0.f, 0.f, 0.f },
-		0.1f,
+		0.3f,
 		0.5f,
 	};
 

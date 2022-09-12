@@ -4,6 +4,8 @@
 
 #include <Util/Image.hpp>
 
+#include <Math/AssimpConvertion.hpp>
+
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 
@@ -16,7 +18,6 @@ namespace Nth {
 	}
 
 	void Model::loadFromFile(std::string_view path) {
-
 		Assimp::Importer import;
 		const aiScene* scene = import.ReadFile(path.data(), aiProcess_Triangulate | aiProcess_FlipUVs);
 
@@ -25,22 +26,24 @@ namespace Nth {
 		}
 		m_directory = path.substr(0, path.find_last_of('/'));
 
-		processNode(scene->mRootNode, scene);
+		processNode(scene->mRootNode, scene, aiMatrix4x4{});
 	}
 
-	void Model::processNode(aiNode* node, const aiScene* scene) {
+	void Model::processNode(aiNode* node, const aiScene* scene, aiMatrix4x4 const& parentTransformation) {
+		aiMatrix4x4 currentTransformation = node->mTransformation * parentTransformation;
+		
 		for (unsigned int i = 0; i < node->mNumMeshes; ++i) {
 			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-			meshes.push_back(processMesh(mesh, scene));
+			meshes.push_back(processMesh(mesh, scene, currentTransformation));
 		}
 
 		// then do the same for each of its children
 		for (unsigned int i = 0; i < node->mNumChildren; ++i) {
-			processNode(node->mChildren[i], scene);
+			processNode(node->mChildren[i], scene, currentTransformation);
 		}
 	}
 
-	Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
+	Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene, aiMatrix4x4 const& transformation) {
 		std::vector<Vertex> vertices;
 		std::vector<uint32_t> indices;
 		std::vector<size_t> textures;
@@ -48,8 +51,8 @@ namespace Nth {
 		for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
 			Vertex vertex;
 			// process vertex positions, normals and texture coordinates
-			vertex.pos = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
-			vertex.normal = { mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z };
+			vertex.pos = toVector3(transformation * mesh->mVertices[i]);
+			vertex.normal = toVector3(transformation * mesh->mNormals[i]);
 
 			if (mesh->mTextureCoords[0]) { // does the mesh contain texture coordinates?
 				vertex.texturePos = { mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y };

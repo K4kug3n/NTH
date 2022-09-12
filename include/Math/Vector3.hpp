@@ -10,7 +10,7 @@ namespace Nth {
 	public:
 		Vector3() = default;
 		Vector3(T x, T y, T z);
-		Vector3(Vector3<T> const& vec) = default;
+		Vector3(Vector3<T> const&) = default;
 		Vector3(Vector3<T>&&) = default;
 		~Vector3() = default;
 

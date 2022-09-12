@@ -95,15 +95,21 @@ int main() {
 		0.5f,
 	};
 
+	unsigned nbFrames = 0;
+
 	auto start = std::chrono::high_resolution_clock::now();
 	while (window.isOpen()) {
 		renderer.light.viewPos = renderer.camera.position;
 
 		auto end = std::chrono::high_resolution_clock::now();
+		nbFrames += 1;
 		std::chrono::duration<float> diff = end - start;
-		start = end;
+		if (diff.count() >= 1.f) {
+			window.setTitle(std::to_string(1000.f / (float)(nbFrames)) + " ms/frame");
+			nbFrames = 0;
+			start += std::chrono::seconds(1);
+		}
 
-		window.setTitle(std::to_string(1 / diff.count()) + " FPS");
 		window.processEvent();
 
 		renderer.draw({ obj1 });

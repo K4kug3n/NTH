@@ -8,15 +8,21 @@ namespace Nth {
 	template<typename T> class Matrix4;
 	using Matrix4f = Matrix4<float>;
 
+	enum class CameraType {
+		FirstPerson,
+		ThirdPerson
+	};
+
 	class Camera {
 	public:
-		Camera() = default;
+		Camera();
 		Camera(Camera const&) = delete;
 		Camera(Camera&&) = default;
 		~Camera() = default;
 
 		Vector3f position;
 		EulerAngle direction;
+		CameraType type;
 
 		Matrix4f getViewMatrix() const;
 

@@ -26,13 +26,7 @@ int main() {
 
 	Nth::Material basicMaterial = renderer.createMaterial(basicMaterialInfos);
 
-	Nth::Model model;
-	try {
-		model.loadFromFile("./guitare/scene.gltf");
-	}
-	catch (const std::exception& e) {
-		std::cout << e.what() << std::endl;
-	}
+	Nth::Model model{ "./guitare/scene.gltf" };
 
 	size_t modelIndex = renderer.registerModel(model);
 	

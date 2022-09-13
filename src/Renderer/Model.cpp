@@ -115,6 +115,10 @@ namespace Nth {
 		return texturesIndex;
 	}
 
+	Model::Model(std::string_view path) {
+		loadFromFile(path);
+	}
+
 	Texture Model::textureFromFile(std::string_view filename, std::string_view directory) const {
 		Image image = Image::loadFromFile(std::string{ directory } + "/" + std::string{ filename }, PixelChannel::Rgba);
 

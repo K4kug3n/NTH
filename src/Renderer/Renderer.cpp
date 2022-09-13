@@ -3,6 +3,7 @@
 #include <Renderer/RenderObject.hpp>
 #include <Renderer/Model.hpp>
 #include <Renderer/Texture.hpp>
+#include <Renderer/ShaderBinding.hpp>
 
 #include <Math/Angle.hpp>
 
@@ -22,45 +23,10 @@ namespace Nth {
 			throw std::runtime_error("Can't create render window");
 		}
 
-		size_t viewLayoutIndex = addDescriptorSetLayout({ 
-			{
-				0,                                         // uint32_t            binding
-				VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         // VkDescriptorType    descriptorType
-				1,                                         // uint32_t            descriptorCount
-				VK_SHADER_STAGE_VERTEX_BIT,                // VkShaderStageFlags  stageFlags
-				nullptr                                    // const VkSampler    *pImmutableSamplers
-			}
-		});
-
-		size_t modelLayoutIndex = addDescriptorSetLayout({
-			{
-				0,                                          // uint32_t             binding
-				VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ,         // VkDescriptorType     descriptorType
-				1,                                          // uint32_t             descriptorCount
-				VK_SHADER_STAGE_VERTEX_BIT,                 // VkShaderStageFlags   stageFlags
-				nullptr                                     // const VkSampler     *pImmutableSamplers
-			}
-		});
-
-		size_t lightLayoutIndex = addDescriptorSetLayout({
-			{
-				0,                                         // uint32_t            binding
-				VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         // VkDescriptorType    descriptorType
-				1,                                         // uint32_t            descriptorCount
-				VK_SHADER_STAGE_FRAGMENT_BIT,              // VkShaderStageFlags  stageFlags
-				nullptr                                    // const VkSampler    *pImmutableSamplers
-			}
-		});
-
-		addDescriptorSetLayout({
-			{
-				0,                                          // uint32_t             binding
-				VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  // VkDescriptorType     descriptorType
-				1,                                          // uint32_t             descriptorCount
-				VK_SHADER_STAGE_FRAGMENT_BIT,               // VkShaderStageFlags   stageFlags
-				nullptr                                     // const VkSampler     *pImmutableSamplers
-			}
-		});
+		size_t viewLayoutIndex = addDescriptorSetLayout({ ShaderBinding{ ShaderType::Vertex, BindingType::Uniform, 0, 0 } });
+		size_t modelLayoutIndex = addDescriptorSetLayout({ ShaderBinding{ ShaderType::Vertex, BindingType::Storage, 1, 0 } });
+		size_t lightLayoutIndex = addDescriptorSetLayout({ ShaderBinding{ ShaderType::Fragment, BindingType::Uniform, 2, 0 } });
+		addDescriptorSetLayout({ ShaderBinding{ ShaderType::Fragment, BindingType::Texture, 3, 0 } });
 
 		m_descriptorAllocator.init(m_vulkan.getDevice().getHandle());
 
@@ -121,7 +87,7 @@ namespace Nth {
 			// TODO: Cleanup
 			renderableMesh.textureIndex = 0;
 			for (size_t textureIndex : mesh.texturesIndex) {
-				if (model.textures()[textureIndex].type == "texture_diffuse") {
+				if (model.textures()[textureIndex].type == "base_color") {
 					renderableMesh.textureIndex = textureIndex;
 					break;
 				}
@@ -290,7 +256,41 @@ namespace Nth {
 		return true;
 	}
 
-	size_t Renderer::addDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> const& layoutBindings) {
+	size_t Renderer::addDescriptorSetLayout(std::vector<ShaderBinding> const& bindings) {
+		// Use "set" information
+		std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
+		for (auto const& binding : bindings) {
+			VkDescriptorSetLayoutBinding layoutBinding;
+			layoutBinding.binding = binding.binding;
+
+			switch (binding.bindingType) {
+			case BindingType::Uniform:
+				layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				break;
+			case BindingType::Texture:
+				layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				break;
+			case BindingType::Storage:
+				layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+				break;
+			}
+
+			layoutBinding.descriptorCount = 1;
+
+			switch (binding.shaderType) {
+			case ShaderType::Vertex:
+				layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+				break;
+			case ShaderType::Fragment:
+				layoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+				break;
+			}
+
+			layoutBinding.pImmutableSamplers = nullptr;
+
+			layoutBindings.push_back(std::move(layoutBinding));
+		}
+
 		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
 			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,  // VkStructureType                      sType
 			nullptr,                                              // const void                          *pNext

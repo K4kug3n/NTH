@@ -21,6 +21,7 @@ namespace Nth {
 	class RenderObject;
 	class Model;
 	struct Texture;
+	struct ShaderBinding;
 
 	class Renderer {
 	public:
@@ -60,7 +61,7 @@ namespace Nth {
 		DescriptorAllocator m_descriptorAllocator;
 
 		// TODO: May move it in dedicated class
-		size_t addDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> const& layoutBindings);
+		size_t addDescriptorSetLayout(std::vector<ShaderBinding> const& bindings);
 		std::vector<Vk::DescriptorSetLayout> m_descriptorSetLayouts;
 
 		size_t m_resourceIndex;

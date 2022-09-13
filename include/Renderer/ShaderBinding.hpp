@@ -16,10 +16,12 @@ namespace Nth {
 	};
 
 	struct ShaderBinding {
-		uint32_t binding;
-		uint32_t set;
+		ShaderBinding(ShaderType shaderType, BindingType bindingType, uint32_t set, uint32_t binding);
+
 		ShaderType shaderType;
 		BindingType bindingType;
+		uint32_t set;
+		uint32_t binding;
 	};
 }
 

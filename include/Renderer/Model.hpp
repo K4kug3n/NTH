@@ -14,6 +14,7 @@ namespace Nth {
 	class Model {
 	public:
 		Model() = default;
+		Model(std::string_view path);
 
 		// TODO: Cleanup
 		std::vector<Texture> m_textures_loaded;

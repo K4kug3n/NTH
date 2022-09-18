@@ -3,7 +3,6 @@
 #include <Renderer/RenderObject.hpp>
 #include <Renderer/Model.hpp>
 #include <Renderer/Texture.hpp>
-#include <Renderer/ShaderBinding.hpp>
 
 #include <Math/Angle.hpp>
 
@@ -23,17 +22,17 @@ namespace Nth {
 			throw std::runtime_error("Can't create render window");
 		}
 
-		size_t viewLayoutIndex = addDescriptorSetLayout({ ShaderBinding{ ShaderType::Vertex, BindingType::Uniform, 0, 0 } });
-		size_t modelLayoutIndex = addDescriptorSetLayout({ ShaderBinding{ ShaderType::Vertex, BindingType::Storage, 1, 0 } });
-		size_t lightLayoutIndex = addDescriptorSetLayout({ ShaderBinding{ ShaderType::Fragment, BindingType::Uniform, 2, 0 } });
-		addDescriptorSetLayout({ ShaderBinding{ ShaderType::Fragment, BindingType::Texture, 3, 0 } });
+		size_t viewLayoutIndex = addDescriptorSetLayout({ BindingInfo{ ShaderType::Vertex, BindingType::Uniform, 0, 0 } });
+		size_t modelLayoutIndex = addDescriptorSetLayout({ BindingInfo{ ShaderType::Vertex, BindingType::Storage, 1, 0 } });
+		size_t lightLayoutIndex = addDescriptorSetLayout({ BindingInfo{ ShaderType::Fragment, BindingType::Uniform, 2, 0 } });
+		addDescriptorSetLayout({ BindingInfo{ ShaderType::Fragment, BindingType::Texture, 3, 0 } });
 
 		m_descriptorAllocator.init(m_vulkan.getDevice().getHandle());
 
 		for (size_t i = 0; i < Renderer::resourceCount; ++i) {
-			m_viewerDescriptors[i] = m_descriptorAllocator.allocate(m_descriptorSetLayouts[viewLayoutIndex]);
-			m_modelDescriptors[i] = m_descriptorAllocator.allocate(m_descriptorSetLayouts[modelLayoutIndex]);
-			m_lightDescriptors[i] = m_descriptorAllocator.allocate(m_descriptorSetLayouts[lightLayoutIndex]);
+			m_viewerBindings[i] = m_descriptorAllocator.allocate(m_descriptorSetLayouts[viewLayoutIndex]);
+			m_modelBindings[i] = m_descriptorAllocator.allocate(m_descriptorSetLayouts[modelLayoutIndex]);
+			m_lightBindings[i] = m_descriptorAllocator.allocate(m_descriptorSetLayouts[lightLayoutIndex]);
 
 			m_lightBuffers[i] = VulkanBuffer{
 				m_vulkan.getDevice(),
@@ -124,13 +123,13 @@ namespace Nth {
 				if (objects[i].material != lastMaterial) {
 					commandBuffer.bindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, objects[i].material->pipeline());
 
-					VkDescriptorSet vkDescriptorSet = m_viewerDescriptors[m_resourceIndex]();
+					VkDescriptorSet vkDescriptorSet = m_viewerBindings[m_resourceIndex].descriptorSet()();
 					commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 0, 1, &vkDescriptorSet, 0, nullptr);
 
-					VkDescriptorSet vkSsboDescriptorSet = m_modelDescriptors[m_resourceIndex]();
+					VkDescriptorSet vkSsboDescriptorSet = m_modelBindings[m_resourceIndex].descriptorSet()();
 					commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 1, 1, &vkSsboDescriptorSet, 0, nullptr);
 
-					VkDescriptorSet vkLightDescriptorSet = m_lightDescriptors[m_resourceIndex]();
+					VkDescriptorSet vkLightDescriptorSet = m_lightBindings[m_resourceIndex].descriptorSet()();
 					commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 2, 1, &vkLightDescriptorSet, 0, nullptr);
 
 					lastMaterial = objects[i].material;
@@ -146,7 +145,7 @@ namespace Nth {
 
 					VulkanTexture const& texture{ model.textures[mesh.textureIndex] };
 					if (&texture != lastTexture) {
-						VkDescriptorSet vkTextureDescriptorSet = texture.descriptorSet();
+						VkDescriptorSet vkTextureDescriptorSet = texture.binding.descriptorSet()();
 						commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 3, 1, &vkTextureDescriptorSet, 0, nullptr);
 
 						lastTexture = &texture;
@@ -180,88 +179,25 @@ namespace Nth {
 
 	bool Renderer::updateDescriptorSet() {
 		for (size_t i = 0; i < Renderer::resourceCount; ++i) {
-			VkDescriptorBufferInfo bufferInfo = {
-				m_viewerBuffers[i].handle(),           // VkBuffer         buffer
-				0,                                     // VkDeviceSize     offset
-				m_viewerBuffers[i].handle.getSize()    // VkDeviceSize     range
-			};
+			UniformBinding viewerUniform{ m_viewerBuffers[i], 0, m_viewerBuffers[i].handle.getSize() };
+			m_viewerBindings[i].update({ Binding{ viewerUniform, 0 } });
 
-			std::vector<VkWriteDescriptorSet> descriptorWrites = {
-				{
-					VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,    // VkStructureType     sType
-					nullptr,                                   // const void         *pNext
-					m_viewerDescriptors[i](),                  // VkDescriptorSet     dstSet
-					0,                                         // uint32_t            dstBinding
-					0,                                         // uint32_t            dstArrayElement
-					1,                                         // uint32_t            descriptorCount
-					VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         // VkDescriptorType    descriptorType
-					nullptr,                                   // const VkDescriptorImageInfo  *pImageInfo
-					&bufferInfo,                               // const VkDescriptorBufferInfo *pBufferInfo
-					nullptr                                    // const VkBufferView *pTexelBufferView
-				}
-			};
+			StorageBinding modelStorage{ m_modelBuffers[i], 0, m_modelBuffers[i].handle.getSize() };
+			m_modelBindings[i].update({ Binding{ modelStorage, 0 } });
 
-			// TODO: Check if update methode should be in Device class 
-			m_viewerDescriptors[i].update(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data());
-
-
-			VkDescriptorBufferInfo ssboInfo = {
-				m_modelBuffers[i].handle(),         // VkBuffer         buffer
-				0,                                  // VkDeviceSize     offset
-				m_modelBuffers[i].handle.getSize()  // VkDeviceSize     range
-			};
-
-			std::vector<VkWriteDescriptorSet> descriptorWrites2 = {
-				{
-					VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
-					nullptr,                                    // const void                    *pNext
-					m_modelDescriptors[i](),                    // VkDescriptorSet                dstSet
-					0,                                          // uint32_t                       dstBinding
-					0,                                          // uint32_t                       dstArrayElement
-					1,                                          // uint32_t                       descriptorCount
-					VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,          // VkDescriptorType               descriptorType
-					nullptr,                                    // const VkDescriptorImageInfo   *pImageInfo
-					&ssboInfo,                                  // const VkDescriptorBufferInfo  *pBufferInfo
-					nullptr                                     // const VkBufferView            *pTexelBufferView
-				},
-			};
-
-			m_modelDescriptors[i].update(static_cast<uint32_t>(descriptorWrites2.size()), descriptorWrites2.data());
-
-			// Light
-			VkDescriptorBufferInfo lightInfo = {
-				m_lightBuffers[i].handle(),          // VkBuffer         buffer
-				0,                                   // VkDeviceSize     offset
-				m_lightBuffers[i].handle.getSize()   // VkDeviceSize     range
-			};
-
-			std::vector<VkWriteDescriptorSet> descriptorWrites3 = {
-				{
-					VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
-					nullptr,                                    // const void                    *pNext
-					m_lightDescriptors[i](),                    // VkDescriptorSet                dstSet
-					0,                                          // uint32_t                       dstBinding
-					0,                                          // uint32_t                       dstArrayElement
-					1,                                          // uint32_t                       descriptorCount
-					VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,          // VkDescriptorType               descriptorType
-					nullptr,                                    // const VkDescriptorImageInfo   *pImageInfo
-					&lightInfo,                                 // const VkDescriptorBufferInfo  *pBufferInfo
-					nullptr                                     // const VkBufferView            *pTexelBufferView
-				},
-			};
-
-			m_lightDescriptors[i].update(static_cast<uint32_t>(descriptorWrites3.size()), descriptorWrites3.data());
+			UniformBinding lightUniform{ m_lightBuffers[i], 0, m_lightBuffers[i].handle.getSize() };
+			m_lightBindings[i].update({ Binding{ lightUniform, 0 } });
 		}
 
 		return true;
 	}
 
-	size_t Renderer::addDescriptorSetLayout(std::vector<ShaderBinding> const& bindings) {
+	size_t Renderer::addDescriptorSetLayout(std::vector<BindingInfo> const& bindings) {
 		// Use "set" information
 		std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
 		for (auto const& binding : bindings) {
 			VkDescriptorSetLayoutBinding layoutBinding;
-			layoutBinding.binding = binding.binding;
+			layoutBinding.binding = binding.bindingIndex;
 
 			switch (binding.bindingType) {
 			case BindingType::Uniform:
@@ -309,6 +245,12 @@ namespace Nth {
 		return m_descriptorSetLayouts.size() - 1;
 	}
 
+	ShaderBinding Renderer::allocateShaderBinding(size_t index) {
+		assert(index < m_descriptorSetLayouts.size());
+
+		return ShaderBinding(m_descriptorAllocator.allocate(m_descriptorSetLayouts[index]));
+	}
+
 	RenderableMesh Renderer::registerMesh(Mesh const& mesh) const {
 		RenderableMesh registeredMesh;
 
@@ -354,31 +296,10 @@ namespace Nth {
 		registeredTexture.image.copy(texture.data.data(), static_cast<uint32_t>(texture.data.size()), texture.width, texture.height);
 
 		// TODO: descriptor set layout index hardcoded
-		registeredTexture.descriptorSet = m_descriptorAllocator.allocate(m_descriptorSetLayouts[3]);
+		registeredTexture.binding = allocateShaderBinding(3);
 
-		VkDescriptorImageInfo textureInfo = {
-			registeredTexture.sampler(),                          // VkSampler                      sampler
-			registeredTexture.image.view(),                       // VkImageView                    imageView
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL              // VkImageLayout                  imageLayout
-		};
-
-		std::vector<VkWriteDescriptorSet> descriptorWrites = {
-			{
-				VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,     // VkStructureType                sType
-				nullptr,                                    // const void                    *pNext
-				registeredTexture.descriptorSet(),          // VkDescriptorSet                dstSet
-				0,                                          // uint32_t                       dstBinding
-				0,                                          // uint32_t                       dstArrayElement
-				1,                                          // uint32_t                       descriptorCount
-				VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  // VkDescriptorType               descriptorType
-				&textureInfo,                               // const VkDescriptorImageInfo   *pImageInfo
-				nullptr,                                    // const VkDescriptorBufferInfo  *pBufferInfo
-				nullptr                                     // const VkBufferView            *pTexelBufferView
-			}
-		};
-
-		// TODO: Check if update methode should be in Device class 
-		registeredTexture.descriptorSet.update(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data());
+		TextureBinding textureBind{ registeredTexture, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+		registeredTexture.binding.update({ Binding{ textureBind, 0 } });
 
 		return registeredTexture;
 	}

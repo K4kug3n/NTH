@@ -12,6 +12,7 @@
 #include <Renderer/Vulkan/DescriptorSet.hpp>
 #include <Renderer/VulkanBuffer.hpp>
 #include <Renderer/RenderableModel.hpp>
+#include <Renderer/ShaderBinding.hpp>
 
 #include <vector>
 #include <array>
@@ -21,7 +22,7 @@ namespace Nth {
 	class RenderObject;
 	class Model;
 	struct Texture;
-	struct ShaderBinding;
+	struct BindingInfo;
 
 	class Renderer {
 	public:
@@ -61,18 +62,19 @@ namespace Nth {
 		DescriptorAllocator m_descriptorAllocator;
 
 		// TODO: May move it in dedicated class
-		size_t addDescriptorSetLayout(std::vector<ShaderBinding> const& bindings);
+		size_t addDescriptorSetLayout(std::vector<BindingInfo> const& bindings);
 		std::vector<Vk::DescriptorSetLayout> m_descriptorSetLayouts;
+		ShaderBinding allocateShaderBinding(size_t index);
 
 		size_t m_resourceIndex;
 
-		std::array<Vk::DescriptorSet, Renderer::resourceCount> m_modelDescriptors;
+		std::array<ShaderBinding, Renderer::resourceCount> m_modelBindings;
 		std::array<VulkanBuffer, Renderer::resourceCount> m_modelBuffers;
 
-		std::array<Vk::DescriptorSet, Renderer::resourceCount> m_viewerDescriptors;
+		std::array<ShaderBinding, Renderer::resourceCount> m_viewerBindings;
 		std::array<VulkanBuffer, Renderer::resourceCount> m_viewerBuffers;
 
-		std::array<Vk::DescriptorSet, Renderer::resourceCount> m_lightDescriptors;
+		std::array<ShaderBinding, Renderer::resourceCount> m_lightBindings;
 		std::array<VulkanBuffer, Renderer::resourceCount> m_lightBuffers;
 
 		// TODO: Review this

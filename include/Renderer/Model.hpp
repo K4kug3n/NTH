@@ -19,7 +19,6 @@ namespace Nth {
 		// TODO: Cleanup
 		std::vector<Texture> m_textures_loaded;
 		std::vector<Mesh> meshes;
-		Texture textureFromFile(std::string_view filename, std::string_view directory) const;
 
 		std::vector<Texture> const& textures() const;
 

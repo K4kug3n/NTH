@@ -13,6 +13,7 @@ namespace Nth {
 		unsigned int width;
 	};
 
+	Texture textureFromFile(std::string_view filepath);
 }
 
 #endif

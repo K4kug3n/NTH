@@ -103,10 +103,10 @@ namespace Nth {
 			}
 			
 			if (!skip) {
-				Texture texture = textureFromFile(str.C_Str(), m_directory);
+				Texture texture = textureFromFile(std::string{ m_directory } + "/" + std::string{ str.C_Str() });
 				texture.type = typeName;
 				texture.path = str.C_Str();
-				m_textures_loaded.push_back(texture);
+				m_textures_loaded.push_back(std::move(texture));
 
 				texturesIndex.push_back(m_textures_loaded.size() - 1);
 			}
@@ -118,21 +118,4 @@ namespace Nth {
 	Model::Model(std::string_view path) {
 		loadFromFile(path);
 	}
-
-	Texture Model::textureFromFile(std::string_view filename, std::string_view directory) const {
-		Image image = Image::loadFromFile(std::string{ directory } + "/" + std::string{ filename }, PixelChannel::Rgba);
-
-		if (image.pixels().empty()) {
-			throw std::runtime_error("Can't read file " + std::string{ directory } + "/" + std::string{ filename });
-		}
-
-		Texture texture;
-		texture.data = image.pixels();
-		texture.height = image.height();
-		texture.width = image.width();
-
-		return texture;
-	}
-
-
 }

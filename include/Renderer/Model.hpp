@@ -20,6 +20,9 @@ namespace Nth {
 		std::vector<Texture> m_textures_loaded;
 		std::vector<Mesh> meshes;
 
+		void addMesh(Mesh&& mesh);
+		size_t addTexture(Texture&& texture);
+
 		std::vector<Texture> const& textures() const;
 
 		void loadFromFile(std::string_view path);

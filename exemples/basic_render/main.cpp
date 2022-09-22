@@ -3,10 +3,11 @@
 #include <Renderer/RenderObject.hpp>
 #include <Renderer/Mesh.hpp>
 #include <Renderer/Model.hpp>
-
 #include <Renderer/Texture.hpp>
 
 #include <Math/Angle.hpp>
+
+#include <Util/Color.hpp>
 
 #include <iostream>
 #include <chrono>
@@ -28,6 +29,16 @@ int main() {
 
 	Nth::Model model{ "./guitare/scene.gltf" };
 
+	Nth::Texture uniformTexture{ Nth::uniformTexture(Nth::Color{ 255, 0, 0 }) };
+	
+	Nth::Model planeModel;
+	size_t textureIndex = planeModel.addTexture(std::move(uniformTexture));
+	Nth::Mesh plane{ Nth::Mesh::Plane() };
+	plane.addTextureIndex(textureIndex);
+	planeModel.addMesh(std::move(plane));
+
+	size_t planeIndex = renderer.registerModel(planeModel);
+
 	size_t modelIndex = renderer.registerModel(model);
 	
 	Nth::RenderObject obj1{
@@ -36,35 +47,49 @@ int main() {
 		Nth::Matrix4f::Translation({ 0.f, -1.f, 0.f }) * Nth::Matrix4f::Scale({ 0.01f, 0.01f, 0.01f })
 	};
 
+	Nth::RenderObject obj2{
+		planeIndex,
+		&basicMaterial,
+		Nth::Matrix4f::Rotation(Nth::toRadians(90.f), {1.f, 0.f, 0.f}) * Nth::Matrix4f::Translation({ -1.f, 0.f, 0.f }) * Nth::Matrix4f::Scale({ 2.f, 2.f, 2.f })
+	};
+
 	Nth::EventHandler& eventHandler{ window.getEventHandler() };
 	eventHandler.onQuit.connect([&window]() {
 		window.close();
 	}); 
 
-	renderer.camera.position = Nth::Vector3f{ 0.f, 0.f, -3.f };
+	renderer.camera.position = Nth::Vector3f{ 0.f, -1.f, -3.f };
 	renderer.camera.direction = Nth::EulerAngle(0.f, 0.f, 0.f);
+
+	renderer.light = {
+		renderer.camera.position,
+		{ 1.f, 1.f, 1.f, 1.f },
+		{ 0.f, -0.2f, 1.f },
+		0.3f,
+		0.5f,
+	};
 
 	eventHandler.onKeyDown.connect([&renderer, &window](SDL_KeyboardEvent key) {
 		float stepSize{ 0.1f };
 
 		switch (key.keysym.sym) {
 		case SDLK_z:
-			renderer.camera.position.z += stepSize;
+			renderer.light.lightPos.z += stepSize;
 			break;
 		case SDLK_s:
-			renderer.camera.position.z -= stepSize;
+			renderer.light.lightPos.z -= stepSize;
 			break;
 		case SDLK_q:
-			renderer.camera.position.x += stepSize;
+			renderer.light.lightPos.x += stepSize;
 			break;
 		case SDLK_d:
-			renderer.camera.position.x -= stepSize;
+			renderer.light.lightPos.x -= stepSize;
 			break;
 		case SDLK_SPACE:
-			renderer.camera.position.y -= stepSize;
+			renderer.light.lightPos.y -= stepSize;
 			break;
 		case SDLK_LSHIFT:
-			renderer.camera.position.y += stepSize;
+			renderer.light.lightPos.y += stepSize;
 			break;
 		case SDLK_ESCAPE:
 			window.close();
@@ -80,14 +105,6 @@ int main() {
 		renderer.camera.direction.yaw += xrel * sensitivity;
 		renderer.camera.direction.pitch += yrel * sensitivity;
 	});
-
-	renderer.light = {
-		renderer.camera.position,
-		{ 1.f, 1.f, 1.f, 1.f },
-		{ 0.f, 0.f, 0.f },
-		0.3f,
-		0.5f,
-	};
 
 	unsigned nbFrames = 0;
 
@@ -106,7 +123,7 @@ int main() {
 
 		window.processEvent();
 
-		renderer.draw({ obj1 });
+		renderer.draw({ obj2 });
 	}
 
 	renderer.waitIdle();

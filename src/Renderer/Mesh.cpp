@@ -10,6 +10,10 @@ namespace Nth {
 		indices(std::move(indices)),
 		texturesIndex(std::move(texturesIndex)) { }
 
+	void Mesh::addTextureIndex(size_t index) {
+		texturesIndex.push_back(index);
+	}
+
 	Mesh Mesh::FromOBJ(const std::string_view filename) {
 		tinyobj::attrib_t attrib;
 		std::vector<tinyobj::shape_t> shapes;

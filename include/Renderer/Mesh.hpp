@@ -9,9 +9,12 @@
 namespace Nth {
 	struct Texture;
 
+	// TODO: Be a class
 	struct Mesh {
 		Mesh() = default;
 		Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices, std::vector<size_t> texturesIndex);
+
+		void addTextureIndex(size_t index);
 
 		std::vector<Vertex> vertices;
 		std::vector<uint32_t> indices;

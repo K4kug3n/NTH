@@ -10,7 +10,7 @@ namespace Nth {
 		indices(std::move(indices)),
 		texturesIndex(std::move(texturesIndex)) { }
 
-	Mesh Mesh::fromOBJ(const std::string_view filename) {
+	Mesh Mesh::FromOBJ(const std::string_view filename) {
 		tinyobj::attrib_t attrib;
 		std::vector<tinyobj::shape_t> shapes;
 		std::vector<tinyobj::material_t> materials;
@@ -53,5 +53,37 @@ namespace Nth {
 		}
 
 		return newMesh;
+	}
+
+	Mesh Mesh::Plane() {
+		Mesh mesh;
+
+		Vertex left_top;
+		left_top.pos = { 0.f, 0.f, 0.f };
+		left_top.texturePos = { 0.f, 0.f };
+		left_top.normal = { 0.f, 0.f, 1.f };
+		mesh.vertices.push_back(std::move(left_top));
+
+		Vertex right_top;
+		right_top.pos = { 1.f, 0.f, 0.f };
+		right_top.texturePos = { 0.f, 0.f };
+		right_top.normal = { 0.f, 0.f, 1.f };
+		mesh.vertices.push_back(std::move(right_top));
+
+		Vertex left_bot;
+		left_bot.pos = { 0.f, 1.f, 0.f };
+		left_bot.texturePos = { 0.f, 0.f };
+		left_bot.normal = { 0.f, 0.f, 1.f };
+		mesh.vertices.push_back(std::move(left_bot));
+
+		Vertex right_bot;
+		right_bot.pos = { 1.f, 1.f, 0.f };
+		right_bot.texturePos = { 0.f, 0.f };
+		right_bot.normal = { 0.f, 0.f, 1.f };
+		mesh.vertices.push_back(std::move(right_bot));
+
+		mesh.indices = { 0, 1, 3, 0, 2, 3 };
+
+		return mesh;
 	}
 }

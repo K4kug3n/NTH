@@ -1,6 +1,7 @@
 #include <Renderer/Texture.hpp>
 
 #include <Util/Image.hpp>
+#include <Util/Color.hpp>
 
 #include <stdexcept>
 
@@ -16,6 +17,17 @@ namespace Nth {
 		texture.data = image.pixels();
 		texture.height = image.height();
 		texture.width = image.width();
+
+		return texture;
+	}
+
+	Texture uniformTexture(Color const& color) {
+		Texture texture;
+		texture.width = 1;
+		texture.height = 1;
+		texture.data = { color.r, color.g, color.b, color.a };
+		texture.type = "base_color";
+		texture.path = "./";
 
 		return texture;
 	}

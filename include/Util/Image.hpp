@@ -17,7 +17,7 @@ namespace Nth {
 	class Image {
 	public:
 		Image() = default;
-		Image(unsigned int width, unsigned int height, unsigned int channels, std::vector<char> const& pixels);
+		Image(unsigned int width, unsigned int height, unsigned int channels, std::vector<unsigned char> const& pixels);
 		Image(Image const&) = default;
 		Image(Image&&) = default;
 		~Image() = default;
@@ -25,7 +25,7 @@ namespace Nth {
 		unsigned int width() const;
 		unsigned int height() const;
 		unsigned int channels() const;
-		std::vector<char> const& pixels() const;
+		std::vector<unsigned char> const& pixels() const;
 
 		static Image loadFromFile(const std::string_view filename, PixelChannel desiredChannel = PixelChannel::Unknow);
 
@@ -36,7 +36,7 @@ namespace Nth {
 		unsigned int m_width;
 		unsigned int m_height;
 		unsigned int m_channels;
-		std::vector<char> m_pixels;
+		std::vector<unsigned char> m_pixels;
 	};
 }
 

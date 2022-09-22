@@ -8,7 +8,7 @@
 #include <cstring>
 
 namespace Nth{
-	Image::Image(unsigned int width, unsigned int height, unsigned int channels, std::vector<char> const& pixels) :
+	Image::Image(unsigned int width, unsigned int height, unsigned int channels, std::vector<unsigned char> const& pixels) :
 		m_width(width),
 		m_height(height),
 		m_channels(channels),
@@ -26,7 +26,7 @@ namespace Nth{
 		return m_channels;
 	}
 
-	std::vector<char> const& Image::pixels() const {
+	std::vector<unsigned char> const& Image::pixels() const {
 		return m_pixels;
 	}
 
@@ -51,7 +51,7 @@ namespace Nth{
 
 		int size = (width) * (height) * (static_cast<int>(desiredChannel) <= 0 ? components : static_cast<int>(desiredChannel));
 
-		std::vector<char> output(size);
+		std::vector<unsigned char> output(size);
 		std::memcpy(&output[0], imageData, size);
 
 		stbi_image_free(imageData);

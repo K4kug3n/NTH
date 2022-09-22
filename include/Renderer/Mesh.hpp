@@ -17,7 +17,8 @@ namespace Nth {
 		std::vector<uint32_t> indices;
 		std::vector<size_t> texturesIndex;
 
-		static Mesh fromOBJ(const std::string_view filename);
+		static Mesh FromOBJ(const std::string_view filename);
+		static Mesh Plane();
 	};
 
 }

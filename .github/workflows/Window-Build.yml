@@ -14,3 +14,6 @@ jobs:
 
       - name: Build targets
         run: xmake build --yes
+
+      - name: Run tests
+        run: xmake run test

@@ -13,6 +13,21 @@
 #include <iostream>
 
 namespace Nth {
+	void Model::addMesh(Mesh&& mesh) {
+		meshes.push_back(std::move(mesh));
+	}
+	
+	size_t Model::addTexture(Texture&& texture) {
+		for (size_t i = 0; i < m_textures_loaded.size(); ++i) {
+			if (m_textures_loaded[i].path == texture.path) {
+				return i;
+			}
+		}
+		
+		m_textures_loaded.push_back(std::move(texture));
+		return m_textures_loaded.size() - 1;
+	}
+
 	std::vector<Texture> const& Model::textures() const {
 		return m_textures_loaded;
 	}

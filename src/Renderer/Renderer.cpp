@@ -34,21 +34,21 @@ namespace Nth {
 			m_modelBindings[i] = m_descriptorAllocator.allocate(m_descriptorSetLayouts[modelLayoutIndex]);
 			m_lightBindings[i] = m_descriptorAllocator.allocate(m_descriptorSetLayouts[lightLayoutIndex]);
 
-			m_lightBuffers[i] = VulkanBuffer{
+			m_lightBuffers[i] = RenderBuffer{
 				m_vulkan.getDevice(),
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 				sizeof(LightGpuObject)
 			};
 
-			m_viewerBuffers[i] = VulkanBuffer{
+			m_viewerBuffers[i] = RenderBuffer{
 				m_vulkan.getDevice(),
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 				sizeof(ViewerGpuObject)
 			};
 
-			m_modelBuffers[i] = VulkanBuffer{
+			m_modelBuffers[i] = RenderBuffer{
 				m_vulkan.getDevice(),
 				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
@@ -74,30 +74,30 @@ namespace Nth {
 	}
 
 	size_t Renderer::registerModel(Model const& model) {
-		std::vector<VulkanTexture> textures;
+		std::vector<RenderTexture> textures;
 		for (auto const& texture : model.textures()) {
 			textures.push_back(registerTexture(texture));
 		}
 
-		std::vector<RenderableMesh> meshes;
+		std::vector<RenderMesh> meshes;
 		for (auto const& mesh : model.meshes) {
-			RenderableMesh renderableMesh{ registerMesh(mesh) };
+			RenderMesh RenderMesh{ registerMesh(mesh) };
 
 			// TODO: Cleanup
-			renderableMesh.textureIndex = 0;
+			RenderMesh.textureIndex = 0;
 			for (size_t textureIndex : mesh.texturesIndex) {
 				if (model.textures()[textureIndex].type == "base_color") {
-					renderableMesh.textureIndex = textureIndex;
+					RenderMesh.textureIndex = textureIndex;
 					break;
 				}
 			}
 
-			meshes.emplace_back(std::move(renderableMesh));
+			meshes.emplace_back(std::move(RenderMesh));
 		}
 
-		m_renderables.emplace_back(std::move(meshes), std::move(textures));
+		m_Renders.emplace_back(std::move(meshes), std::move(textures));
 
-		return m_renderables.size() - 1;
+		return m_Renders.size() - 1;
 	}
 
 	void Renderer::draw(std::vector<RenderObject> const& objects) {
@@ -135,15 +135,15 @@ namespace Nth {
 					lastMaterial = objects[i].material;
 				}
 
-				VulkanTexture const* lastTexture = nullptr;
-				RenderableModel const& model = m_renderables[objects[i].modelIndex];
-				for (RenderableMesh const& mesh : model.meshes) {
+				RenderTexture const* lastTexture = nullptr;
+				RenderModel const& model = m_Renders[objects[i].modelIndex];
+				for (RenderMesh const& mesh : model.meshes) {
 					VkDeviceSize offset = 0;
 					commandBuffer.bindVertexBuffer(mesh.vertexBuffer.handle(), offset);
 
 					commandBuffer.bindIndexBuffer(mesh.indexBuffer.handle(), 0, VK_INDEX_TYPE_UINT32);
 
-					VulkanTexture const& texture{ model.textures[mesh.textureIndex] };
+					RenderTexture const& texture{ model.textures[mesh.textureIndex] };
 					if (&texture != lastTexture) {
 						VkDescriptorSet vkTextureDescriptorSet = texture.binding.descriptorSet()();
 						commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 3, 1, &vkTextureDescriptorSet, 0, nullptr);
@@ -251,10 +251,10 @@ namespace Nth {
 		return ShaderBinding(m_descriptorAllocator.allocate(m_descriptorSetLayouts[index]));
 	}
 
-	RenderableMesh Renderer::registerMesh(Mesh const& mesh) const {
-		RenderableMesh registeredMesh;
+	RenderMesh Renderer::registerMesh(Mesh const& mesh) const {
+		RenderMesh registeredMesh;
 
-		registeredMesh.vertexBuffer = VulkanBuffer{
+		registeredMesh.vertexBuffer = RenderBuffer{
 			m_vulkan.getDevice(),
 			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -263,7 +263,7 @@ namespace Nth {
 
 		registeredMesh.vertexBuffer.copy(mesh.vertices.data(), registeredMesh.vertexBuffer.handle.getSize());
 
-		registeredMesh.indexBuffer = VulkanBuffer{
+		registeredMesh.indexBuffer = RenderBuffer{
 			m_vulkan.getDevice(),
 			VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -277,8 +277,8 @@ namespace Nth {
 		return registeredMesh;
 	}
 
-	VulkanTexture Renderer::registerTexture(Texture const& texture) {
-		VulkanTexture registeredTexture;
+	RenderTexture Renderer::registerTexture(Texture const& texture) {
+		RenderTexture registeredTexture;
 
 		registeredTexture.create(
 			m_vulkan.getDevice(),

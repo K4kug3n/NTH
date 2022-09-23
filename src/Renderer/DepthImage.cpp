@@ -2,13 +2,13 @@
 
 #include <Renderer/Vulkan/Device.hpp>
 #include <Renderer/Vulkan/PhysicalDevice.hpp>
-#include <Renderer/VulkanDevice.hpp>
+#include <Renderer/RenderDevice.hpp>
 #include <Math/Vector2.hpp>
 
 #include <iostream>
 
 namespace Nth {
-	bool DepthImage::create(VulkanDevice const& device, Vector2<unsigned int> const& size) {
+	bool DepthImage::create(RenderDevice const& device, Vector2<unsigned int> const& size) {
 		m_format = findDepthFormat(device.getHandle());
 
 		m_image.create(

@@ -8,8 +8,8 @@
 #include <vector>
 
 namespace Nth {
-	class VulkanBuffer;
-	class VulkanTexture;
+	class RenderBuffer;
+	class RenderTexture;
 
 	enum class ShaderType {
 		Fragment,
@@ -30,18 +30,18 @@ namespace Nth {
 	};
 
 	struct UniformBinding {
-		const VulkanBuffer& buffer;
+		const RenderBuffer& buffer;
 		uint64_t offset;
 		uint64_t range;
 	};
 
 	struct TextureBinding {
-		const VulkanTexture& texture;
+		const RenderTexture& texture;
 		VkImageLayout layout;
 	};
 
 	struct StorageBinding {
-		const VulkanBuffer& buffer;
+		const RenderBuffer& buffer;
 		uint64_t offset;
 		uint64_t range;
 	};

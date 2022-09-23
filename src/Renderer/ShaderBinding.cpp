@@ -1,7 +1,7 @@
 #include <Renderer/ShaderBinding.hpp>
 
-#include <Renderer/VulkanBuffer.hpp>
-#include <Renderer/VulkanTexture.hpp>
+#include <Renderer/RenderBuffer.hpp>
+#include <Renderer/RenderTexture.hpp>
 
 #include <utility>
 

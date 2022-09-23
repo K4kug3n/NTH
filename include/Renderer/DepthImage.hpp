@@ -1,13 +1,13 @@
 #ifndef NTH_RENDERER_DEPTHIMAGE_HPP
 #define NTH_RENDERER_DEPTHIMAGE_HPP
 
-#include <Renderer/VulkanImage.hpp>
+#include <Renderer/RenderImage.hpp>
 
 #include <vector>
 
 namespace Nth {
 	template<typename T> class Vector2;
-	class VulkanDevice;
+	class RenderDevice;
 
 	class DepthImage {
 	public:
@@ -16,7 +16,7 @@ namespace Nth {
 		DepthImage(DepthImage&&) = default;
 		~DepthImage() = default;
 
-		bool create(VulkanDevice const& device, Vector2<unsigned int> const& size);
+		bool create(RenderDevice const& device, Vector2<unsigned int> const& size);
 		
 		Vk::ImageView const& view() const;
 		Vk::Image const& image() const;
@@ -29,7 +29,7 @@ namespace Nth {
 		VkFormat findSupportedFormat(Vk::Device const& device, std::vector<VkFormat> const& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
 		bool hasStencilComponent(VkFormat format) const;
 
-		VulkanImage m_image;
+		RenderImage m_image;
 		VkFormat m_format;
 	};
 }

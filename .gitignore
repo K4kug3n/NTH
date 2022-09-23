@@ -33,8 +33,7 @@
 
 # xmake folders
 .xmake/*
-vsxmake2019/*
-vs2019/*
+vsxmake*/*
 build/*
 install/*
 

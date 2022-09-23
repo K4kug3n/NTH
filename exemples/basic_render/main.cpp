@@ -74,22 +74,22 @@ int main() {
 
 		switch (key.keysym.sym) {
 		case SDLK_z:
-			renderer.light.lightPos.z += stepSize;
+			renderer.light.position.z += stepSize;
 			break;
 		case SDLK_s:
-			renderer.light.lightPos.z -= stepSize;
+			renderer.light.position.z -= stepSize;
 			break;
 		case SDLK_q:
-			renderer.light.lightPos.x += stepSize;
+			renderer.light.position.x += stepSize;
 			break;
 		case SDLK_d:
-			renderer.light.lightPos.x -= stepSize;
+			renderer.light.position.x -= stepSize;
 			break;
 		case SDLK_SPACE:
-			renderer.light.lightPos.y -= stepSize;
+			renderer.light.position.y -= stepSize;
 			break;
 		case SDLK_LSHIFT:
-			renderer.light.lightPos.y += stepSize;
+			renderer.light.position.y += stepSize;
 			break;
 		case SDLK_ESCAPE:
 			window.close();

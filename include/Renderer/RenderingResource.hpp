@@ -12,7 +12,7 @@
 namespace Nth {
 	class Vk::Device;
 	class RenderWindow;
-	class VulkanDevice;
+	class RenderDevice;
 
 	class RenderingResource {
 	public:

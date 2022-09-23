@@ -10,7 +10,7 @@ namespace Nth {
 		alignas(16) Vector3f viewPos;
 
 		alignas(16) Vector4f lightColor;
-		alignas(16) Vector3f lightPos;
+		alignas(16) Vector3f position;
 		alignas(4) float ambientStrength;
 		alignas(4) float specularStrength;
 	};

@@ -1,4 +1,4 @@
-#include <Renderer/VulkanInstance.hpp>
+#include <Renderer/RenderInstance.hpp>
 
 #include <Renderer/Vulkan/VulkanLoader.hpp>
 #include <Renderer/Vulkan/Surface.hpp>
@@ -13,7 +13,7 @@
 #include <stdexcept>
 
 namespace Nth {
-	VulkanInstance::VulkanInstance() :
+	RenderInstance::RenderInstance() :
 		m_device(*this) {
 
 		if (!Vk::VulkanLoader::initialize()) {
@@ -59,10 +59,10 @@ namespace Nth {
 		}
 	}
 
-	VulkanInstance::~VulkanInstance() {
+	RenderInstance::~RenderInstance() {
 	}
 
-	bool VulkanInstance::createDevice(Vk::Surface& surface) {
+	bool RenderInstance::createDevice(Vk::Surface& surface) {
 		uint32_t presentQueueFamilyIndex = UINT32_MAX;
 		uint32_t graphicsQueueFamilyIndex = UINT32_MAX;
 
@@ -132,23 +132,23 @@ namespace Nth {
 		return true;
 	}
 
-	Vk::Instance& VulkanInstance::getHandle() {
+	Vk::Instance& RenderInstance::getHandle() {
 		return m_instance;
 	}
 
-	Vk::Instance const& VulkanInstance::getHandle() const {
+	Vk::Instance const& RenderInstance::getHandle() const {
 		return m_instance;
 	}
 
-	VulkanDevice& VulkanInstance::getDevice() {
+	RenderDevice& RenderInstance::getDevice() {
 		return m_device;
 	}
 
-	VulkanDevice const& VulkanInstance::getDevice() const {
+	RenderDevice const& RenderInstance::getDevice() const {
 		return m_device;
 	}
 
-	bool VulkanInstance::checkPhysicalDeviceProperties(Vk::PhysicalDevice& physicalDevice, Vk::Surface& surface, uint32_t& graphicsQueueFamilyIndex, uint32_t& presentQueueFamilyIndex) {
+	bool RenderInstance::checkPhysicalDeviceProperties(Vk::PhysicalDevice& physicalDevice, Vk::Surface& surface, uint32_t& graphicsQueueFamilyIndex, uint32_t& presentQueueFamilyIndex) {
 		std::vector<char const*> devicesExtensionsNames = {
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME
 		};

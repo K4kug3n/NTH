@@ -1,5 +1,5 @@
-#include <Renderer/VulkanDevice.hpp>
-#include <Renderer/VulkanInstance.hpp>
+#include <Renderer/RenderDevice.hpp>
+#include <Renderer/RenderInstance.hpp>
 
 #include <Renderer/Vulkan/PhysicalDevice.hpp>
 #include <Renderer/Vulkan/Queue.hpp>
@@ -8,15 +8,15 @@
 #include <stdexcept>
 
 namespace Nth {
-	VulkanDevice::VulkanDevice(VulkanInstance const& instance) :
+	RenderDevice::RenderDevice(RenderInstance const& instance) :
 		m_instance(instance),
 		m_device(instance.getHandle()) { }
 
-	VulkanDevice::~VulkanDevice() {
+	RenderDevice::~RenderDevice() {
 		m_pool.destroy();
 	}
 
-	void VulkanDevice::create(Vk::PhysicalDevice physicalDevice, VkDeviceCreateInfo const& infos, uint32_t presentQueueFamilyIndex, uint32_t graphicQueueFamilyIndex) {
+	void RenderDevice::create(Vk::PhysicalDevice physicalDevice, VkDeviceCreateInfo const& infos, uint32_t presentQueueFamilyIndex, uint32_t graphicQueueFamilyIndex) {
 		if (!m_device.create(std::move(physicalDevice), infos)) {
 			throw std::runtime_error("Can't create device");
 		}
@@ -34,7 +34,7 @@ namespace Nth {
 		}
 	}
 
-	Vk::CommandBuffer VulkanDevice::allocateCommandBuffer() const  {
+	Vk::CommandBuffer RenderDevice::allocateCommandBuffer() const  {
 		Vk::CommandBuffer commandBuffer;
 
 		if (!m_pool.allocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, commandBuffer)) {
@@ -44,27 +44,27 @@ namespace Nth {
 		return commandBuffer;
 	}
 
-	Vk::Queue& VulkanDevice::presentQueue() {
+	Vk::Queue& RenderDevice::presentQueue() {
 		return m_presentQueue;
 	}
 
-	Vk::Queue const& VulkanDevice::presentQueue() const {
+	Vk::Queue const& RenderDevice::presentQueue() const {
 		return m_presentQueue;
 	}
 
-	Vk::Queue& VulkanDevice::graphicsQueue() {
+	Vk::Queue& RenderDevice::graphicsQueue() {
 		return m_graphicsQueue;
 	}
 
-	Vk::Queue const& VulkanDevice::graphicsQueue() const {
+	Vk::Queue const& RenderDevice::graphicsQueue() const {
 		return m_graphicsQueue;
 	}
 
-	Vk::Device& VulkanDevice::getHandle() {
+	Vk::Device& RenderDevice::getHandle() {
 		return m_device;
 	}
 
-	Vk::Device const& VulkanDevice::getHandle() const {
+	Vk::Device const& RenderDevice::getHandle() const {
 		return m_device;
 	}
 }

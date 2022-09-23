@@ -1,10 +1,10 @@
-#ifndef NTH_RENDERER_VULKANINSTANCE_HPP
-#define NTH_RENDERER_VULKANINSTANCE_HPP
+#ifndef NTH_RENDERER_RENDERINSTANCE_HPP
+#define NTH_RENDERER_RENDERINSTANCE_HPP
 
 #include <Renderer/Vulkan/Instance.hpp>
 #include <Renderer/Vulkan/Queue.hpp>
 
-#include <Renderer/VulkanDevice.hpp>
+#include <Renderer/RenderDevice.hpp>
 
 #include <vulkan/vulkan.h>
 
@@ -17,27 +17,27 @@ namespace Nth {
 	}
 
 	// TODO: Clean this imple
-	class VulkanInstance {
+	class RenderInstance {
 	public:
-		VulkanInstance();
-		VulkanInstance(VulkanInstance const&) = delete;
-		VulkanInstance(VulkanInstance&&) = delete;
-		~VulkanInstance();
+		RenderInstance();
+		RenderInstance(RenderInstance const&) = delete;
+		RenderInstance(RenderInstance&&) = delete;
+		~RenderInstance();
 
 		bool createDevice(Vk::Surface& surface);
 
 		Vk::Instance& getHandle();
 		Vk::Instance const& getHandle() const;
-		VulkanDevice& getDevice();
-		VulkanDevice const& getDevice() const;
+		RenderDevice& getDevice();
+		RenderDevice const& getDevice() const;
 
-		VulkanInstance& operator=(VulkanInstance const&) = delete;
-		VulkanInstance& operator=(VulkanInstance&&) = delete;
+		RenderInstance& operator=(RenderInstance const&) = delete;
+		RenderInstance& operator=(RenderInstance&&) = delete;
 	private:
 		bool checkPhysicalDeviceProperties(Vk::PhysicalDevice& physicalDevice, Vk::Surface& surface, uint32_t& graphicsQueueFamilyIndex, uint32_t& presentQueueFamilyIndex);
 
 		Vk::Instance m_instance;
-		VulkanDevice m_device;
+		RenderDevice m_device;
 	};
 }
 

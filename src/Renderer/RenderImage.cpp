@@ -1,8 +1,8 @@
-#include <Renderer/VulkanImage.hpp>
+#include <Renderer/RenderImage.hpp>
 
 #include <Renderer/Vulkan/Device.hpp>
 #include <Renderer/Vulkan/PhysicalDevice.hpp>
-#include <Renderer/VulkanDevice.hpp>
+#include <Renderer/RenderDevice.hpp>
 #include <Renderer/Vulkan/CommandBuffer.hpp>
 
 #include <cstring>
@@ -10,7 +10,7 @@
 #include <cassert>
 
 namespace Nth {
-	void VulkanImage::create(VulkanDevice const& device, uint32_t width, uint32_t height, size_t stagingSize, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties) {
+	void RenderImage::create(RenderDevice const& device, uint32_t width, uint32_t height, size_t stagingSize, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties) {
 		VkImageCreateInfo imageCreateInfo = {
 			VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,  // VkStructureType        sType;
 			nullptr,                              // const void            *pNext
@@ -61,7 +61,7 @@ namespace Nth {
 		m_device = &device;
 	}
 
-	void VulkanImage::createView(VkFormat format, VkImageAspectFlags aspectFlags) {
+	void RenderImage::createView(VkFormat format, VkImageAspectFlags aspectFlags) {
 		assert(m_device != nullptr);
 
 		VkImageViewCreateInfo imageViewCreateInfo = {
@@ -91,7 +91,7 @@ namespace Nth {
 		}
 	}
 
-	void VulkanImage::copy(void const* data, size_t size, uint32_t width, uint32_t height) {
+	void RenderImage::copy(void const* data, size_t size, uint32_t width, uint32_t height) {
 		assert(m_device != nullptr);
 
 		if (!m_stagingMemory.map(0, size, 0)) {
@@ -199,7 +199,7 @@ namespace Nth {
 		m_device->getHandle().waitIdle();
 	}
 
-	uint32_t VulkanImage::findMemoryType(Vk::Device const& device, uint32_t memoryTypeBit, VkMemoryPropertyFlags properties) const {
+	uint32_t RenderImage::findMemoryType(Vk::Device const& device, uint32_t memoryTypeBit, VkMemoryPropertyFlags properties) const {
 		VkPhysicalDeviceMemoryProperties memProperties = device.getPhysicalDevice().getMemoryProperties();
 
 		for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
@@ -210,7 +210,7 @@ namespace Nth {
 
 		throw std::runtime_error("Canno't find suitable memory type!");
 	}
-	void VulkanImage::createStaging(Vk::Device const& device, size_t size) {
+	void RenderImage::createStaging(Vk::Device const& device, size_t size) {
 		VkBufferCreateInfo stagingCreateInfo = {
 			VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,             // VkStructureType                sType
 			nullptr,                                          // const void                    *pNext

@@ -5,7 +5,7 @@
 #include <Renderer/RenderObject.hpp>
 #include <Renderer/Material.hpp>
 #include <Renderer/Mesh.hpp>
-#include <Renderer/VulkanTexture.hpp>
+#include <Renderer/RenderTexture.hpp>
 
 #include <Util/Reader.hpp>
 #include <Util/Image.hpp>
@@ -15,13 +15,13 @@
 #include <iostream>
 
 namespace Nth {
-	RenderWindow::RenderWindow(VulkanInstance& vulkanInstance) :
+	RenderWindow::RenderWindow(RenderInstance& vulkanInstance) :
 		m_vulkan(vulkanInstance),
 		m_surface(vulkanInstance.getHandle()),
 		m_ressourceIndex(0),
 		m_swapchainSize() { }
 
-	RenderWindow::RenderWindow(VulkanInstance& vulkanInstance, VideoMode const& mode, const std::string_view title) :
+	RenderWindow::RenderWindow(RenderInstance& vulkanInstance, VideoMode const& mode, const std::string_view title) :
 		m_vulkan(vulkanInstance),
 		m_surface(vulkanInstance.getHandle()),
 		m_ressourceIndex(0),
@@ -147,7 +147,7 @@ namespace Nth {
 		return m_renderPass;
 	}
 
-	VulkanDevice const& RenderWindow::getDevice() const {
+	RenderDevice const& RenderWindow::getDevice() const {
 		return m_vulkan.getDevice();
 	}
 

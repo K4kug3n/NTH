@@ -1,5 +1,5 @@
-#ifndef NTH_RENDERER_VULKANDEVICE_HPP
-#define NTH_RENDERER_VULKANDEVICE_HPP
+#ifndef NTH_RENDERER_RENDERDEVICE_HPP
+#define NTH_RENDERER_RENDERDEVICE_HPP
 
 #include <Renderer/Vulkan/Device.hpp>
 #include <Renderer/Vulkan/Queue.hpp>
@@ -13,15 +13,15 @@ namespace Nth {
 		class CommandBuffer;
 	}
 
-	class VulkanInstance;
+	class RenderInstance;
 
-	class VulkanDevice {
+	class RenderDevice {
 	public:
-		VulkanDevice(VulkanInstance const& instance);
-		VulkanDevice() = delete;
-		VulkanDevice(VulkanDevice const&) = delete;
-		VulkanDevice(VulkanDevice&&) = delete;
-		~VulkanDevice();
+		RenderDevice(RenderInstance const& instance);
+		RenderDevice() = delete;
+		RenderDevice(RenderDevice const&) = delete;
+		RenderDevice(RenderDevice&&) = delete;
+		~RenderDevice();
 
 		//TODO: Review this
 		void create(Vk::PhysicalDevice physicalDevice, VkDeviceCreateInfo const& infos, uint32_t presentQueueFamilyIndex, uint32_t graphicQueueFamilyIndex);
@@ -35,10 +35,10 @@ namespace Nth {
 		Vk::Device& getHandle();
 		Vk::Device const& getHandle() const;
 
-		VulkanDevice& operator=(VulkanDevice const&) = delete;
-		VulkanDevice& operator=(VulkanDevice&&) = delete;
+		RenderDevice& operator=(RenderDevice const&) = delete;
+		RenderDevice& operator=(RenderDevice&&) = delete;
 	private:
-		VulkanInstance const& m_instance;
+		RenderInstance const& m_instance;
 		Vk::Queue m_presentQueue;
 		Vk::Queue m_graphicsQueue;
 

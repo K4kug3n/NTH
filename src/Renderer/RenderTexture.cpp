@@ -1,22 +1,22 @@
-#include <Renderer/VulkanTexture.hpp>
+#include <Renderer/RenderTexture.hpp>
 
 #include <Renderer/Vulkan/Device.hpp>
-#include <Renderer/VulkanDevice.hpp>
+#include <Renderer/RenderDevice.hpp>
 
 #include <iostream>
 
 namespace Nth {
-	void VulkanTexture::create(VulkanDevice const& device, uint32_t width, uint32_t height, size_t size, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties) {
+	void RenderTexture::create(RenderDevice const& device, uint32_t width, uint32_t height, size_t size, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties) {
 		image.create(device, width, height, size, format, tiling, usage, properties);
 
 		createSampler(device.getHandle());
 	}
 
-	void VulkanTexture::createView(VkFormat format, VkImageAspectFlags aspectFlags) {
+	void RenderTexture::createView(VkFormat format, VkImageAspectFlags aspectFlags) {
 		image.createView(format, aspectFlags);
 	}
 
-	void VulkanTexture::createSampler(Vk::Device const& device) {
+	void RenderTexture::createSampler(Vk::Device const& device) {
 		VkSamplerCreateInfo samplerCreateInfo = {
 			VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,         // VkStructureType        sType
 			nullptr,                                       // const void*            pNext

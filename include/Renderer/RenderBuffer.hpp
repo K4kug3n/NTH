@@ -1,5 +1,5 @@
-#ifndef NTH_RENDERER_VULKANBUFFER_HPP
-#define NTH_RENDERER_VULKANBUFFER_HPP
+#ifndef NTH_RENDERER_RENDERBUFFER_HPP
+#define NTH_RENDERER_RENDERBUFFER_HPP
 
 #include <Renderer/Vulkan/Buffer.hpp>
 #include <Renderer/Vulkan/DeviceMemory.hpp>
@@ -9,20 +9,20 @@ namespace Nth {
 		class CommandBuffer;
 	}
 
-	class VulkanDevice;
+	class RenderDevice;
 
-	class VulkanBuffer {
+	class RenderBuffer {
 	public:
-		VulkanBuffer();
-		VulkanBuffer(VulkanDevice const& device, VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size);
-		VulkanBuffer(VulkanBuffer const&) = delete;
-		VulkanBuffer(VulkanBuffer&&) = default;
-		~VulkanBuffer() = default;
+		RenderBuffer();
+		RenderBuffer(RenderDevice const& device, VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size);
+		RenderBuffer(RenderBuffer const&) = delete;
+		RenderBuffer(RenderBuffer&&) = default;
+		~RenderBuffer() = default;
 
 		void copy(const void* data, size_t size);
 
-		VulkanBuffer& operator=(VulkanBuffer const&) = delete;
-		VulkanBuffer& operator=(VulkanBuffer&&) = default;
+		RenderBuffer& operator=(RenderBuffer const&) = delete;
+		RenderBuffer& operator=(RenderBuffer&&) = default;
 
 		Vk::Buffer handle;
 	private:
@@ -37,7 +37,7 @@ namespace Nth {
 
 		VkMemoryPropertyFlagBits m_memoryProperty;
 
-		VulkanDevice const* m_device;
+		RenderDevice const* m_device;
 	};
 }
 

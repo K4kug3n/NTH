@@ -59,7 +59,7 @@ namespace Nth {
 			1                                                   // uint32_t                               layerCount
 		};
 
-		VulkanDevice const& device{ m_owner.getDevice() };
+		RenderDevice const& device{ m_owner.getDevice() };
 
 		if (device.presentQueue()!= device.graphicsQueue()) {
 			VkImageMemoryBarrier barrierFromPresentToDraw = {

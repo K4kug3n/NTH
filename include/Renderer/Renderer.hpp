@@ -1,17 +1,17 @@
 #ifndef NTH_RENDERER_RENDERER_HPP
 #define NTH_RENDERER_RENDERER_HPP
 
-#include <Renderer/VulkanInstance.hpp>
+#include <Renderer/RenderInstance.hpp>
 #include <Renderer/Vulkan/DescriptorSetLayout.hpp>
 #include <Renderer/RenderWindow.hpp>
 #include <Renderer/Material.hpp>
 #include <Renderer/DescriptorAllocator.hpp>
 #include <Renderer/Mesh.hpp>
-#include <Renderer/VulkanTexture.hpp>
+#include <Renderer/RenderTexture.hpp>
 #include <Renderer/Camera.hpp>
 #include <Renderer/Vulkan/DescriptorSet.hpp>
-#include <Renderer/VulkanBuffer.hpp>
-#include <Renderer/RenderableModel.hpp>
+#include <Renderer/RenderBuffer.hpp>
+#include <Renderer/RenderModel.hpp>
 #include <Renderer/ShaderBinding.hpp>
 
 #include <vector>
@@ -56,7 +56,7 @@ namespace Nth {
 		ViewerGpuObject getViewerData() const;
 		bool updateDescriptorSet();
 
-		VulkanInstance m_vulkan;
+		RenderInstance m_vulkan;
 		RenderWindow m_renderWindow;
 
 		DescriptorAllocator m_descriptorAllocator;
@@ -69,19 +69,19 @@ namespace Nth {
 		size_t m_resourceIndex;
 
 		std::array<ShaderBinding, Renderer::resourceCount> m_modelBindings;
-		std::array<VulkanBuffer, Renderer::resourceCount> m_modelBuffers;
+		std::array<RenderBuffer, Renderer::resourceCount> m_modelBuffers;
 
 		std::array<ShaderBinding, Renderer::resourceCount> m_viewerBindings;
-		std::array<VulkanBuffer, Renderer::resourceCount> m_viewerBuffers;
+		std::array<RenderBuffer, Renderer::resourceCount> m_viewerBuffers;
 
 		std::array<ShaderBinding, Renderer::resourceCount> m_lightBindings;
-		std::array<VulkanBuffer, Renderer::resourceCount> m_lightBuffers;
+		std::array<RenderBuffer, Renderer::resourceCount> m_lightBuffers;
 
 		// TODO: Review this
-		RenderableMesh registerMesh(Mesh const& mesh) const;
-		VulkanTexture registerTexture(Texture const& texture);
+		RenderMesh registerMesh(Mesh const& mesh) const;
+		RenderTexture registerTexture(Texture const& texture);
 
-		std::vector<RenderableModel> m_renderables;
+		std::vector<RenderModel> m_Renders;
 	};
 }
 

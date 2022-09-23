@@ -1,6 +1,6 @@
-#include <Renderer/VulkanBuffer.hpp>
+#include <Renderer/RenderBuffer.hpp>
 
-#include <Renderer/VulkanDevice.hpp>
+#include <Renderer/RenderDevice.hpp>
 #include <Renderer/Vulkan/PhysicalDevice.hpp>
 #include <Renderer/Vulkan/CommandBuffer.hpp>
 #include <Renderer/Vulkan/Queue.hpp>
@@ -10,11 +10,11 @@
 #include <cassert>
 
 namespace Nth {
-	VulkanBuffer::VulkanBuffer() :
+	RenderBuffer::RenderBuffer() :
 		m_device(nullptr),
 		m_memoryProperty(VK_MEMORY_PROPERTY_FLAG_BITS_MAX_ENUM) { }
 
-	VulkanBuffer::VulkanBuffer(VulkanDevice const& device, VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size) :
+	RenderBuffer::RenderBuffer(RenderDevice const& device, VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size) :
 		m_device(&device),
 		m_memoryProperty(memoryProperty) {
 		VkBufferCreateInfo bufferCreateInfo = {
@@ -45,7 +45,7 @@ namespace Nth {
 		}
 	}
 
-	void VulkanBuffer::copy(const void* data, size_t size) {
+	void RenderBuffer::copy(const void* data, size_t size) {
 		if (m_memoryProperty & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
 			copyByStaging(data, size);
 		}
@@ -61,7 +61,7 @@ namespace Nth {
 		}
 	}
 
-	bool VulkanBuffer::allocateBufferMemory(Vk::Device const& device, VkMemoryPropertyFlagBits memoryProperty, Vk::Buffer& buffer, Vk::DeviceMemory& memory) {
+	bool RenderBuffer::allocateBufferMemory(Vk::Device const& device, VkMemoryPropertyFlagBits memoryProperty, Vk::Buffer& buffer, Vk::DeviceMemory& memory) {
 		VkMemoryRequirements bufferMemoryRequirements = buffer.getMemoryRequirements();;
 		VkPhysicalDeviceMemoryProperties memoryProperties = device.getPhysicalDevice().getMemoryProperties();
 
@@ -85,7 +85,7 @@ namespace Nth {
 		return false;
 	}
 
-	void VulkanBuffer::createStaging(Vk::Device const& device, VkDeviceSize size) {
+	void RenderBuffer::createStaging(Vk::Device const& device, VkDeviceSize size) {
 		VkBufferCreateInfo stagingCreateInfo = {
 			VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,             // VkStructureType                sType
 			nullptr,                                          // const void                    *pNext
@@ -110,7 +110,7 @@ namespace Nth {
 		}
 	}
 
-	void VulkanBuffer::copyByStaging(const void* data, size_t size) {
+	void RenderBuffer::copyByStaging(const void* data, size_t size) {
 		assert(m_device != nullptr);
 
 		if (!m_stagingMemory.map(0, handle.getSize(), 0)) {

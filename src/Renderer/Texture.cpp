@@ -6,11 +6,11 @@
 #include <stdexcept>
 
 namespace Nth {
-	Texture textureFromFile(std::string_view filepath) {
-		Image image = Image::loadFromFile(filepath, PixelChannel::Rgba);
+	Texture textureFromFile(std::filesystem::path const& path) {
+		Image image = Image::loadFromFile(path, PixelChannel::Rgba);
 
 		if (image.pixels().empty()) {
-			throw std::runtime_error("Can't read file " + std::string{ filepath });
+			throw std::runtime_error("Can't read file " + path.string());
 		}
 
 		Texture texture;

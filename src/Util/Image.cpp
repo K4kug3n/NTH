@@ -30,8 +30,8 @@ namespace Nth{
 		return m_pixels;
 	}
 
-	Image Image::loadFromFile(const std::string_view filename, PixelChannel desiredChannel) {
-		std::vector<char> file_data = readBinaryFile(filename);
+	Image Image::loadFromFile(std::filesystem::path const& path, PixelChannel desiredChannel) {
+		std::vector<char> file_data = readBinaryFile(path);
 		if (file_data.size() == 0) {
 			return Image();
 		}

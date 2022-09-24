@@ -6,7 +6,7 @@
 #include <Renderer/Vulkan/ShaderModule.hpp>
 #include <Renderer/Vulkan/RenderPass.hpp>
 
-#include <string_view>
+#include <filesystem>
 #include <vector>
 #include <string>
 
@@ -14,8 +14,8 @@ namespace Nth {
 	class Vk::Device;
 
 	struct MaterialInfos {
-		std::string vertexShaderName;
-		std::string fragmentShaderName;
+		std::filesystem::path vertexShaderName;
+		std::filesystem::path fragmentShaderName;
 	};
 
 	class Material {
@@ -25,7 +25,7 @@ namespace Nth {
 		Material(Material&&) = default;
 		~Material() = default;
 
-		bool createPipeline(Vk::Device const& device, Vk::RenderPass const& renderPass, const std::string_view vertexShaderName, const std::string_view fragmentShaderName, std::vector<VkDescriptorSetLayout> const& descriptorSetLayouts);
+		bool createPipeline(Vk::Device const& device, Vk::RenderPass const& renderPass, std::filesystem::path const& vertexShaderName, std::filesystem::path const& fragmentShaderName, std::vector<VkDescriptorSetLayout> const& descriptorSetLayouts);
 
 		Material& operator=(Material const&) = delete;
 		Material& operator=(Material&&) = default;
@@ -36,7 +36,7 @@ namespace Nth {
 	private:
 		bool createPipelineLayout(Vk::Device const& device, std::vector<VkDescriptorSetLayout> const& descriptorSetLayouts);
 
-		Vk::ShaderModule createShaderModule(Vk::Device const& device, const std::string_view filename) const;
+		Vk::ShaderModule createShaderModule(Vk::Device const& device, std::filesystem::path const& path) const;
 	};
 }
 

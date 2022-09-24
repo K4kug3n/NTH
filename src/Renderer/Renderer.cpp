@@ -30,9 +30,9 @@ namespace Nth {
 		m_descriptorAllocator.init(m_vulkan.getDevice().getHandle());
 
 		for (size_t i = 0; i < Renderer::resourceCount; ++i) {
-			m_viewerBindings[i] = m_descriptorAllocator.allocate(m_descriptorSetLayouts[viewLayoutIndex]);
-			m_modelBindings[i] = m_descriptorAllocator.allocate(m_descriptorSetLayouts[modelLayoutIndex]);
-			m_lightBindings[i] = m_descriptorAllocator.allocate(m_descriptorSetLayouts[lightLayoutIndex]);
+			m_viewerBindings[i] = ShaderBinding{ m_descriptorAllocator.allocate(m_descriptorSetLayouts[viewLayoutIndex]) };
+			m_modelBindings[i] = ShaderBinding{ m_descriptorAllocator.allocate(m_descriptorSetLayouts[modelLayoutIndex]) };
+			m_lightBindings[i] = ShaderBinding{ m_descriptorAllocator.allocate(m_descriptorSetLayouts[lightLayoutIndex]) };
 
 			m_lightBuffers[i] = RenderBuffer{
 				m_vulkan.getDevice(),

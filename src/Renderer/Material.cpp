@@ -8,7 +8,7 @@
 #include <iostream>
 
 namespace Nth {
-	bool Material::createPipeline(Vk::Device const& device, Vk::RenderPass const& renderPass, const std::string_view vertexShaderName, const std::string_view fragmentShaderName, std::vector<VkDescriptorSetLayout> const& descriptorSetLayouts) {
+	bool Material::createPipeline(Vk::Device const& device, Vk::RenderPass const& renderPass, std::filesystem::path const& vertexShaderName, std::filesystem::path const& fragmentShaderName, std::vector<VkDescriptorSetLayout> const& descriptorSetLayouts) {
 		Vk::ShaderModule vertexShaderModule = createShaderModule(device, vertexShaderName);
 		Vk::ShaderModule fragmentShaderModule = createShaderModule(device, fragmentShaderName);
 
@@ -188,8 +188,8 @@ namespace Nth {
 		);
 	}
 
-	Vk::ShaderModule Material::createShaderModule(Vk::Device const& device, const std::string_view filename) const {
-		std::vector<char> code{ readBinaryFile(filename) };
+	Vk::ShaderModule Material::createShaderModule(Vk::Device const& device, std::filesystem::path const& path) const {
+		std::vector<char> code{ readBinaryFile(path) };
 
 		Vk::ShaderModule shader;
 		if (!shader.create(device, code.size(), reinterpret_cast<const uint32_t*>(&code[0]))) {

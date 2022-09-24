@@ -1,7 +1,7 @@
 #ifndef NTH_UTIL_IMAGE_HPP
 #define NTH_UTIL_IMAGE_HPP
 
-#include <string_view>
+#include <filesystem>
 #include <vector>
 #include <memory>
 
@@ -27,7 +27,7 @@ namespace Nth {
 		unsigned int channels() const;
 		std::vector<unsigned char> const& pixels() const;
 
-		static Image loadFromFile(const std::string_view filename, PixelChannel desiredChannel = PixelChannel::Unknow);
+		static Image loadFromFile(std::filesystem::path const& path, PixelChannel desiredChannel = PixelChannel::Unknow);
 
 		Image& operator=(Image const&) = default;
 		Image& operator=(Image&&) = default;

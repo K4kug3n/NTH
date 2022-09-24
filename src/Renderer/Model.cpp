@@ -13,6 +13,10 @@
 #include <iostream>
 
 namespace Nth {
+	Model::Model(std::filesystem::path const& path) {
+		loadFromFile(path);
+	}
+
 	void Model::addMesh(Mesh&& mesh) {
 		meshes.push_back(std::move(mesh));
 	}
@@ -32,14 +36,14 @@ namespace Nth {
 		return m_textures_loaded;
 	}
 
-	void Model::loadFromFile(std::string_view path) {
+	void Model::loadFromFile(std::filesystem::path const& path) {
 		Assimp::Importer import;
-		const aiScene* scene = import.ReadFile(path.data(), aiProcess_Triangulate | aiProcess_FlipUVs);
+		const aiScene* scene = import.ReadFile(path.string().c_str(), aiProcess_Triangulate | aiProcess_FlipUVs);
 
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
 			throw std::runtime_error("ERROR::ASSIMP::" + std::string{ import.GetErrorString() });
 		}
-		m_directory = path.substr(0, path.find_last_of('/'));
+		m_directory = path.parent_path();
 
 		processNode(scene->mRootNode, scene, aiMatrix4x4{});
 	}
@@ -118,7 +122,7 @@ namespace Nth {
 			}
 			
 			if (!skip) {
-				Texture texture = textureFromFile(std::string{ m_directory } + "/" + std::string{ str.C_Str() });
+				Texture texture = textureFromFile(m_directory / std::string{ str.C_Str() });
 				texture.type = typeName;
 				texture.path = str.C_Str();
 				m_textures_loaded.push_back(std::move(texture));
@@ -128,9 +132,5 @@ namespace Nth {
 		}
 
 		return texturesIndex;
-	}
-
-	Model::Model(std::string_view path) {
-		loadFromFile(path);
 	}
 }

@@ -6,7 +6,7 @@
 #include <assimp/scene.h>
 
 #include <vector>
-#include <string_view>
+#include <filesystem>
 
 namespace Nth {
 	struct Mesh;
@@ -14,7 +14,7 @@ namespace Nth {
 	class Model {
 	public:
 		Model() = default;
-		Model(std::string_view path);
+		Model(std::filesystem::path const& path);
 
 		// TODO: Cleanup
 		std::vector<Texture> m_textures_loaded;
@@ -25,13 +25,13 @@ namespace Nth {
 
 		std::vector<Texture> const& textures() const;
 
-		void loadFromFile(std::string_view path);
+		void loadFromFile(std::filesystem::path const& path);
 	private:
 		void processNode(aiNode* node, const aiScene* scene, aiMatrix4x4 const& parentTransformation);
 		Mesh processMesh(aiMesh* mesh, const aiScene* scene, aiMatrix4x4 const& transformation);
 		std::vector<size_t> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string_view typeName);
 
-		std::string_view m_directory;
+		std::filesystem::path m_directory;
 	};
 
 }

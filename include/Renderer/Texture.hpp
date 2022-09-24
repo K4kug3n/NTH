@@ -2,6 +2,7 @@
 #define NTH_RENDERER_TEXTURE_HPP
 
 #include <string_view>
+#include <filesystem>
 #include <vector>
 
 namespace Nth {
@@ -9,13 +10,13 @@ namespace Nth {
 
 	struct Texture {
 		std::string_view type;
-		std::string_view path;
+		std::filesystem::path path;
 		std::vector<unsigned char> data;
 		unsigned int height;
 		unsigned int width;
 	};
 
-	Texture textureFromFile(std::string_view filepath);
+	Texture textureFromFile(std::filesystem::path const& path);
 	Texture uniformTexture(Color const& color);
 }
 

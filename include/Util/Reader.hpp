@@ -2,10 +2,10 @@
 #define NTH_UTIL_READER_HPP
 
 #include <vector>
-#include <string_view>
+#include <filesystem>
 
 namespace Nth {
-	std::vector<char> readBinaryFile(const std::string_view filename);
+	std::vector<char> readBinaryFile(std::filesystem::path const& path);
 }
 
 #endif

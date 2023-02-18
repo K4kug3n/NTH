@@ -14,25 +14,28 @@ namespace Nth {
 	
 		class Surface {
 		public:
-			Surface(Instance const& instance);
-			Surface(Surface const&) = delete;
+			Surface() = delete;
+			Surface(const Instance& instance);
+			Surface(Surface&&) = delete;
+			Surface(const Surface&) = delete;
 			~Surface();
 
-			bool create(WindowHandle const& infos);
+			void create(const WindowHandle& infos);
 
-			bool getPhysicalDeviceSurfaceSupport(PhysicalDevice const& device, uint32_t queueFamilyIndex, bool& supported) const;
-			bool getCapabilities(PhysicalDevice const& physicalDevice, VkSurfaceCapabilitiesKHR& capabilities) const;
-			bool getFormats(PhysicalDevice const& physicalDevice, std::vector<VkSurfaceFormatKHR>& formats) const;
-			bool getPresentModes(PhysicalDevice const& physicalDevice, std::vector<VkPresentModeKHR>& presentModes) const;
+			bool get_physical_device_surface_support(const PhysicalDevice& device, uint32_t queue_family_index) const;
+			VkSurfaceCapabilitiesKHR get_capabilities(const PhysicalDevice& physical_device) const;
+			std::vector<VkSurfaceFormatKHR> get_formats(const PhysicalDevice& physical_device) const;
+			std::vector<VkPresentModeKHR> get_present_modes(const PhysicalDevice& physical_device) const;
 
-			bool isValid() const;
+			bool is_valid() const;
 
-			VkSurfaceKHR const& operator()() const;
+			VkSurfaceKHR operator()() const;
 
-			Surface& operator=(Surface const&) = delete;
+			Surface& operator=(Surface&&) = delete;
+			Surface& operator=(const Surface&) = delete;
 
 		private:
-			Instance const& m_instance;
+			const Instance& m_instance;
 			VkSurfaceKHR m_surface;
 		};
 	}

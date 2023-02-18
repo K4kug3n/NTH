@@ -11,19 +11,19 @@ namespace Nth {
 		class Image {
 		public:
 			Image();
-			Image(Image const&) = delete;
+			Image(const Image&) = delete;
 			Image(Image&& object) noexcept;
 			~Image();
 
-			bool create(Device const& device, VkImageCreateInfo const& infos);
+			void bind_image_memory(const DeviceMemory& memory);
+			void create(const Device& device, const VkImageCreateInfo& infos);
 			void destroy();
-			bool bindImageMemory(DeviceMemory const& memory);
+			
+			VkMemoryRequirements get_image_memory_requirements() const;
 
-			VkMemoryRequirements getImageMemoryRequirements() const;
+			VkImage operator()() const;
 
-			VkImage const& operator()() const;
-
-			Image& operator=(Image const&) = delete;
+			Image& operator=(const Image&) = delete;
 			Image& operator=(Image&& object) noexcept;
 
 		private:

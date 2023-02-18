@@ -10,20 +10,20 @@ namespace Nth {
 		class Queue {
 		public:
 			Queue() = default;
-			Queue(Queue const&) = delete;
+			Queue(const Queue&) = delete;
 			Queue(Queue&&) = delete;
 			~Queue() = default;
 
-			bool create(Device const& device, uint32_t index);
-			bool submit(VkSubmitInfo const& infos, VkFence fence) const;
+			void create(const Device& device, uint32_t index);
+			void submit(const VkSubmitInfo& infos, VkFence fence) const;
 
-			VkResult present(VkPresentInfoKHR const& infos) const;
+			VkResult present(const VkPresentInfoKHR& infos) const;
 
 			uint32_t index() const;
 
-			VkQueue const& operator()() const;
+			VkQueue operator()() const;
 
-			Queue& operator=(Queue const&) = delete;
+			Queue& operator=(const Queue&) = delete;
 			Queue& operator=(Queue&&) = delete;
 
 		private:
@@ -32,8 +32,8 @@ namespace Nth {
 			uint32_t m_index;
 		};
 
-		bool operator==(Queue const& queue1, Queue const& queue2);
-		bool operator!=(Queue const& queue1, Queue const& queue2);
+		bool operator==(const Queue& queue_1, const Queue& queue_2);
+		bool operator!=(const Queue& queue_1, const Queue& queue_2);
 	}
 }
 

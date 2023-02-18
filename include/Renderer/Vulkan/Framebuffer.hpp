@@ -10,18 +10,18 @@ namespace Nth {
 		class Framebuffer {
 		public:
 			Framebuffer();
-			Framebuffer(Framebuffer const&) = delete;
+			Framebuffer(const Framebuffer&) = delete;
 			Framebuffer(Framebuffer&& object) noexcept;
 			~Framebuffer();
 
-			bool create(Device const& device, VkFramebufferCreateInfo const& infos);
+			void create(const Device& device, const VkFramebufferCreateInfo& infos);
 			void destroy();
 
-			bool isValid() const;
+			bool is_valid() const;
 
-			VkFramebuffer const& operator()() const;
+			VkFramebuffer operator()() const;
 
-			Framebuffer& operator=(Framebuffer const&) = delete;
+			Framebuffer& operator=(const Framebuffer&) = delete;
 			Framebuffer& operator=(Framebuffer&& object) noexcept;
 
 		private:

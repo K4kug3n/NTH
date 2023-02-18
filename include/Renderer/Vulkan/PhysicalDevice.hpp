@@ -12,33 +12,33 @@ namespace Nth {
 	namespace Vk {
 		class PhysicalDevice {
 		public:
-			PhysicalDevice(Instance const& instance, VkPhysicalDevice const& physicalDevice);
+			PhysicalDevice(const Instance& instance, const VkPhysicalDevice& physicalDevice);
 			PhysicalDevice() = delete;
-			PhysicalDevice(PhysicalDevice const&) = delete;
+			PhysicalDevice(const PhysicalDevice&) = delete;
 			PhysicalDevice(PhysicalDevice&&) = default;
 			~PhysicalDevice() = default;
 
-			VkPhysicalDeviceProperties getProperties() const;
-			VkPhysicalDeviceFeatures getFeatures() const;
-			VkPhysicalDeviceMemoryProperties getMemoryProperties() const;
-			VkFormatProperties getFormatProperties(VkFormat format) const;
-			std::vector<VkQueueFamilyProperties> getQueueFamilyProperties() const;
-			std::vector<VkExtensionProperties> getExtensionsProperties(const char* layerName = nullptr) const;
+			VkPhysicalDeviceProperties get_properties() const;
+			VkPhysicalDeviceFeatures get_features() const;
+			VkPhysicalDeviceMemoryProperties get_memory_properties() const;
+			VkFormatProperties get_format_properties(VkFormat format) const;
+			std::vector<VkQueueFamilyProperties> get_queue_family_properties() const;
+			std::vector<VkExtensionProperties> get_extensions_properties(const char* layer_name = nullptr) const;
 
-			bool isSupportedExtension(const std::string_view name) const;
+			bool is_supported_extension(std::string_view name) const;
 
-			VkPhysicalDevice const& operator()() const;
+			VkPhysicalDevice operator()() const;
 
-			PhysicalDevice& operator=(PhysicalDevice const&) = delete;
+			PhysicalDevice& operator=(const PhysicalDevice&) = delete;
 			PhysicalDevice& operator=(PhysicalDevice&&) = delete;
 
 		private:
-			std::unordered_set<std::string> enumerateExtensionsPropertiesNames(const char* layerName = nullptr) const;
+			std::unordered_set<std::string> enumerate_extensions_properties_names(const char* layer_name = nullptr) const;
 
-			Instance const& m_instance;
-			VkPhysicalDevice m_physicalDevice;
+			const Instance& m_instance;
+			VkPhysicalDevice m_physical_device;
 
-			std::unordered_set<std::string> m_extensionsNames;
+			std::unordered_set<std::string> m_extensions_names;
 		};
 	}
 }

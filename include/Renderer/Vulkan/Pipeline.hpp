@@ -10,16 +10,16 @@ namespace Nth {
 		class Pipeline {
 		public:
 			Pipeline();
-			Pipeline(Pipeline const&) = delete;
+			Pipeline(const Pipeline&) = delete;
 			Pipeline(Pipeline&& object) noexcept;
 			~Pipeline();
 
-			bool createGraphics(Device const& device, VkPipelineCache cache, VkGraphicsPipelineCreateInfo const& infos);
+			void create_graphics(const Device& device, VkPipelineCache cache, const VkGraphicsPipelineCreateInfo& infos);
 			void destroy();
 
 			VkPipeline operator()() const;
 
-			Pipeline& operator=(Pipeline const&) = delete;
+			Pipeline& operator=(const Pipeline&) = delete;
 			Pipeline& operator=(Pipeline&& object) noexcept;
 
 		private:

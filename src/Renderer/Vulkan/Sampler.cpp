@@ -1,7 +1,7 @@
 #include <Renderer/Vulkan/Sampler.hpp>
 
 #include <Renderer/Vulkan/Device.hpp>
-#include <Renderer/Vulkan/VkUtil.hpp>
+#include <Renderer/Vulkan/VkUtils.hpp>
 
 #include <iostream>
 
@@ -24,16 +24,13 @@ namespace Nth {
 			}
 		}
 
-		bool Sampler::create(Device const& device, VkSamplerCreateInfo const& info) {
+		void Sampler::create(const Device& device, const VkSamplerCreateInfo& info) {
 			VkResult result{ device.vkCreateSampler(device(), &info, nullptr, &m_sampler) };
 			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Can't create sampler, " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Can't create sampler, " + to_string(result));
 			}
 
 			m_device = &device;
-
-			return true;
 		}
 
 		VkSampler Sampler::operator()() const {

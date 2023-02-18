@@ -10,27 +10,26 @@ namespace Nth {
 		class DeviceMemory {
 		public:
 			DeviceMemory();
-			DeviceMemory(DeviceMemory const&) = delete;
+			DeviceMemory(const DeviceMemory&) = delete;
 			DeviceMemory(DeviceMemory&& object) noexcept;
 			~DeviceMemory();
 
-			bool create(Device const& device, VkMemoryAllocateInfo const& infos);
-			bool map(VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags);
-			bool flushMappedMemory(VkDeviceSize offset, VkDeviceSize size) const;
-			void unmap();
+			void create(const Device& device, const VkMemoryAllocateInfo& infos);
 			void destroy();
-
-			void* getMappedPointer() const;
+			void flush_mapped_memory(VkDeviceSize offset, VkDeviceSize size) const;
+			void* get_mapped_pointer() const;
+			void map(VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags);
+			void unmap();
 
 			VkDeviceMemory operator()() const;
 
-			DeviceMemory& operator=(DeviceMemory const&) = delete;
+			DeviceMemory& operator=(const DeviceMemory&) = delete;
 			DeviceMemory& operator=(DeviceMemory&& object) noexcept;
 
 		private:
-			VkDeviceMemory m_deviceMemory;
+			VkDeviceMemory m_device_memory;
 			Device const* m_device;
-			void* m_memoryPointer;
+			void* m_memory_pointer;
 		};
 	}
 }

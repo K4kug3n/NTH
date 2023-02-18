@@ -10,15 +10,15 @@ namespace Nth {
 		class Semaphore {
 		public:
 			Semaphore();
-			Semaphore(Semaphore const&) = delete;
+			Semaphore(const Semaphore&) = delete;
 			Semaphore(Semaphore&& object) noexcept;
 			~Semaphore();
 
-			bool create(Device const& device);
+			void create(const Device& device);
 
-			VkSemaphore const& operator()() const;
+			VkSemaphore operator()() const;
 
-			Semaphore& operator=(Semaphore const&) = delete;
+			Semaphore& operator=(const Semaphore&) = delete;
 			Semaphore& operator=(Semaphore&& object) noexcept;
 
 		private:

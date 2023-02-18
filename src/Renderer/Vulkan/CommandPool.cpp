@@ -1,7 +1,7 @@
 #include <Renderer/Vulkan/CommandPool.hpp>
 
 #include <Renderer/Vulkan/Device.hpp>
-#include <Renderer/Vulkan/VkUtil.hpp>
+#include <Renderer/Vulkan/VkUtils.hpp>
 #include <Renderer/Vulkan/CommandBuffer.hpp>
 
 #include <iostream>
@@ -9,90 +9,81 @@
 namespace Nth {
 	namespace Vk {
 		CommandPool::CommandPool() :
-			m_commandPool(VK_NULL_HANDLE),
+			m_command_pool(VK_NULL_HANDLE),
 			m_device(nullptr) {
 		}
 
 		CommandPool::CommandPool(CommandPool&& object) noexcept :
-			m_commandPool(object.m_commandPool),
+			m_command_pool(object.m_command_pool),
 			m_device(object.m_device){
-			object.m_commandPool = VK_NULL_HANDLE;
+			object.m_command_pool = VK_NULL_HANDLE;
 		}
 
 		CommandPool::~CommandPool() {
 			destroy();
 		}
 
-		bool CommandPool::create(Device const& device, uint32_t familyIndex, VkCommandPoolCreateFlags flags) {
-			VkCommandPoolCreateInfo cmdPoolCreateInfo = {
+		void CommandPool::create(const Device& device, uint32_t family_index, VkCommandPoolCreateFlags flags) {
+			VkCommandPoolCreateInfo cmd_pool_create_info = {
 				VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,     // VkStructureType              sType
 				nullptr,                                        // const void*                  pNext
 				flags,                                          // VkCommandPoolCreateFlags     flags
-				familyIndex                                           // uint32_t                     queueFamilyIndex
+				family_index                                           // uint32_t                     queueFamilyIndex
 			};
 
-			VkResult result{ device.vkCreateCommandPool(device(), &cmdPoolCreateInfo, nullptr, &m_commandPool) };
+			VkResult result{ device.vkCreateCommandPool(device(), &cmd_pool_create_info, nullptr, &m_command_pool) };
 			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Can't create command pool, " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Error: Can't create command pool, " + to_string(result));
 			}
 
 			m_device = &device;
-
-			return true;
 		}
 
 		void CommandPool::destroy() {
-			if (m_commandPool != VK_NULL_HANDLE) {
-				m_device->vkDestroyCommandPool((*m_device)(), m_commandPool, nullptr);
-				m_commandPool = VK_NULL_HANDLE;
+			if (m_command_pool != VK_NULL_HANDLE) {
+				m_device->vkDestroyCommandPool((*m_device)(), m_command_pool, nullptr);
+				m_command_pool = VK_NULL_HANDLE;
 			}
 		}
 
-		bool CommandPool::allocateCommandBuffer(VkCommandBufferLevel level, CommandBuffer& commandBuffer) const {
-			VkCommandBufferAllocateInfo cmdBufferAllocateInfo = {
+		void CommandPool::allocate_command_buffer(VkCommandBufferLevel level, CommandBuffer& command_buffer) const {
+			VkCommandBufferAllocateInfo cmd_buffer_allocate_info = {
 				VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, // VkStructureType              sType
 				nullptr,                                        // const void*                  pNext
-				m_commandPool,                                  // VkCommandPool                commandPool
+				m_command_pool,                                  // VkCommandPool                commandPool
 				level,                                          // VkCommandBufferLevel         level
 				1                                               // uint32_t                     bufferCount
 			};
 
 			VkCommandBuffer vkBuffer = VK_NULL_HANDLE;
-			VkResult result{ m_device->vkAllocateCommandBuffers((*m_device)(), &cmdBufferAllocateInfo, &vkBuffer) };
+			VkResult result{ m_device->vkAllocateCommandBuffers((*m_device)(), &cmd_buffer_allocate_info, &vkBuffer) };
 			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Could not allocate command buffers, " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Could not allocate command buffers, " + to_string(result));
 			}
 
-			commandBuffer = CommandBuffer(this, vkBuffer);
-
-			return true;
+			command_buffer = CommandBuffer(this, vkBuffer);
 		}
 
-		bool CommandPool::reset() const {
-			VkResult result{ m_device->vkResetCommandPool((*m_device)(), m_commandPool, 0) };
+		void CommandPool::reset() const {
+			VkResult result{ m_device->vkResetCommandPool((*m_device)(), m_command_pool, 0) };
 
 			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Can't reset command pool, " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Can't reset command pool, " + to_string(result));
 			}
-
-			return true;
 		}
 
-		Device const* CommandPool::getDevice() const {
+		Device const* CommandPool::get_device() const {
 			return m_device;
 		}
 
-		VkCommandPool const& CommandPool::operator()() const {
-			return m_commandPool;
+		VkCommandPool CommandPool::operator()() const {
+			return m_command_pool;
 		}
 
 		CommandPool& CommandPool::operator=(CommandPool&& object) noexcept {
-			m_commandPool = object.m_commandPool;
+			m_command_pool = object.m_command_pool;
 			m_device = object.m_device;
-			object.m_commandPool = VK_NULL_HANDLE;
+			object.m_command_pool = VK_NULL_HANDLE;
 
 			return *this;
 		}

@@ -10,21 +10,21 @@ namespace Nth {
 		class ShaderModule {
 		public:
 			ShaderModule() = default;
-			ShaderModule(ShaderModule const&) = delete;
+			ShaderModule(const ShaderModule&) = delete;
 			ShaderModule(ShaderModule&& object) noexcept;
 			~ShaderModule();
 
-			bool create(Device const& device, size_t codeSize, uint32_t const* code);
+			void create(const Device& device, size_t code_size, uint32_t const* code);
 
-			bool isValid() const;
+			bool is_valid() const;
 
-			VkShaderModule const& operator()() const;
+			VkShaderModule operator()() const;
 
-			ShaderModule& operator=(ShaderModule const&) = delete;
+			ShaderModule& operator=(const ShaderModule&) = delete;
 			ShaderModule& operator=(ShaderModule&&) = delete;
 
 		private:
-			VkShaderModule m_shaderModule;
+			VkShaderModule m_shader_module;
 			Device const* m_device;
 		};
 	}

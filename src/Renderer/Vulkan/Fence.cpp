@@ -1,7 +1,7 @@
 #include <Renderer/Vulkan/Fence.hpp>
 
 #include <Renderer/Vulkan/Device.hpp>
-#include <Renderer/Vulkan/VkUtil.hpp>
+#include <Renderer/Vulkan/VkUtils.hpp>
 
 #include <iostream>
 #include <cassert>
@@ -25,43 +25,34 @@ namespace Nth {
 			}
 		}
 
-		bool Fence::create(Device const& device, VkFenceCreateFlags flags) {
-			VkFenceCreateInfo fenceCreateInfo = {
+		void Fence::create(const Device& device, VkFenceCreateFlags flags) {
+			VkFenceCreateInfo fence_create_info = {
 				VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, // VkStructureType                sType
 				nullptr,                             // const void                    *pNext
-				flags         // VkFenceCreateFlags             flags
+				flags                                // VkFenceCreateFlags             flags
 			};
 
-			VkResult result{ device.vkCreateFence(device(), &fenceCreateInfo, nullptr, &m_fence) };
+			VkResult result{ device.vkCreateFence(device(), &fence_create_info, nullptr, &m_fence) };
 			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Can't create fence, " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Can't create fence, " + to_string(result));
 			}
 
 			m_device = &device;
-
-			return true;
 		}
 
-		bool Fence::wait(uint64_t timeout) const {
+		void Fence::wait(uint64_t timeout) const {
 			assert(m_device != nullptr);
 			VkResult result{ m_device->vkWaitForFences((*m_device)(), 1, &m_fence, VK_FALSE, timeout) };
 			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Waiting fence take too long, " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Waiting fence took too long, " + to_string(result));
 			}
-
-			return true;
 		}
 
-		bool Fence::reset() const {
+		void Fence::reset() const {
 			VkResult result{ m_device->vkResetFences((*m_device)(), 1, &m_fence) };
 			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Can't reset fence, " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Can't reset fence, " + to_string(result));
 			}
-
-			return true;
 		}
 
 		VkFence Fence::operator()() const {

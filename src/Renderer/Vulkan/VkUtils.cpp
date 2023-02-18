@@ -1,8 +1,8 @@
-#include <Renderer/Vulkan/VkUtil.hpp>
+#include <Renderer/Vulkan/VkUtils.hpp>
 
 namespace Nth {
 	namespace Vk {
-		std::string toString(VkResult result) {
+		std::string to_string(VkResult result) {
 			switch (result) {
 			case VkResult::VK_SUCCESS:
 				return "No error";

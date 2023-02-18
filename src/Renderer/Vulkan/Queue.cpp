@@ -1,31 +1,27 @@
 #include <Renderer/Vulkan/Queue.hpp>
 
+#include <Renderer/Vulkan/VkUtils.hpp>
 #include <Renderer/Vulkan/Device.hpp>
 
 #include <iostream>
 
 namespace Nth {
 	namespace Vk {
-		bool Queue::create(Device const& device, uint32_t index) {
+		void Queue::create(const Device& device, uint32_t index) {
 			device.vkGetDeviceQueue(device(), index, 0, &m_queue);
 
 			m_index = index;
 			m_device = &device;
-
-			return true;
 		}
 
-		bool Queue::submit(VkSubmitInfo const& infos, VkFence fence) const {
+		void Queue::submit(const VkSubmitInfo& infos, VkFence fence) const {
 			VkResult result{ m_device->vkQueueSubmit(m_queue, 1, &infos, fence) };
 			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Can't submit to queue" << std::endl;
-				return false;
+				throw std::runtime_error("Can't submit to queue, " + to_string(result));
 			}
-
-			return true;
 		}
 
-		VkResult Queue::present(VkPresentInfoKHR const& infos) const {
+		VkResult Queue::present(const VkPresentInfoKHR& infos) const {
 			return m_device->vkQueuePresentKHR(m_queue, &infos);
 		}
 
@@ -33,15 +29,15 @@ namespace Nth {
 			return m_index;
 		}
 
-		VkQueue const& Queue::operator()() const {
+		VkQueue Queue::operator()() const {
 			return m_queue;
 		}
 
-		bool operator==(Queue const& queue1, Queue const& queue2) {
+		bool operator==(const Queue& queue1, const Queue& queue2) {
 			return queue1() == queue2();
 		}
 
-		bool operator!=(Queue const& queue1, Queue const& queue2) {
+		bool operator!=(const Queue& queue1, const Queue& queue2) {
 			return !(queue1 == queue2);
 		}
 	}

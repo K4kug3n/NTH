@@ -1,6 +1,6 @@
 #include <Renderer/Vulkan/Surface.hpp>
 
-#include <Renderer/Vulkan/VkUtil.hpp>
+#include <Renderer/Vulkan/VkUtils.hpp>
 #include <Renderer/Vulkan/PhysicalDevice.hpp>
 #include <Window/WindowHandle.hpp>
 
@@ -9,7 +9,7 @@
 
 namespace Nth {
 	namespace Vk {
-		Surface::Surface(Instance const& instance) :
+		Surface::Surface(const Instance& instance) :
 			m_surface{ VK_NULL_HANDLE },
 			m_instance{ instance } { }
 
@@ -19,12 +19,10 @@ namespace Nth {
 			}
 		}
 
-		bool Surface::create(WindowHandle const& infos) {
+		void Surface::create(const WindowHandle& infos) {
 		#if defined(VK_USE_PLATFORM_WIN32_KHR)
-
-			if (infos.protocol != WindowProtocol::Windows) {
-				std::cerr << "Error : System detected by Vulkan and for Window management are different" << std::endl;
-				return false;
+			if (infos.subsystem != WindowProtocol::Windows) {
+				throw std::runtime_error("System detected by Vulkan and for Window management are different");
 			}
 
 			VkWin32SurfaceCreateInfoKHR surface_create_info = {
@@ -37,16 +35,12 @@ namespace Nth {
 
 			VkResult result{ m_instance.vkCreateWin32SurfaceKHR(m_instance(), &surface_create_info, nullptr, &m_surface) };
 			if (result != VkResult::VK_SUCCESS) {
-				std::cerr << "Error : Can't create surface: " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Can't create surface, " + to_string(result));
 			}
 
-			return true;
-
 		#elif defined(VK_USE_PLATFORM_XLIB_KHR)
-			if (infos.protocol != WindowProtocol::X11) {
-				std::cerr << "Error : System detected by Vulkan and for Window management are different" << std::endl;
-				return false;
+			if (infos.subsystem != WindowProtocol::X11) {
+				throw std::runtime_error("System detected by Vulkan and for Window management are different");
 			}
 
 			VkXlibSurfaceCreateInfoKHR surface_create_info = {
@@ -59,80 +53,70 @@ namespace Nth {
 
 			VkResult result{ m_instance.vkCreateXlibSurfaceKHR(m_instance(), &surface_create_info, nullptr, &m_surface) };
 			if (result != VkResult::VK_SUCCESS) {
-				std::cerr << "Error : Can't create surface: " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Can't create surface, " + to_string(result));
 			}
-
-			return true;
 		#else
-			return false;
+			#error "Platform not supported"
 		#endif
 		}
 
-		bool Surface::getPhysicalDeviceSurfaceSupport(PhysicalDevice const& device, uint32_t queueFamilyIndex, bool& supported) const {
+		bool Surface::get_physical_device_surface_support(const PhysicalDevice& device, uint32_t queueFamilyIndex) const {
 			VkBool32 presentationSupported{ false };
 			VkResult result{ m_instance.vkGetPhysicalDeviceSurfaceSupportKHR(device(), queueFamilyIndex, m_surface, &presentationSupported) };
 			if (result != VkResult::VK_SUCCESS) {
-				std::cerr << "Error : Can't query if presentation is supported, " + toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Can't query if presentation is supported, " + to_string(result));
 			}
 
-			supported = (presentationSupported == VK_TRUE);
-
-			return true;
+			return (presentationSupported == VK_TRUE);
 		}
 
-		bool Surface::getCapabilities(PhysicalDevice const& physicalDevice, VkSurfaceCapabilitiesKHR& capabilities) const {
+		VkSurfaceCapabilitiesKHR Surface::get_capabilities(const PhysicalDevice& physicalDevice) const {
+			VkSurfaceCapabilitiesKHR capabilities;
 			VkResult result{ m_instance.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice(), m_surface, &capabilities) };
 			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Could not check presentation surface capabilities, " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Could not check presentation surface capabilities, " + to_string(result));
 			}
 
-			return true;
+			return capabilities;
 		}
 
-		bool Surface::getFormats(PhysicalDevice const& physicalDevice, std::vector<VkSurfaceFormatKHR>& formats) const {
+		std::vector<VkSurfaceFormatKHR> Surface::get_formats(const PhysicalDevice& physicalDevice) const {
 			uint32_t formatsCount;
 			VkResult result{ m_instance.vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice(), m_surface, &formatsCount, nullptr) };
 			if ((result != VK_SUCCESS) || (formatsCount == 0)) {
-				std::cerr << "Error: Could not get surface format count, " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Could not get surface format count, " + to_string(result));
 			}
 
-			formats = std::vector<VkSurfaceFormatKHR>(formatsCount);
+			std::vector<VkSurfaceFormatKHR> formats(formatsCount);
 			result = m_instance.vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice(), m_surface, &formatsCount, formats.data());
 			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Could not get surface format, " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Could not get surface format, " + to_string(result));
 			}
 
-			return true;
+			return formats;
 		}
 
-		bool Surface::getPresentModes(PhysicalDevice const& physicalDevice, std::vector<VkPresentModeKHR>& presentModes) const {
+		std::vector<VkPresentModeKHR> Surface::get_present_modes(const PhysicalDevice& physicalDevice) const {
 			uint32_t presentModesCount;
 			VkResult result{ m_instance.vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice(), m_surface, &presentModesCount, nullptr) };
 			if ((result != VK_SUCCESS) || (presentModesCount == 0)) {
-				std::cerr << "Error: Could not get present modes count, " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Could not get present modes count, " + to_string(result));
 			}
 
-			presentModes = std::vector<VkPresentModeKHR>(presentModesCount);
+			std::vector<VkPresentModeKHR> presentModes(presentModesCount);
 			result = m_instance.vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice(), m_surface, &presentModesCount, presentModes.data());
 			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Could not get present modes, " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Could not get present modes, " + to_string(result));
 			}
 
-			return true;
+			return presentModes;
 		}
 
-		bool Surface::isValid() const {
+		bool Surface::is_valid() const {
 			return m_surface != VK_NULL_HANDLE;
 		}
 
-		VkSurfaceKHR const& Surface::operator()() const {
+		VkSurfaceKHR Surface::operator()() const {
 			return m_surface;
 		}
 	}

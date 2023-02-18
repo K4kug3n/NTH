@@ -16,37 +16,37 @@ namespace Nth {
 
 		class Device {
 		public:
-			Device(Instance const& instance);
-			Device(Device const&) = delete;
+			Device(const Instance& instance);
+			Device(const Device&) = delete;
 			Device(Device&&) = delete;
 			~Device();
 
-			bool create(PhysicalDevice physicalDevice, VkDeviceCreateInfo const& infos);
+			void create(PhysicalDevice physicalDevice, const VkDeviceCreateInfo& infos);
 			void destroy();
 
-			bool isValid() const;
-			bool isLoadedExtension(const std::string_view name) const;
-			bool isLoadedLayer(const std::string_view  name) const;
+			bool is_valid() const;
+			bool is_loaded_extension(std::string_view name) const;
+			bool is_loaded_layer(std::string_view  name) const;
 
-			PhysicalDevice const& getPhysicalDevice() const;
-			VmaAllocator getAllocator() const;
+			const PhysicalDevice& get_physical_device() const;
+			VmaAllocator get_allocator() const;
 
-			void waitIdle() const;
+			void wait_idle() const;
 
 			#define NTH_RENDERER_VK_DEVICE_FUNCTION(fun) PFN_##fun fun;
 			#include <Renderer/Vulkan/DeviceFunctions.inl>
 
-			VkDevice const& operator()() const;
+			VkDevice operator()() const;
 
-			Device& operator=(Device const&) = delete;
+			Device& operator=(const Device&) = delete;
 			Device& operator=(Device&&) = delete;
 
 		private:
-			PFN_vkVoidFunction loadDeviceFunction(const char* name);
+			PFN_vkVoidFunction load_device_function(const char* name);
 
 			VkDevice m_device;
-			std::unique_ptr<PhysicalDevice> m_physicalDevice;
-			Instance const& m_instance;
+			std::unique_ptr<PhysicalDevice> m_physical_device;
+			const Instance& m_instance;
 			VmaAllocator m_allocator;
 
 			std::unordered_set<std::string> m_extensions;

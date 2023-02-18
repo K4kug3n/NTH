@@ -2,9 +2,9 @@
 
 #include <Renderer/Vulkan/Device.hpp>
 #include <Renderer/Vulkan/DeviceMemory.hpp>
-#include <Renderer/Vulkan/VkUtil.hpp>
+#include <Renderer/Vulkan/VkUtils.hpp>
 
-#include <iostream>
+#include <stdexcept>
 
 namespace Nth {
 	namespace Vk {
@@ -26,34 +26,28 @@ namespace Nth {
 			}
 		}
 
-		bool Buffer::create(Device const& device, VkBufferCreateInfo const& infos) {
+		void Buffer::create(const Device& device, const VkBufferCreateInfo& infos) {
 			VkResult result{ device.vkCreateBuffer(device(), &infos, nullptr, &m_buffer) };;
 			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Can't create buffer, " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Error: Can't create buffer, " + to_string(result));
 			}
 
 			m_device = &device;
 			m_size = static_cast<uint32_t>(infos.size);
-
-			return true;
 		}
 
-		bool Buffer::bindBufferMemory(DeviceMemory const& deviceMemory) const {
+		void Buffer::bind_buffer_memory(const DeviceMemory& deviceMemory) const {
 			VkResult result{ m_device->vkBindBufferMemory((*m_device)(), m_buffer, deviceMemory(), 0) };
 			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Could not bind memory for buffer, " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Error: Could not bind memory for buffer, " + to_string(result));
 			}
-
-			return true;
 		}
 
-		uint32_t Buffer::getSize() const {
+		uint32_t Buffer::get_size() const {
 			return m_size;
 		}
 
-		VkMemoryRequirements Buffer::getMemoryRequirements() const {
+		VkMemoryRequirements Buffer::get_memory_requirements() const {
 			VkMemoryRequirements requirements;
 
 			m_device->vkGetBufferMemoryRequirements((*m_device)(), m_buffer, &requirements);

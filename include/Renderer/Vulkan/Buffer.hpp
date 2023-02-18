@@ -11,20 +11,20 @@ namespace Nth {
 		class Buffer {
 		public:
 			Buffer();
-			Buffer(Buffer const&) = delete;
+			Buffer(const Buffer&) = delete;
 			Buffer(Buffer&& object) noexcept;
 			~Buffer();
 
-			bool create(Device const& device, VkBufferCreateInfo const& infos);
-			bool bindBufferMemory(DeviceMemory const& deviceMemory) const;
+			void bind_buffer_memory(const DeviceMemory& device_memory) const;
+			void create(const Device& device, const VkBufferCreateInfo& infos);
+			
+			uint32_t get_size() const;
 
-			uint32_t getSize() const;
-
-			VkMemoryRequirements getMemoryRequirements() const;
+			VkMemoryRequirements get_memory_requirements() const;
 
 			VkBuffer operator()() const;
 
-			Buffer& operator=(Buffer const&) = delete;
+			Buffer& operator=(const Buffer&) = delete;
 			Buffer& operator=(Buffer&& object) noexcept;
 
 		private:

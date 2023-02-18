@@ -12,21 +12,21 @@ namespace Nth {
 		class DescriptorPool {
 		public:
 			DescriptorPool();
-			DescriptorPool(DescriptorPool const&) = delete;
+			DescriptorPool(const DescriptorPool&) = delete;
 			DescriptorPool(DescriptorPool&& object) noexcept;
 			~DescriptorPool();
 
-			bool create(Device const& device, VkDescriptorPoolCreateInfo const& info);
-			bool reset() const;
+			void create(const Device& device, const VkDescriptorPoolCreateInfo& info);
 			void destroy();
-
+			void reset() const;
+			
 			VkDescriptorPool operator()() const;
 
-			DescriptorPool& operator=(DescriptorPool const&) = delete;
+			DescriptorPool& operator=(const DescriptorPool&) = delete;
 			DescriptorPool& operator=(DescriptorPool&& object) noexcept;
 
 		private:
-			VkDescriptorPool m_descriptorPool;
+			VkDescriptorPool m_descriptor_pool;
 			Device const* m_device;
 		};
 	}

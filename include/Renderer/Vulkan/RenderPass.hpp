@@ -10,20 +10,20 @@ namespace Nth {
 		class RenderPass {
 		public:
 			RenderPass();
-			RenderPass(RenderPass const&) = delete;
+			RenderPass(const RenderPass&) = delete;
 			RenderPass(RenderPass&&) = delete;
 			~RenderPass();
 
-			bool create(Device const& device, VkRenderPassCreateInfo const& infos);
+			void create(const Device& device, const VkRenderPassCreateInfo& infos);
 			void destroy();
 
-			VkRenderPass const& operator()() const;
+			VkRenderPass operator()() const;
 
-			RenderPass& operator=(RenderPass const&) = delete;
+			RenderPass& operator=(const RenderPass&) = delete;
 			RenderPass& operator=(RenderPass&&) = delete;
 
 		private:
-			VkRenderPass m_renderPass;
+			VkRenderPass m_render_pass;
 			Device const* m_device;
 		};
 	}

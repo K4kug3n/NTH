@@ -1,7 +1,7 @@
 #include <Renderer/Vulkan/DescriptorPool.hpp>
 
 #include <Renderer/Vulkan/Device.hpp>
-#include <Renderer/Vulkan/VkUtil.hpp>
+#include <Renderer/Vulkan/VkUtils.hpp>
 
 #include <iostream>
 #include <cassert>
@@ -9,62 +9,56 @@
 namespace Nth {
 	namespace Vk {
 		DescriptorPool::DescriptorPool() :
-			m_descriptorPool(VK_NULL_HANDLE),
+			m_descriptor_pool(VK_NULL_HANDLE),
 			m_device(nullptr) {
 		}
 
 		DescriptorPool::DescriptorPool(DescriptorPool&& object) noexcept :
-			m_descriptorPool(object.m_descriptorPool),
+			m_descriptor_pool(object.m_descriptor_pool),
 			m_device(object.m_device) {
-			object.m_descriptorPool = VK_NULL_HANDLE;
+			object.m_descriptor_pool = VK_NULL_HANDLE;
 		}
 
 		DescriptorPool::~DescriptorPool() {
 			destroy();
 		}
 
-		bool DescriptorPool::create(Device const& device, VkDescriptorPoolCreateInfo const& info) {
-			VkResult result{ device.vkCreateDescriptorPool(device(), &info, nullptr, &m_descriptorPool) };
+		void DescriptorPool::create(const Device& device, const VkDescriptorPoolCreateInfo& info) {
+			VkResult result{ device.vkCreateDescriptorPool(device(), &info, nullptr, &m_descriptor_pool) };
 			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Can't create Descriptor Pool, " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Can't create Descriptor Pool, " + to_string(result));
 			}
 
 			m_device = &device;
-
-			return true;
 		}
 
-		bool DescriptorPool::reset() const {
+		void DescriptorPool::reset() const {
 			assert(m_device != nullptr);
 
-			VkResult result{ m_device->vkResetDescriptorPool((*m_device)(), m_descriptorPool, 0) };
+			VkResult result{ m_device->vkResetDescriptorPool((*m_device)(), m_descriptor_pool, 0) };
 			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Can't reset Descriptor Pool, " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Can't reset Descriptor Pool, " + to_string(result));
 			}
-
-			return true;
 		}
 
 		void DescriptorPool::destroy() {
-			if (m_descriptorPool != VK_NULL_HANDLE) {
-				m_device->vkDestroyDescriptorPool((*m_device)(), m_descriptorPool, nullptr);
-				m_descriptorPool = VK_NULL_HANDLE;
+			if (m_descriptor_pool != VK_NULL_HANDLE) {
+				m_device->vkDestroyDescriptorPool((*m_device)(), m_descriptor_pool, nullptr);
+				m_descriptor_pool = VK_NULL_HANDLE;
 			}
 		}
 
 		VkDescriptorPool DescriptorPool::operator()() const {
-			return m_descriptorPool;
+			return m_descriptor_pool;
 		}
 
 		DescriptorPool& DescriptorPool::operator=(DescriptorPool&& object) noexcept {
 			destroy();
 
-			m_descriptorPool = object.m_descriptorPool;
+			m_descriptor_pool = object.m_descriptor_pool;
 			m_device = object.m_device;
 
-			object.m_descriptorPool = VK_NULL_HANDLE;
+			object.m_descriptor_pool = VK_NULL_HANDLE;
 
 			return *this;
 		}

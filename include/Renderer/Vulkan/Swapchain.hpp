@@ -22,22 +22,22 @@ namespace Nth {
 		class Swapchain {
 		public:
 			Swapchain();
-			Swapchain(Swapchain const&) = delete;
+			Swapchain(const Swapchain&) = delete;
 			Swapchain(Swapchain&& object) noexcept;
 			~Swapchain();
 
-			VkResult aquireNextImage(VkSemaphore const& semaphore, VkFence const& fence, uint32_t& imageIndex);
+			VkResult aquire_next_image(VkSemaphore semaphore, VkFence fence, uint32_t& image_index);
 
-			bool create(Device const& device, VkSwapchainCreateInfoKHR const& infos);
+			void create(const Device& device, const VkSwapchainCreateInfoKHR& infos);
 			void destroy();
 
-			VkFormat getFormat() const;
-			uint32_t getImageCount() const;
-			std::vector<SwapchainImage> const& getImages() const;
+			VkFormat get_format() const;
+			uint32_t get_image_count() const;
+			const std::vector<SwapchainImage>& get_images() const;
 
 			VkSwapchainKHR operator()() const;
 
-			Swapchain& operator=(Swapchain const&) = delete;
+			Swapchain& operator=(const Swapchain&) = delete;
 			Swapchain& operator=(Swapchain&& object) noexcept;
 
 		private:

@@ -12,23 +12,23 @@ namespace Nth {
 		class DescriptorSet {
 		public:
 			DescriptorSet();
-			DescriptorSet(DescriptorSet const&) = delete;
+			DescriptorSet(const DescriptorSet&) = delete;
 			DescriptorSet(DescriptorSet&& object) noexcept;
 			~DescriptorSet();
 
-			VkResult allocate(Device const& device, VkDescriptorSetAllocateInfo const& info);
+			VkResult allocate(const Device& device, const VkDescriptorSetAllocateInfo& info);
 			
-			void update(uint32_t nbSetWrite, VkWriteDescriptorSet const* setWrites);
+			bool is_valid();
 
-			bool isValid();
+			void update(uint32_t nb_set_write, VkWriteDescriptorSet const* set_writes);
 
 			VkDescriptorSet operator()() const;
 
-			DescriptorSet& operator=(DescriptorSet const&) = delete;
+			DescriptorSet& operator=(const DescriptorSet&) = delete;
 			DescriptorSet& operator=(DescriptorSet&& object) noexcept;
 
 		private:
-			VkDescriptorSet m_descriptorSet;
+			VkDescriptorSet m_descriptor_set;
 			Device const* m_device;
 		};
 	}

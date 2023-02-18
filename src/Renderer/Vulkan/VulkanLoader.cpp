@@ -1,13 +1,13 @@
 #include <Renderer/Vulkan/VulkanLoader.hpp>
 
-#include <Renderer/Vulkan/VkUtil.hpp>
+#include <Renderer/Vulkan/VkUtils.hpp>
 
 #include <stdexcept>
 #include <iostream>
 
 namespace Nth {
 	namespace Vk {
-		Lib VulkanLoader::m_vulkan;
+		Library VulkanLoader::m_vulkan;
 		PFN_vkGetInstanceProcAddr VulkanLoader::vkGetInstanceProcAddr = nullptr;
 		#define NTH_RENDERER_VK_GLOBAL_FUNCTION(fun) PFN_##fun VulkanLoader::fun = nullptr;
 		#define NTH_RENDERER_VK_GLOBAL_FUNCTION_OPTIONAL(fun) NTH_RENDERER_VK_GLOBAL_FUNCTION(fun)
@@ -22,12 +22,12 @@ namespace Nth {
 			#error "OS not supported"
 			#endif
 
-			if (!m_vulkan.isValid()) {
+			if (!m_vulkan.is_valid()) {
 				std::cerr << "Error: Can't load Vulkan" << std::endl;
 				return false;
 			}
 
-			vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(m_vulkan.getSymbol("vkGetInstanceProcAddr"));
+			vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(m_vulkan.get_symbol("vkGetInstanceProcAddr"));
 			if (!vkGetInstanceProcAddr) {
 				std::cerr << "Error: Can't get 'vkGetInstanceProcAddr' as exposed function" << std::endl;
 				return false;
@@ -57,44 +57,44 @@ namespace Nth {
 		}
 
 		void VulkanLoader::unitialize() {
-			if (m_vulkan.isValid()) {
+			if (m_vulkan.is_valid()) {
 				m_vulkan.free();
 			}
 		}
 
-		std::vector<VkLayerProperties> VulkanLoader::enumerateLayerProperties() {
+		std::vector<VkLayerProperties> VulkanLoader::enumerate_layer_properties() {
 			uint32_t count{ 0 };
 			VkResult result{ vkEnumerateInstanceLayerProperties(&count, nullptr) };
 			if (result != VkResult::VK_SUCCESS || count == 0) {
-				std::cerr << "Error: Could not get number of instance layers : " << toString(result) << std::endl;
+				std::cerr << "Error: Could not get number of instance layers : " << to_string(result) << std::endl;
 			}
 
 			std::vector<VkLayerProperties> layers(count);
 			result = vkEnumerateInstanceLayerProperties(&count, layers.data());
 			if (result != VkResult::VK_SUCCESS) {
-				std::cerr << "Error: Could not enumerate instance layers : " << toString(result) << std::endl;
+				std::cerr << "Error: Could not enumerate instance layers : " << to_string(result) << std::endl;
 			}
 
 			return layers;
 		}
 
-		std::vector<VkExtensionProperties> VulkanLoader::enumerateExtensionProperties(char const* layerName) {
+		std::vector<VkExtensionProperties> VulkanLoader::enumerate_extension_properties(char const* layerName) {
 			uint32_t count{ 0 };
 			VkResult result{ vkEnumerateInstanceExtensionProperties(layerName, &count, nullptr) };
 			if (result != VkResult::VK_SUCCESS || count == 0) {
-				std::cerr << "Error: Could not get number of instance layers : " << toString(result) << std::endl;
+				std::cerr << "Error: Could not get number of instance layers : " << to_string(result) << std::endl;
 			}
 
 			std::vector<VkExtensionProperties> extensions(count);
 			result = vkEnumerateInstanceExtensionProperties(layerName, &count, extensions.data());
 			if (result != VkResult::VK_SUCCESS) {
-				std::cerr << "Error: Could not enumerate instance layers : " << toString(result) << std::endl;
+				std::cerr << "Error: Could not enumerate instance layers : " << to_string(result) << std::endl;
 			}
 
 			return extensions;
 		}
 
-		PFN_vkVoidFunction VulkanLoader::getInstanceProcAddr(VkInstance const& instance, const std::string_view name) {
+		PFN_vkVoidFunction VulkanLoader::get_instance_proc_addr(const VkInstance& instance, std::string_view name) {
 			return vkGetInstanceProcAddr(instance, name.data());
 		}
 	}

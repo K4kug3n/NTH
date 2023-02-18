@@ -1,7 +1,7 @@
 #include <Renderer/Vulkan/Swapchain.hpp>
 
 #include <Renderer/Vulkan/Device.hpp>
-#include <Renderer/Vulkan/VkUtil.hpp>
+#include <Renderer/Vulkan/VkUtils.hpp>
 #include <Renderer/Vulkan/Semaphore.hpp>
 
 #include <iostream>
@@ -26,15 +26,14 @@ namespace Nth {
 			destroy();
 		}
 
-		VkResult Swapchain::aquireNextImage(VkSemaphore const& semaphore, VkFence const& fence, uint32_t& imageIndex) {
+		VkResult Swapchain::aquire_next_image(VkSemaphore semaphore, VkFence fence, uint32_t& imageIndex) {
 			return m_device->vkAcquireNextImageKHR((*m_device)(), m_swapchain, UINT64_MAX, semaphore, fence, &imageIndex);
 		}
 
-		bool Swapchain::create(Device const& device, VkSwapchainCreateInfoKHR const& infos) {
+		void Swapchain::create(const Device& device, const VkSwapchainCreateInfoKHR& infos) {
 			VkResult result{ device.vkCreateSwapchainKHR(device(), &infos, nullptr, &m_swapchain) };
 			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Can't create swapchain, " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Can't create swapchain, " + to_string(result));
 			}
 
 			m_device = &device;
@@ -42,25 +41,24 @@ namespace Nth {
 			uint32_t imageCount = 0;
 			result = m_device->vkGetSwapchainImagesKHR((*m_device)(), m_swapchain, &imageCount, nullptr);
 			if ((result != VK_SUCCESS) || (imageCount == 0)) {
-				std::cerr << "Could not get the number of swap chain images : " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Could not get the number of swap chain images, " + to_string(result));
 			}
 
-			std::vector<VkImage> vkImages(imageCount);
-			if (m_device->vkGetSwapchainImagesKHR((*m_device)(), m_swapchain, &imageCount, &vkImages[0]) != VK_SUCCESS) {
-				std::cerr << "Could not get swap chain images !" << std::endl;
-				return false;
+			std::vector<VkImage> vk_images(imageCount);
+			result = m_device->vkGetSwapchainImagesKHR((*m_device)(), m_swapchain, &imageCount, &vk_images[0]);
+			if (result != VK_SUCCESS) {
+				throw std::runtime_error("Could not get swap chain images, " + to_string(result));
 			}
 
-			m_images.resize(vkImages.size());
+			m_images.resize(vk_images.size());
 			for (size_t i{ 0 }; i < m_images.size(); ++i) {
-				m_images[i].image = vkImages[i];
+				m_images[i].image = vk_images[i];
 
-				VkImageViewCreateInfo imageViewCreateInfo = {
+				VkImageViewCreateInfo image_view_create_info = {
 					VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,   // VkStructureType                sType
 					nullptr,                                    // const void                    *pNext
 					0,                                          // VkImageViewCreateFlags         flags
-					vkImages[i],                                    // VkImage                        image
+					vk_images[i],                                    // VkImage                        image
 					VK_IMAGE_VIEW_TYPE_2D,                      // VkImageViewType                viewType
 					infos.imageFormat,                          // VkFormat                       format
 					{                                           // VkComponentMapping             components
@@ -78,14 +76,10 @@ namespace Nth {
 					}
 				};
 
-				if (!m_images[i].view.create(device, imageViewCreateInfo)) {
-					return false;
-				}
+				m_images[i].view.create(device, image_view_create_info);
 			}
 
 			m_format = infos.imageFormat;
-
-			return true;
 		}
 
 		void Swapchain::destroy() {
@@ -95,15 +89,15 @@ namespace Nth {
 			}
 		}
 
-		VkFormat Swapchain::getFormat() const {
+		VkFormat Swapchain::get_format() const {
 			return m_format;
 		}
 
-		uint32_t Swapchain::getImageCount() const {
+		uint32_t Swapchain::get_image_count() const {
 			return static_cast<uint32_t>(m_images.size());
 		}
 
-		std::vector<SwapchainImage> const& Swapchain::getImages() const {
+		const std::vector<SwapchainImage>& Swapchain::get_images() const {
 			return m_images;
 		}
 

@@ -2,7 +2,7 @@
 
 #include <Renderer/Vulkan/Device.hpp>
 #include <Renderer/Vulkan/DeviceMemory.hpp>
-#include <Renderer/Vulkan/VkUtil.hpp>
+#include <Renderer/Vulkan/VkUtils.hpp>
 
 #include <iostream>
 #include <cassert>
@@ -24,16 +24,22 @@ namespace Nth {
 			destroy();
 		}
 
-		bool Image::create(Device const& device, VkImageCreateInfo const& infos) {
+		void Image::bind_image_memory(const DeviceMemory& memory) {
+			assert(m_device != nullptr);
+
+			VkResult result{ m_device->vkBindImageMemory((*m_device)(), m_image, memory(), 0) };
+			if (result != VK_SUCCESS) {
+				throw std::runtime_error("Could not bind memory to an image," + to_string(result));
+			}
+		}
+
+		void Image::create(const Device& device, const VkImageCreateInfo& infos) {
 			VkResult result{ device.vkCreateImage(device(), &infos, nullptr, &m_image) };
 			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Can't create image, " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Can't create image, " + to_string(result));
 			}
 
 			m_device = &device;
-
-			return true;
 		}
 
 		void Image::destroy() {
@@ -43,19 +49,7 @@ namespace Nth {
 			}
 		}
 
-		bool Image::bindImageMemory(DeviceMemory const& memory) {
-			assert(m_device != nullptr);
-
-			VkResult result{ m_device->vkBindImageMemory((*m_device)(), m_image, memory(), 0) };
-			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Could not bind memory to an image," << toString(result) << std::endl;
-				return false;
-			}
-
-			return true;
-		}
-
-		VkMemoryRequirements Image::getImageMemoryRequirements() const {
+		VkMemoryRequirements Image::get_image_memory_requirements() const {
 			assert(m_device != nullptr);
 
 			VkMemoryRequirements imageMemoryRequirements;
@@ -64,7 +58,7 @@ namespace Nth {
 			return imageMemoryRequirements;
 		}
 
-		VkImage const& Image::operator()() const {
+		VkImage Image::operator()() const {
 			return m_image;
 		}
 

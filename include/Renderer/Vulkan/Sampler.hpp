@@ -10,15 +10,15 @@ namespace Nth {
 		class Sampler {
 		public:
 			Sampler();
-			Sampler(Sampler const&) = delete;
+			Sampler(const Sampler&) = delete;
 			Sampler(Sampler&& object) noexcept;
 			~Sampler();
 
-			bool create(Device const& device, VkSamplerCreateInfo const& info);
+			void create(const Device& device, const VkSamplerCreateInfo& info);
 
 			VkSampler operator()() const;
 
-			Sampler& operator=(Sampler const&) = delete;
+			Sampler& operator=(const Sampler&) = delete;
 			Sampler& operator=(Sampler&&) = delete;
 
 		private:

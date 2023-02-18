@@ -14,30 +14,29 @@ namespace Nth {
 		class Instance {
 		public:
 			Instance();
-			Instance(Instance const&) = delete;
+			Instance(const Instance&) = delete;
 			Instance(Instance&&) = delete;
 			~Instance();
 
-			bool create(const std::string_view appName, uint32_t appVersion, const std::string_view engineName, uint32_t engineVersion,
-				uint32_t apiVersion, std::vector<const char*> const& layers, std::vector<const char*> const& extensions);
+			void create(const std::string_view app_name, uint32_t app_version, std::string_view engine_name, uint32_t engine_version,
+				uint32_t api_version, const std::vector<const char*>& layers, const std::vector<const char*>& extensions);
+			void create(const VkInstanceCreateInfo& infos);
 
-			bool isValid() const;
-			bool isLoadedExtension(const std::string_view name) const;
-			bool isLoadedLayer(const std::string_view name) const;
+			bool is_valid() const;
+			bool is_loaded_extension(std::string_view name) const;
+			bool is_loaded_layer(std::string_view name) const;
 
-			VkInstance const& operator()() const;
+			VkInstance operator()() const;
 
-			std::vector<PhysicalDevice> enumeratePhysicalDevices();
+			std::vector<PhysicalDevice> enumerate_physical_devices();
 
 			#define NTH_RENDERER_VK_INSTANCE_FUNCTION(fun) PFN_##fun fun;
 			#include <Renderer/Vulkan/InstanceFunctions.inl>
 
-			Instance& operator=(Instance const&) = delete;
+			Instance& operator=(const Instance&) = delete;
 			Instance& operator=(Instance&&) = delete;
 		private:
-			bool create(VkInstanceCreateInfo const& infos);
-
-			PFN_vkVoidFunction loadInstanceFunction(const char* name);
+			PFN_vkVoidFunction load_instance_function(const char* name);
 
 			VkInstance m_instance;
 			std::unordered_set<std::string> m_layers;

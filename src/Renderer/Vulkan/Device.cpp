@@ -1,6 +1,6 @@
 #include <Renderer/Vulkan/Device.hpp>
 
-#include <Renderer/Vulkan/VkUtil.hpp>
+#include <Renderer/Vulkan/VkUtils.hpp>
 #include <Renderer/Vulkan/PhysicalDevice.hpp>
 #include <Renderer/Vulkan/VulkanLoader.hpp>
 
@@ -10,9 +10,9 @@
 
 namespace Nth {
 	namespace Vk {
-		Device::Device(Instance const& instance) :
+		Device::Device(const Instance& instance) :
 			m_device{ VK_NULL_HANDLE },
-			m_physicalDevice{ nullptr },
+			m_physical_device{ nullptr },
 			m_allocator{ VK_NULL_HANDLE },
 			m_instance{ instance } {
 
@@ -24,16 +24,15 @@ namespace Nth {
 			destroy();
 		}
 
-		bool Device::create(PhysicalDevice physicalDevice, VkDeviceCreateInfo const& infos) {
-			assert(m_instance.isValid());
+		void Device::create(PhysicalDevice physicalDevice, const VkDeviceCreateInfo& infos) {
+			assert(m_instance.is_valid());
 			
 			// TODO: Review
-			m_physicalDevice = std::make_unique<PhysicalDevice>(std::move(physicalDevice));
+			m_physical_device = std::make_unique<PhysicalDevice>(std::move(physicalDevice));
 
-			VkResult result{ m_instance.vkCreateDevice((*m_physicalDevice)(), &infos, nullptr, &m_device) };
+			VkResult result{ m_instance.vkCreateDevice((*m_physical_device)(), &infos, nullptr, &m_device) };
 			if (result != VkResult::VK_SUCCESS) {
-				std::cerr << "Error: Can't create device, " + toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Can't create device, " + to_string(result));
 			}
 
 			for (uint32_t i{ 0 }; i < infos.enabledExtensionCount; ++i) {
@@ -44,17 +43,11 @@ namespace Nth {
 				m_layers.emplace(infos.ppEnabledLayerNames[i]);
 			}
 
-			try {
-				#define NTH_RENDERER_VK_DEVICE_EXT_FUNCTION_BEGIN(ext) if(isLoadedExtension(#ext)) {
-				#define NTH_RENDERER_VK_DEVICE_EXT_FUNCTION_END() }
-				#define NTH_RENDERER_VK_DEVICE_FUNCTION(fun) fun = reinterpret_cast<PFN_##fun>(loadDeviceFunction(#fun));
-				
-				#include <Renderer/Vulkan/DeviceFunctions.inl>
-			}
-			catch (std::exception& e) {
-				std::cerr << "Error: Can't load " << e.what() << " function" << std::endl;
-				return false;
-			}
+			#define NTH_RENDERER_VK_DEVICE_EXT_FUNCTION_BEGIN(ext) if(is_loaded_extension(#ext)) {
+			#define NTH_RENDERER_VK_DEVICE_EXT_FUNCTION_END() }
+			#define NTH_RENDERER_VK_DEVICE_FUNCTION(fun) fun = reinterpret_cast<PFN_##fun>(load_device_function(#fun));
+			
+			#include <Renderer/Vulkan/DeviceFunctions.inl>
 
 			VmaVulkanFunctions vulkanFunctions{};
 			vulkanFunctions.vkGetPhysicalDeviceProperties = m_instance.vkGetPhysicalDeviceProperties;
@@ -79,22 +72,19 @@ namespace Nth {
 
 			VmaAllocatorCreateInfo allocatorInfo = {};
 			allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_0;
-			allocatorInfo.physicalDevice = (*m_physicalDevice)();
+			allocatorInfo.physicalDevice = (*m_physical_device)();
 			allocatorInfo.device = m_device;
 			allocatorInfo.instance = m_instance();
 			allocatorInfo.pVulkanFunctions = &vulkanFunctions;
 
 			result = vmaCreateAllocator(&allocatorInfo, &m_allocator);
 			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Can't create allocator, " << toString(result) << std::endl;
-				return false;
+				throw std::runtime_error("Can't create allocator, " + to_string(result));
 			}
-
-			return true;
 		}
 
 		void Device::destroy() {
-			if (isValid()) {
+			if (is_valid()) {
 				vmaDestroyAllocator(m_allocator);
 				vkDestroyDevice(m_device, nullptr);
 
@@ -102,36 +92,36 @@ namespace Nth {
 			}
 		}
 
-		bool Device::isValid() const {
+		bool Device::is_valid() const {
 			return m_device != VK_NULL_HANDLE;
 		}
 
-		bool Device::isLoadedExtension(const std::string_view name) const {
+		bool Device::is_loaded_extension(std::string_view name) const {
 			return m_extensions.count(name.data()) > 0;
 		}
 
-		bool Device::isLoadedLayer(const std::string_view name) const {
+		bool Device::is_loaded_layer(std::string_view name) const {
 			return m_layers.count(name.data()) > 0;
 		}
 
-		PhysicalDevice const& Device::getPhysicalDevice() const {
-			return *m_physicalDevice;
+		const PhysicalDevice& Device::get_physical_device() const {
+			return *m_physical_device;
 		}
 
-		VmaAllocator Device::getAllocator() const {
+		VmaAllocator Device::get_allocator() const {
 			return m_allocator;
 		}
 
-		void Device::waitIdle() const {
-			assert(isValid());
+		void Device::wait_idle() const {
+			assert(is_valid());
 			vkDeviceWaitIdle(m_device);
 		}
 
-		VkDevice const& Device::operator()() const {
+		VkDevice Device::operator()() const {
 			return m_device;
 		}
 
-		PFN_vkVoidFunction Device::loadDeviceFunction(const char* name) {
+		PFN_vkVoidFunction Device::load_device_function(const char* name) {
 			PFN_vkVoidFunction fun{ m_instance.vkGetDeviceProcAddr(m_device, name) };
 			if (!fun) {
 				throw std::runtime_error(name);

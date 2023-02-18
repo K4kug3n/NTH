@@ -10,17 +10,17 @@ namespace Nth {
 		class Fence {
 		public:
 			Fence();
-			Fence(Fence const&) = delete;
+			Fence(const Fence&) = delete;
 			Fence(Fence&& object) noexcept;
 			~Fence();
 
-			bool create(Device const& device, VkFenceCreateFlags flags);
-			bool wait(uint64_t timeout) const;
-			bool reset() const;
-
+			void create(const Device& device, VkFenceCreateFlags flags);
+			void reset() const;
+			void wait(uint64_t timeout) const;
+			
 			VkFence operator()() const;
 
-			Fence& operator=(Fence const&) = delete;
+			Fence& operator=(const Fence&) = delete;
 			Fence& operator=(Fence&& object) noexcept;
 
 		private:

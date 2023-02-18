@@ -10,20 +10,20 @@ namespace Nth {
 		class ImageView {
 		public:
 			ImageView();
-			ImageView(ImageView const&) = delete;
+			ImageView(const ImageView&) = delete;
 			ImageView(ImageView&& object) noexcept;
 			~ImageView();
 
-			bool create(Device const& device, VkImageViewCreateInfo const& infos);
+			void create(const Device& device, const VkImageViewCreateInfo& infos);
 			void destroy();
 
-			VkImageView const& operator()() const;
+			VkImageView operator()() const;
 
-			ImageView& operator=(ImageView const&) = delete;
+			ImageView& operator=(const ImageView&) = delete;
 			ImageView& operator=(ImageView&& object) noexcept;
 
 		private:
-			VkImageView m_imageView;
+			VkImageView m_image_view;
 			Device const* m_device;
 		};
 	}

@@ -12,20 +12,20 @@ namespace Nth {
 		class DescriptorSetLayout {
 		public:
 			DescriptorSetLayout();
-			DescriptorSetLayout(DescriptorSetLayout const&) = delete;
+			DescriptorSetLayout(const DescriptorSetLayout&) = delete;
 			DescriptorSetLayout(DescriptorSetLayout&& object) noexcept;
 			~DescriptorSetLayout();
 
-			bool create(Device const& device, VkDescriptorSetLayoutCreateInfo const& descriptorSetLayoutInfo);
+			void create(const Device& device, const VkDescriptorSetLayoutCreateInfo& descriptorSetLayoutInfo);
 			void destroy();
 
-			VkDescriptorSetLayout const& operator()() const;
+			VkDescriptorSetLayout operator()() const;
 
-			DescriptorSetLayout& operator=(DescriptorSetLayout const&) = delete;
+			DescriptorSetLayout& operator=(const DescriptorSetLayout&) = delete;
 			DescriptorSetLayout& operator=(DescriptorSetLayout&& object) noexcept;
 
 		private:
-			VkDescriptorSetLayout m_descriptorSetLayout;
+			VkDescriptorSetLayout m_descriptor_set_layout;
 			Device const* m_device;
 		};
 	}

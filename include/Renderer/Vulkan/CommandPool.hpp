@@ -13,24 +13,25 @@ namespace Nth {
 		class CommandPool {
 		public:
 			CommandPool();
-			CommandPool(CommandPool const&) = delete;
+			CommandPool(const CommandPool&) = delete;
 			CommandPool(CommandPool&& object) noexcept;
 			~CommandPool();
 
-			bool create(Device const& device, uint32_t familyIndex, VkCommandPoolCreateFlags flags);
+			void allocate_command_buffer(VkCommandBufferLevel level, CommandBuffer& command_buffer) const;
+
+			void create(const Device& device, uint32_t family_index, VkCommandPoolCreateFlags flags);
 			void destroy();
 
-			bool allocateCommandBuffer(VkCommandBufferLevel level, CommandBuffer& commandBuffer) const;
-			bool reset() const;
+			void reset() const;
 
-			Device const* getDevice() const;
-			VkCommandPool const& operator()() const;
+			Device const* get_device() const;
+			VkCommandPool operator()() const;
 
-			CommandPool& operator=(CommandPool const&) = delete;
+			CommandPool& operator=(const CommandPool&) = delete;
 			CommandPool& operator=(CommandPool&& object) noexcept;
 
 		private:
-			VkCommandPool m_commandPool;
+			VkCommandPool m_command_pool;
 			Device const* m_device;
 		};
 	}

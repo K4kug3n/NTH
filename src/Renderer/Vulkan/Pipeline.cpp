@@ -1,7 +1,7 @@
 #include <Renderer/Vulkan/Pipeline.hpp>
 
 #include <Renderer/Vulkan/Device.hpp>
-#include <Renderer/Vulkan/VkUtil.hpp>
+#include <Renderer/Vulkan/VkUtils.hpp>
 
 #include <iostream>
 
@@ -22,15 +22,13 @@ namespace Nth {
 			destroy();
 		}
 
-		bool Pipeline::createGraphics(Device const& device, VkPipelineCache cache, VkGraphicsPipelineCreateInfo const& infos) {
+		void Pipeline::create_graphics(const Device& device, VkPipelineCache cache, const VkGraphicsPipelineCreateInfo& infos) {
 			VkResult result{ device.vkCreateGraphicsPipelines(device(), cache, 1, &infos, nullptr, &m_pipeline) };
 			if (result != VK_SUCCESS) {
-				std::cerr << "Error: Can't create graphics pipeline, " << toString(result) << std::endl;
+				throw std::runtime_error("Can't create graphics pipeline, " + to_string(result));
 			}
 
 			m_device = &device;
-
-			return true;
 		}
 
 		void Pipeline::destroy() {

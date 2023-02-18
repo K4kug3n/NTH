@@ -21,22 +21,23 @@ namespace Nth {
 	class Material {
 	public:
 		Material() = default;
-		Material(Material const&) = delete;
+		Material(const Material&) = delete;
 		Material(Material&&) = default;
 		~Material() = default;
 
-		bool createPipeline(Vk::Device const& device, Vk::RenderPass const& renderPass, std::filesystem::path const& vertexShaderName, std::filesystem::path const& fragmentShaderName, std::vector<VkDescriptorSetLayout> const& descriptorSetLayouts);
+		void create_pipeline(const Vk::Device& device, const Vk::RenderPass& render_pass, const std::filesystem::path& vertex_shader_name, 
+			const std::filesystem::path& fragment_shader_name, const std::vector<VkDescriptorSetLayout>& descriptor_set_layouts);
 
-		Material& operator=(Material const&) = delete;
+		Material& operator=(const Material&) = delete;
 		Material& operator=(Material&&) = default;
 
 		Vk::Pipeline pipeline;
-		Vk::PipelineLayout pipelineLayout;
+		Vk::PipelineLayout pipeline_layout;
 
 	private:
-		bool createPipelineLayout(Vk::Device const& device, std::vector<VkDescriptorSetLayout> const& descriptorSetLayouts);
+		void create_pipeline_layout(const Vk::Device& device, const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts);
 
-		Vk::ShaderModule createShaderModule(Vk::Device const& device, std::filesystem::path const& path) const;
+		Vk::ShaderModule create_shader_module(const Vk::Device& device, const std::filesystem::path& path) const;
 	};
 }
 

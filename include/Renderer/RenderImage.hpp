@@ -17,29 +17,29 @@ namespace Nth {
 	class RenderImage {
 	public:
 		RenderImage() = default;
-		RenderImage(RenderImage const&) = delete;
+		RenderImage(const RenderImage&) = delete;
 		RenderImage(RenderImage&&) = default;
 		~RenderImage() = default;
 
-		void create(RenderDevice const& device, uint32_t width, uint32_t height, size_t stagingSize, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties);
-		void createView(VkFormat format, VkImageAspectFlags aspectFlags);
+		void create(const RenderDevice& device, uint32_t width, uint32_t height, size_t staging_size, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties);
+		void create_view(VkFormat format, VkImageAspectFlags aspect_flags);
 
 		void copy(void const* data, size_t size, uint32_t width, uint32_t height);
 
-		RenderImage& operator=(RenderImage const&) = delete;
+		RenderImage& operator=(const RenderImage&) = delete;
 		RenderImage& operator=(RenderImage&&) = default;
 
 		Vk::Image handle;
 		Vk::ImageView view;
 		Vk::DeviceMemory memory;
 	private:
-		uint32_t findMemoryType(Vk::Device const& device, uint32_t memoryTypeBit, VkMemoryPropertyFlags properties) const;
-		void createStaging(Vk::Device const& device, size_t size);
+		uint32_t find_memory_type(const Vk::Device& device, uint32_t memory_type_bit, VkMemoryPropertyFlags properties) const;
+		void create_staging(const Vk::Device& device, size_t size);
 
 		RenderDevice const* m_device;
 
 		Vk::Buffer m_staging;
-		Vk::DeviceMemory m_stagingMemory;
+		Vk::DeviceMemory m_staging_memory;
 	};
 }
 

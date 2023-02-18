@@ -6,18 +6,18 @@
 #include <iostream>
 
 namespace Nth {
-	void RenderTexture::create(RenderDevice const& device, uint32_t width, uint32_t height, size_t size, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties) {
+	void RenderTexture::create(const RenderDevice& device, uint32_t width, uint32_t height, size_t size, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties) {
 		image.create(device, width, height, size, format, tiling, usage, properties);
 
-		createSampler(device.getHandle());
+		createSampler(device.get_handle());
 	}
 
 	void RenderTexture::createView(VkFormat format, VkImageAspectFlags aspectFlags) {
-		image.createView(format, aspectFlags);
+		image.create_view(format, aspectFlags);
 	}
 
-	void RenderTexture::createSampler(Vk::Device const& device) {
-		VkSamplerCreateInfo samplerCreateInfo = {
+	void RenderTexture::createSampler(const Vk::Device& device) {
+		VkSamplerCreateInfo sampler_create_info = {
 			VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,         // VkStructureType        sType
 			nullptr,                                       // const void*            pNext
 			0,                                             // VkSamplerCreateFlags   flags
@@ -38,8 +38,6 @@ namespace Nth {
 			VK_FALSE                                       // VkBool32               unnormalizedCoordinates
 		};
 
-		if (!sampler.create(device, samplerCreateInfo)) {
-			throw std::runtime_error("Can't create sampler");
-		}
+		sampler.create(device, sampler_create_info);
 	}
 }

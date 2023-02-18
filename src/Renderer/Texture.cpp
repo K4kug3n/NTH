@@ -1,13 +1,13 @@
 #include <Renderer/Texture.hpp>
 
-#include <Util/Image.hpp>
-#include <Util/Color.hpp>
+#include <Utils/Image.hpp>
+#include <Utils/Color.hpp>
 
 #include <stdexcept>
 
 namespace Nth {
-	Texture textureFromFile(std::filesystem::path const& path) {
-		Image image = Image::loadFromFile(path, PixelChannel::Rgba);
+	Texture texture_from_file(const std::filesystem::path& path) {
+		Image image = Image::LoadFromFile(path, PixelChannel::Rgba);
 
 		if (image.pixels().empty()) {
 			throw std::runtime_error("Can't read file " + path.string());
@@ -21,7 +21,7 @@ namespace Nth {
 		return texture;
 	}
 
-	Texture uniformTexture(Color const& color) {
+	Texture uniform_texture(const Color& color) {
 		Texture texture;
 		texture.width = 1;
 		texture.height = 1;

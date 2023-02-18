@@ -4,9 +4,9 @@
 #include <Renderer/Model.hpp>
 #include <Renderer/Texture.hpp>
 
-#include <Math/Angle.hpp>
+#include <Maths/Angle.hpp>
 
-#include <Util/Image.hpp>
+#include <Utils/Image.hpp>
 
 #include <cstring>
 #include <iostream>
@@ -14,80 +14,76 @@
 namespace Nth {
 	Renderer::Renderer() :
 		m_vulkan(),
-		m_renderWindow(m_vulkan),
+		m_render_window(m_vulkan, ""),
 		m_resourceIndex(0) { }
 
-	RenderWindow& Renderer::getWindow(VideoMode const& mode, const std::string_view title) {
-		if (!m_renderWindow.create(mode, title)) {
-			throw std::runtime_error("Can't create render window");
-		}
+	RenderWindow& Renderer::get_window() {
+		size_t viewLayoutIndex = add_descriptor_set_layout({ BindingInfo{ ShaderType::Vertex, BindingType::Uniform, 0, 0 } });
+		size_t modelLayoutIndex = add_descriptor_set_layout({ BindingInfo{ ShaderType::Vertex, BindingType::Storage, 1, 0 } });
+		size_t lightLayoutIndex = add_descriptor_set_layout({ BindingInfo{ ShaderType::Fragment, BindingType::Uniform, 2, 0 } });
+		add_descriptor_set_layout({ BindingInfo{ ShaderType::Fragment, BindingType::Texture, 3, 0 } });
 
-		size_t viewLayoutIndex = addDescriptorSetLayout({ BindingInfo{ ShaderType::Vertex, BindingType::Uniform, 0, 0 } });
-		size_t modelLayoutIndex = addDescriptorSetLayout({ BindingInfo{ ShaderType::Vertex, BindingType::Storage, 1, 0 } });
-		size_t lightLayoutIndex = addDescriptorSetLayout({ BindingInfo{ ShaderType::Fragment, BindingType::Uniform, 2, 0 } });
-		addDescriptorSetLayout({ BindingInfo{ ShaderType::Fragment, BindingType::Texture, 3, 0 } });
+		m_descriptor_allocator.init(m_vulkan.get_device().get_handle());
 
-		m_descriptorAllocator.init(m_vulkan.getDevice().getHandle());
+		for (size_t i = 0; i < Renderer::resource_count; ++i) {
+			m_viewer_bindings[i] = ShaderBinding{ m_descriptor_allocator.allocate(m_descriptor_set_layouts[viewLayoutIndex]) };
+			m_model_bindings[i] = ShaderBinding{ m_descriptor_allocator.allocate(m_descriptor_set_layouts[modelLayoutIndex]) };
+			m_light_bindings[i] = ShaderBinding{ m_descriptor_allocator.allocate(m_descriptor_set_layouts[lightLayoutIndex]) };
 
-		for (size_t i = 0; i < Renderer::resourceCount; ++i) {
-			m_viewerBindings[i] = ShaderBinding{ m_descriptorAllocator.allocate(m_descriptorSetLayouts[viewLayoutIndex]) };
-			m_modelBindings[i] = ShaderBinding{ m_descriptorAllocator.allocate(m_descriptorSetLayouts[modelLayoutIndex]) };
-			m_lightBindings[i] = ShaderBinding{ m_descriptorAllocator.allocate(m_descriptorSetLayouts[lightLayoutIndex]) };
-
-			m_lightBuffers[i] = RenderBuffer{
-				m_vulkan.getDevice(),
+			m_light_buffers[i] = RenderBuffer{
+				m_vulkan.get_device(),
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 				sizeof(LightGpuObject)
 			};
 
-			m_viewerBuffers[i] = RenderBuffer{
-				m_vulkan.getDevice(),
+			m_viewer_buffers[i] = RenderBuffer{
+				m_vulkan.get_device(),
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 				sizeof(ViewerGpuObject)
 			};
 
-			m_modelBuffers[i] = RenderBuffer{
-				m_vulkan.getDevice(),
+			m_model_buffers[i] = RenderBuffer{
+				m_vulkan.get_device(),
 				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 				10000 * sizeof(ModelGpuObject)
 			};
 		}
 
-		updateDescriptorSet();
+		update_descriptor_set();
 
-		return m_renderWindow;
+		return m_render_window;
 	}
 
-	Material Renderer::createMaterial(MaterialInfos const& infos) {
-		std::vector<VkDescriptorSetLayout> vkDescritptorLayouts(m_descriptorSetLayouts.size());
-		for (size_t i = 0; i < m_descriptorSetLayouts.size(); ++i) {
-			vkDescritptorLayouts[i] = m_descriptorSetLayouts[i]();
+	Material Renderer::create_material(const MaterialInfos& infos) {
+		std::vector<VkDescriptorSetLayout> vk_descritptor_layouts(m_descriptor_set_layouts.size());
+		for (size_t i = 0; i < m_descriptor_set_layouts.size(); ++i) {
+			vk_descritptor_layouts[i] = m_descriptor_set_layouts[i]();
 		}
 
 		Material material;
-		material.createPipeline(m_vulkan.getDevice().getHandle(), m_renderWindow.getRenderPass(), infos.vertexShaderName, infos.fragmentShaderName, vkDescritptorLayouts);
+		material.create_pipeline(m_vulkan.get_device().get_handle(), m_render_window.get_render_pass(), infos.vertexShaderName, infos.fragmentShaderName, vk_descritptor_layouts);
 
 		return material;
 	}
 
-	size_t Renderer::registerModel(Model const& model) {
+	size_t Renderer::register_model(const Model& model) {
 		std::vector<RenderTexture> textures;
-		for (auto const& texture : model.textures()) {
-			textures.push_back(registerTexture(texture));
+		for (const auto& texture : model.textures()) {
+			textures.push_back(register_texture(texture));
 		}
 
 		std::vector<RenderMesh> meshes;
-		for (auto const& mesh : model.meshes) {
-			RenderMesh RenderMesh{ registerMesh(mesh) };
+		for (const auto& mesh : model.meshes) {
+			RenderMesh RenderMesh{ register_mesh(mesh) };
 
 			// TODO: Cleanup
-			RenderMesh.textureIndex = 0;
-			for (size_t textureIndex : mesh.texturesIndex) {
+			RenderMesh.texture_index = 0;
+			for (size_t textureIndex : mesh.textures_index) {
 				if (model.textures()[textureIndex].type == "base_color") {
-					RenderMesh.textureIndex = textureIndex;
+					RenderMesh.texture_index = textureIndex;
 					break;
 				}
 			}
@@ -95,111 +91,109 @@ namespace Nth {
 			meshes.emplace_back(std::move(RenderMesh));
 		}
 
-		m_Renders.emplace_back(std::move(meshes), std::move(textures));
+		m_renders.emplace_back(std::move(meshes), std::move(textures));
 
-		return m_Renders.size() - 1;
+		return m_renders.size() - 1;
 	}
 
-	void Renderer::draw(std::vector<RenderObject> const& objects) {
-		RenderingResource& image = m_renderWindow.aquireNextImage();
+	void Renderer::draw(const std::vector<RenderObject>& objects) {
+		RenderingResource& image = m_render_window.aquireNextImage();
 
-		ViewerGpuObject viewer = getViewerData();
+		ViewerGpuObject viewer = get_viewer_data();
 
 		// TODO: Move this logic
 		image.prepare([this, &objects, &viewer](Vk::CommandBuffer& commandBuffer) {
 			std::vector<ModelGpuObject> storageObjects(objects.size());
 			for (size_t i = 0; i < storageObjects.size(); ++i) {
-				storageObjects[i].model = objects[i].transformMatrix;
+				storageObjects[i].model = objects[i].transform_matrix;
 			}
 
-			m_modelBuffers[m_resourceIndex].copy(storageObjects.data(), storageObjects.size() * sizeof(ModelGpuObject));
+			m_model_buffers[m_resourceIndex].copy(storageObjects.data(), storageObjects.size() * sizeof(ModelGpuObject));
 
-			m_lightBuffers[m_resourceIndex].copy(&light, sizeof(LightGpuObject));
+			m_light_buffers[m_resourceIndex].copy(&light, sizeof(LightGpuObject));
 
-			m_viewerBuffers[m_resourceIndex].copy(&viewer, sizeof(ViewerGpuObject));
+			m_viewer_buffers[m_resourceIndex].copy(&viewer, sizeof(ViewerGpuObject));
 
 			Material* lastMaterial = nullptr;
 			for (size_t i = 0; i < objects.size(); ++i) {
 				if (objects[i].material != lastMaterial) {
-					commandBuffer.bindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, objects[i].material->pipeline());
+					commandBuffer.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, objects[i].material->pipeline());
 
-					VkDescriptorSet vkDescriptorSet = m_viewerBindings[m_resourceIndex].descriptorSet()();
-					commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 0, 1, &vkDescriptorSet, 0, nullptr);
+					VkDescriptorSet vkDescriptorSet = m_viewer_bindings[m_resourceIndex].descriptor_set()();
+					commandBuffer.bind_descriptor_sets(objects[i].material->pipeline_layout(), 0, 1, &vkDescriptorSet, 0, nullptr);
 
-					VkDescriptorSet vkSsboDescriptorSet = m_modelBindings[m_resourceIndex].descriptorSet()();
-					commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 1, 1, &vkSsboDescriptorSet, 0, nullptr);
+					VkDescriptorSet vkSsboDescriptorSet = m_model_bindings[m_resourceIndex].descriptor_set()();
+					commandBuffer.bind_descriptor_sets(objects[i].material->pipeline_layout(), 1, 1, &vkSsboDescriptorSet, 0, nullptr);
 
-					VkDescriptorSet vkLightDescriptorSet = m_lightBindings[m_resourceIndex].descriptorSet()();
-					commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 2, 1, &vkLightDescriptorSet, 0, nullptr);
+					VkDescriptorSet vkLightDescriptorSet = m_light_bindings[m_resourceIndex].descriptor_set()();
+					commandBuffer.bind_descriptor_sets(objects[i].material->pipeline_layout(), 2, 1, &vkLightDescriptorSet, 0, nullptr);
 
 					lastMaterial = objects[i].material;
 				}
 
-				RenderTexture const* lastTexture = nullptr;
-				RenderModel const& model = m_Renders[objects[i].modelIndex];
-				for (RenderMesh const& mesh : model.meshes) {
+				RenderTexture const* last_texture = nullptr;
+				const RenderModel& model = m_renders[objects[i].model_index];
+				for (const RenderMesh& mesh : model.meshes) {
 					VkDeviceSize offset = 0;
-					commandBuffer.bindVertexBuffer(mesh.vertexBuffer.handle(), offset);
+					commandBuffer.bind_vertex_buffer(mesh.vertex_buffer.handle(), offset);
 
-					commandBuffer.bindIndexBuffer(mesh.indexBuffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+					commandBuffer.bind_index_buffer(mesh.index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
 
-					RenderTexture const& texture{ model.textures[mesh.textureIndex] };
-					if (&texture != lastTexture) {
-						VkDescriptorSet vkTextureDescriptorSet = texture.binding.descriptorSet()();
-						commandBuffer.bindDescriptorSets(objects[i].material->pipelineLayout(), 3, 1, &vkTextureDescriptorSet, 0, nullptr);
+					const RenderTexture& texture{ model.textures[mesh.texture_index] };
+					if (&texture != last_texture) {
+						VkDescriptorSet vkTextureDescriptorSet = texture.binding.descriptor_set()();
+						commandBuffer.bind_descriptor_sets(objects[i].material->pipeline_layout(), 3, 1, &vkTextureDescriptorSet, 0, nullptr);
 
-						lastTexture = &texture;
+						last_texture = &texture;
 					}
 
-					commandBuffer.drawIndexed(static_cast<uint32_t>(mesh.indices.size()), 1, 0, 0, static_cast<uint32_t>(i));
+					commandBuffer.draw_indexed(static_cast<uint32_t>(mesh.indices.size()), 1, 0, 0, static_cast<uint32_t>(i));
 				}
 			}
 		});
 
 		image.present();
 		
-		m_resourceIndex = (m_resourceIndex + 1) % Renderer::resourceCount;
+		m_resourceIndex = (m_resourceIndex + 1) % Renderer::resource_count;
 	}
 
-	void Renderer::waitIdle() const {
-		m_vulkan.getDevice().getHandle().waitIdle();
+	void Renderer::wait_idle() const {
+		m_vulkan.get_device().get_handle().wait_idle();
 	}
 
-	ViewerGpuObject Renderer::getViewerData() const {
+	ViewerGpuObject Renderer::get_viewer_data() const {
 		ViewerGpuObject ubo{};
 
-		Vector2ui size = m_renderWindow.size();
+		Vector2ui size = m_render_window.size();
 
-		ubo.view = camera.getViewMatrix();
-		ubo.proj = Matrix4f::Perspective(toRadians(45.0f), static_cast<float>(size.x) / static_cast<float>(size.y), 0.1f, 10.0f);
+		ubo.view = camera.get_view_matrix();
+		ubo.proj = Matrix4f::Perspective(to_radians(45.0f), static_cast<float>(size.x) / static_cast<float>(size.y), 0.1f, 10.0f);
 		ubo.proj.a22 *= -1;
 
 		return ubo;
 	}
 
-	bool Renderer::updateDescriptorSet() {
-		for (size_t i = 0; i < Renderer::resourceCount; ++i) {
-			UniformBinding viewerUniform{ m_viewerBuffers[i], 0, m_viewerBuffers[i].handle.getSize() };
-			m_viewerBindings[i].update({ Binding{ viewerUniform, 0 } });
+	void Renderer::update_descriptor_set() {
+		for (size_t i = 0; i < Renderer::resource_count; ++i) {
+			UniformBinding viewerUniform{ m_viewer_buffers[i], 0, m_viewer_buffers[i].handle.get_size() };
+			m_viewer_bindings[i].update({ Binding{ viewerUniform, 0 } });
 
-			StorageBinding modelStorage{ m_modelBuffers[i], 0, m_modelBuffers[i].handle.getSize() };
-			m_modelBindings[i].update({ Binding{ modelStorage, 0 } });
+			StorageBinding modelStorage{ m_model_buffers[i], 0, m_model_buffers[i].handle.get_size() };
+			m_model_bindings[i].update({ Binding{ modelStorage, 0 } });
 
-			UniformBinding lightUniform{ m_lightBuffers[i], 0, m_lightBuffers[i].handle.getSize() };
-			m_lightBindings[i].update({ Binding{ lightUniform, 0 } });
+			UniformBinding lightUniform{ m_light_buffers[i], 0, m_light_buffers[i].handle.get_size() };
+			m_light_bindings[i].update({ Binding{ lightUniform, 0 } });
 		}
-
-		return true;
 	}
 
-	size_t Renderer::addDescriptorSetLayout(std::vector<BindingInfo> const& bindings) {
+	size_t Renderer::add_descriptor_set_layout(const std::vector<BindingInfo>& bindings) {
 		// Use "set" information
 		std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
-		for (auto const& binding : bindings) {
+		for (const auto& binding : bindings) {
 			VkDescriptorSetLayoutBinding layoutBinding;
-			layoutBinding.binding = binding.bindingIndex;
+			layoutBinding.binding = binding.binding_index;
 
-			switch (binding.bindingType) {
+			switch (binding.binding_type) {
 			case BindingType::Uniform:
 				layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 				break;
@@ -213,7 +207,7 @@ namespace Nth {
 
 			layoutBinding.descriptorCount = 1;
 
-			switch (binding.shaderType) {
+			switch (binding.shader_type) {
 			case ShaderType::Vertex:
 				layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 				break;
@@ -236,52 +230,50 @@ namespace Nth {
 		};
 
 		Vk::DescriptorSetLayout layout;
-		if (!layout.create(m_vulkan.getDevice().getHandle(), descriptorSetLayoutCreateInfo)) {
-			throw std::runtime_error("Could not create descriptor set layout!");
-		}
+		layout.create(m_vulkan.get_device().get_handle(), descriptorSetLayoutCreateInfo);
 
-		m_descriptorSetLayouts.push_back(std::move(layout));
+		m_descriptor_set_layouts.push_back(std::move(layout));
 
-		return m_descriptorSetLayouts.size() - 1;
+		return m_descriptor_set_layouts.size() - 1;
 	}
 
-	ShaderBinding Renderer::allocateShaderBinding(size_t index) {
-		assert(index < m_descriptorSetLayouts.size());
+	ShaderBinding Renderer::allocate_shader_binding(size_t index) {
+		assert(index < m_descriptor_set_layouts.size());
 
-		return ShaderBinding(m_descriptorAllocator.allocate(m_descriptorSetLayouts[index]));
+		return ShaderBinding(m_descriptor_allocator.allocate(m_descriptor_set_layouts[index]));
 	}
 
-	RenderMesh Renderer::registerMesh(Mesh const& mesh) const {
-		RenderMesh registeredMesh;
+	RenderMesh Renderer::register_mesh(const Mesh& mesh) const {
+		RenderMesh registered_mesh;
 
-		registeredMesh.vertexBuffer = RenderBuffer{
-			m_vulkan.getDevice(),
+		registered_mesh.vertex_buffer = RenderBuffer{
+			m_vulkan.get_device(),
 			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			static_cast<uint32_t>(mesh.vertices.size() * sizeof(mesh.vertices[0]))
 		};
 
-		registeredMesh.vertexBuffer.copy(mesh.vertices.data(), registeredMesh.vertexBuffer.handle.getSize());
+		registered_mesh.vertex_buffer.copy(mesh.vertices.data(), registered_mesh.vertex_buffer.handle.get_size());
 
-		registeredMesh.indexBuffer = RenderBuffer{
-			m_vulkan.getDevice(),
+		registered_mesh.index_buffer = RenderBuffer{
+			m_vulkan.get_device(),
 			VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			sizeof(mesh.indices[0]) * mesh.indices.size()
 		};
 
-		registeredMesh.indexBuffer.copy(mesh.indices.data(), registeredMesh.indexBuffer.handle.getSize());
+		registered_mesh.index_buffer.copy(mesh.indices.data(), registered_mesh.index_buffer.handle.get_size());
 
-		registeredMesh.indices = mesh.indices;
+		registered_mesh.indices = mesh.indices;
 
-		return registeredMesh;
+		return registered_mesh;
 	}
 
-	RenderTexture Renderer::registerTexture(Texture const& texture) {
-		RenderTexture registeredTexture;
+	RenderTexture Renderer::register_texture(const Texture& texture) {
+		RenderTexture registered_texture;
 
-		registeredTexture.create(
-			m_vulkan.getDevice(),
+		registered_texture.create(
+			m_vulkan.get_device(),
 			texture.width,
 			texture.height,
 			static_cast<uint32_t>(texture.data.size()),
@@ -291,16 +283,16 @@ namespace Nth {
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 		);
 
-		registeredTexture.createView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+		registered_texture.createView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
 
-		registeredTexture.image.copy(texture.data.data(), static_cast<uint32_t>(texture.data.size()), texture.width, texture.height);
+		registered_texture.image.copy(texture.data.data(), static_cast<uint32_t>(texture.data.size()), texture.width, texture.height);
 
 		// TODO: descriptor set layout index hardcoded
-		registeredTexture.binding = allocateShaderBinding(3);
+		registered_texture.binding = allocate_shader_binding(3);
 
-		TextureBinding textureBind{ registeredTexture, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
-		registeredTexture.binding.update({ Binding{ textureBind, 0 } });
+		TextureBinding textureBind{ registered_texture, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+		registered_texture.binding.update({ Binding{ textureBind, 0 } });
 
-		return registeredTexture;
+		return registered_texture;
 	}
 }

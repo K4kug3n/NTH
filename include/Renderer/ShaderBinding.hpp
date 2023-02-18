@@ -23,10 +23,10 @@ namespace Nth {
 	};
 
 	struct BindingInfo {
-		ShaderType shaderType;
-		BindingType bindingType;
-		uint32_t setIndex;
-		uint32_t bindingIndex;
+		ShaderType shader_type;
+		BindingType binding_type;
+		uint32_t set_index;
+		uint32_t binding_index;
 	};
 
 	struct UniformBinding {
@@ -59,12 +59,12 @@ namespace Nth {
 		ShaderBinding(ShaderBinding&&) = default;
 
 		void update(const std::vector<Binding>& bindings);
-		const Vk::DescriptorSet& descriptorSet() const;
+		const Vk::DescriptorSet& descriptor_set() const;
 
 		ShaderBinding& operator=(const ShaderBinding&) = delete;
 		ShaderBinding& operator=(ShaderBinding&&) = default;
 	private:
-		Vk::DescriptorSet m_descriptorSet;
+		Vk::DescriptorSet m_descriptor_set;
 	};
 }
 

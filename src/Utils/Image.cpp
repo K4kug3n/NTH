@@ -1,6 +1,6 @@
 #include <Utils/Image.hpp>
 
-#include <Utils/Reader.hpp>
+//#include <Utils/Reader.hpp>
 
 #include <stb_image.h>
 
@@ -31,15 +31,17 @@ namespace Nth{
 	}
 
 	Image Image::LoadFromFile(const std::filesystem::path& path, PixelChannel desired_channel) {
-		std::vector<char> file_data = read_binary_file(path);
+		/*std::vector<char> file_data = read_binary_file(path);
 		if (file_data.size() == 0) {
 			return Image();
-		}
+		}*/
 
 		int width = 0;
 		int height = 0;
 		int components = 0;
-		unsigned char* image_data = stbi_load_from_memory(reinterpret_cast<unsigned char*>(&file_data[0]), static_cast<int>(file_data.size()), &width, &height, &components, static_cast<int>(desired_channel));
+
+		//unsigned char* image_data = stbi_load_from_memory(reinterpret_cast<unsigned char*>(&file_data[0]), static_cast<int>(file_data.size()), &width, &height, &components, static_cast<int>(desired_channel));
+		unsigned char* image_data = stbi_load(path.string().c_str(), &width, &height, &components, static_cast<int>(desired_channel));
 		if ((image_data == nullptr) ||
 			(width <= 0) ||
 			(height <= 0) ||

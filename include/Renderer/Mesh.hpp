@@ -12,15 +12,15 @@ namespace Nth {
 	// TODO: Be a class
 	struct Mesh {
 		Mesh() = default;
-		Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices, std::vector<size_t> texturesIndex);
+		Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices, std::vector<size_t> textures_index);
 
-		void addTextureIndex(size_t index);
+		void add_texture_index(size_t index);
 
 		std::vector<Vertex> vertices;
 		std::vector<uint32_t> indices;
-		std::vector<size_t> texturesIndex;
+		std::vector<size_t> textures_index;
 
-		static Mesh FromOBJ(const std::string_view filename);
+		static Mesh FromOBJ(std::string_view filename);
 		static Mesh Plane();
 	};
 

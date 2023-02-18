@@ -1,7 +1,7 @@
 #include <Renderer/Vertex.hpp>
 
 namespace Nth {
-	VertexInputDescription Vertex::getVertexDescription() {
+	VertexInputDescription Vertex::get_vertex_description() {
 		VertexInputDescription description;
 
 		VkVertexInputBindingDescription mainBinding = {};
@@ -21,7 +21,7 @@ namespace Nth {
 		textureAttribute.binding = 0;
 		textureAttribute.location = 1;
 		textureAttribute.format = VK_FORMAT_R32G32_SFLOAT;
-		textureAttribute.offset = offsetof(Vertex, texturePos);
+		textureAttribute.offset = offsetof(Vertex, texture_pos);
 
 		VkVertexInputAttributeDescription normalAttribute = {};
 		normalAttribute.binding = 0;

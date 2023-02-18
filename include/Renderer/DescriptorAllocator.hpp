@@ -32,26 +32,26 @@ namespace Nth {
 		};
 
 		DescriptorAllocator();
-		DescriptorAllocator(DescriptorAllocator const&) = delete;
+		DescriptorAllocator(const DescriptorAllocator&) = delete;
 		DescriptorAllocator(DescriptorAllocator&&) = default;
 		~DescriptorAllocator() = default;
 
-		void init(Vk::Device const& device);
-		void resetPools();
+		void init(const Vk::Device& device);
+		void reset_pools();
 
-		Vk::DescriptorSet allocate(Vk::DescriptorSetLayout const& layout);
+		Vk::DescriptorSet allocate(const Vk::DescriptorSetLayout& layout);
 
-		DescriptorAllocator& operator=(DescriptorAllocator const&) = delete;
+		DescriptorAllocator& operator=(const DescriptorAllocator&) = delete;
 		DescriptorAllocator& operator=(DescriptorAllocator&&) = default;
 
 	private:
-		Vk::DescriptorPool createPool(uint32_t count, VkDescriptorPoolCreateFlags flags);
-		Vk::DescriptorPool grabPool();
+		Vk::DescriptorPool create_pool(uint32_t count, VkDescriptorPoolCreateFlags flags);
+		Vk::DescriptorPool grab_pool();
 
 		Vk::Device const* m_device;
-		Vk::DescriptorPool* m_currentPool;
-		std::vector<Vk::DescriptorPool> m_usedPools;
-		std::vector<Vk::DescriptorPool> m_freePools;
+		Vk::DescriptorPool* m_current_pool;
+		std::vector<Vk::DescriptorPool> m_used_pools;
+		std::vector<Vk::DescriptorPool> m_free_pools;
 	};
 }
 

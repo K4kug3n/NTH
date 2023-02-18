@@ -14,28 +14,28 @@ namespace Nth {
 	class RenderBuffer {
 	public:
 		RenderBuffer();
-		RenderBuffer(RenderDevice const& device, VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size);
-		RenderBuffer(RenderBuffer const&) = delete;
+		RenderBuffer(const RenderDevice& device, VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size);
+		RenderBuffer(const RenderBuffer&) = delete;
 		RenderBuffer(RenderBuffer&&) = default;
 		~RenderBuffer() = default;
 
 		void copy(const void* data, size_t size);
 
-		RenderBuffer& operator=(RenderBuffer const&) = delete;
+		RenderBuffer& operator=(const RenderBuffer&) = delete;
 		RenderBuffer& operator=(RenderBuffer&&) = default;
 
 		Vk::Buffer handle;
 	private:
-		bool allocateBufferMemory(Vk::Device const& device, VkMemoryPropertyFlagBits memoryProperty, Vk::Buffer& buffer, Vk::DeviceMemory& memory);
-		void createStaging(Vk::Device const& device, VkDeviceSize size);
-		void copyByStaging(const void* data, size_t size);
+		void allocate_buffer_memory(const Vk::Device& device, VkMemoryPropertyFlagBits memoryProperty, Vk::Buffer& buffer, Vk::DeviceMemory& memory);
+		void create_staging(const Vk::Device& device, VkDeviceSize size);
+		void copy_by_staging(const void* data, size_t size);
 
 		Vk::Buffer m_staging;
-		Vk::DeviceMemory m_stagingMemory;
+		Vk::DeviceMemory m_staging_memory;
 
 		Vk::DeviceMemory m_memory;
 
-		VkMemoryPropertyFlagBits m_memoryProperty;
+		VkMemoryPropertyFlagBits m_memory_property;
 
 		RenderDevice const* m_device;
 	};

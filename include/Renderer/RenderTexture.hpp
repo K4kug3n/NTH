@@ -11,22 +11,22 @@ namespace Nth {
 	class RenderTexture {
 	public:
 		RenderTexture() = default;
-		RenderTexture(RenderTexture const&) = delete;
+		RenderTexture(const RenderTexture&) = delete;
 		RenderTexture(RenderTexture&&) = default;
 		~RenderTexture() = default;
 
-		void create(RenderDevice const& device, uint32_t width, uint32_t height, size_t size, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties);
-		void createView(VkFormat format, VkImageAspectFlags aspectFlags);
+		void create(const RenderDevice& device, uint32_t width, uint32_t height, size_t size, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties);
+		void createView(VkFormat format, VkImageAspectFlags aspect_flags);
 
 		RenderImage image;
 		Vk::Sampler sampler;
 
 		ShaderBinding binding;
 
-		RenderTexture& operator=(RenderTexture const&) = delete;
+		RenderTexture& operator=(const RenderTexture&) = delete;
 		RenderTexture& operator=(RenderTexture&&) = default;
 	private:
-		void createSampler(Vk::Device const& device);
+		void createSampler(const Vk::Device& device);
 	};
 }
 

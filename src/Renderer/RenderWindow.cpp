@@ -7,223 +7,173 @@
 #include <Renderer/Mesh.hpp>
 #include <Renderer/RenderTexture.hpp>
 
-#include <Util/Reader.hpp>
-#include <Util/Image.hpp>
+#include <Window/WindowHandle.hpp>
 
-#include <Math/Matrix4.hpp>
+#include <Utils/Reader.hpp>
+#include <Utils/Image.hpp>
+
+#include <Maths/Matrix4.hpp>
 
 #include <iostream>
 
 namespace Nth {
-	RenderWindow::RenderWindow(RenderInstance& vulkanInstance) :
-		m_vulkan(vulkanInstance),
-		m_surface(vulkanInstance.getHandle()),
+	RenderWindow::RenderWindow(RenderInstance& vulkan_instance) :
+		m_vulkan(vulkan_instance),
+		m_surface(vulkan_instance.get_handle()),
 		m_ressourceIndex(0),
-		m_swapchainSize() { }
+		m_swapchain_size() { }
 
-	RenderWindow::RenderWindow(RenderInstance& vulkanInstance, VideoMode const& mode, const std::string_view title) :
-		m_vulkan(vulkanInstance),
-		m_surface(vulkanInstance.getHandle()),
+	RenderWindow::RenderWindow(RenderInstance& vulkan_instance, const std::string& title) :
+		Window(title, 10, 10, 640, 480, 0),
+		m_vulkan(vulkan_instance),
+		m_surface(vulkan_instance.get_handle()),
 		m_ressourceIndex(0),
-		m_swapchainSize() {
+		m_swapchain_size() {
 
-		if (!create(mode, title)) {
-			throw std::runtime_error("Can't create render window");
-		}
+		create();
 	}
 
 	RenderWindow::~RenderWindow() {
-		if (m_vulkan.getDevice().getHandle().isValid()) {
-			m_vulkan.getDevice().getHandle().waitIdle();
+		if (m_vulkan.get_device().get_handle().is_valid()) {
+			m_vulkan.get_device().get_handle().wait_idle();
 		}
 		
 		m_swapchain.destroy();
 	}
 
-	bool RenderWindow::create(VideoMode const& mode, const std::string_view title){
-		if (!Window::create(mode, title)) {
-			return false;
-		}
+	void RenderWindow::create(){
+		m_surface.create(handle());
 
-		if (!m_surface.create(getHandle())) {
-			std::cerr << "Error: Can't create surface" << std::endl;
-			return false;
-		}
+		m_vulkan.create_device(m_surface);
 
-		if (!m_vulkan.createDevice(m_surface)) {
-			std::cerr << "Error: Can't create device" << std::endl;
-			return false;
-		}
+		create_swapchain();
 
-		if (!createSwapchain()) {
-			std::cerr << "Error: Can't create swapchain" << std::endl;
-			return false;
-		}
+		create_depth_ressource();
 
-		if (!createDepthRessource()) {
-			std::cerr << "Can't create depth ressource" << std::endl;
-			return false;
-		}
+		create_render_pass();
 
-		if (!createRenderPass()) {
-			std::cerr << "Can't create render pass" << std::endl;
-			return false;
-		}
-
-		if (!createRenderingResources()) {
-			std::cerr << "Can't create rendering ressources" << std::endl;
-			return false;
-		}
-
-		return true;
+		create_rendering_resources();
 	}
 
 	RenderingResource& RenderWindow::aquireNextImage() {
-		if (m_swapchainSize != size()) {
-			onWindowSizeChanged();
+		if (m_swapchain_size != size()) {
+			on_window_size_changed();
 		}
 
-		RenderingResource& ressource = m_renderingResources[m_ressourceIndex];
-		m_ressourceIndex = (m_ressourceIndex + 1) % m_renderingResources.size();
+		RenderingResource& ressource = m_rendering_resources[m_ressourceIndex];
+		m_ressourceIndex = (m_ressourceIndex + 1) % m_rendering_resources.size();
 
-		if (!ressource.fence.wait(1000000000)) {
-			std::runtime_error("Waiting for fence takes too long !");
-		}
+		ressource.fence.wait(1000000000);
 
-		if (!ressource.fence.reset()) {
-			std::runtime_error("Can't reset fence !");
-		}
+		ressource.fence.reset();
 
 		uint32_t imageIndex;
-		VkResult result = m_swapchain.aquireNextImage(ressource.imageAvailableSemaphore(), VK_NULL_HANDLE, imageIndex);
+		VkResult result = m_swapchain.aquire_next_image(ressource.image_available_semaphore(), VK_NULL_HANDLE, imageIndex);
 		switch (result) {
 		case VK_SUCCESS:
 		case VK_SUBOPTIMAL_KHR:
 			break;
 		case VK_ERROR_OUT_OF_DATE_KHR:
-			onWindowSizeChanged();
+			on_window_size_changed();
 		default:
 			throw std::runtime_error("Problem occurred during swap chain image acquisition!");
 		}
 
-		Vk::SwapchainImage const& swpachainImage = m_swapchain.getImages()[imageIndex];
+		const Vk::SwapchainImage& swpachain_image = m_swapchain.get_images()[imageIndex];
 
 		ressource.framebuffer.destroy();
-		if (!createFramebuffer(ressource.framebuffer, swpachainImage)) {
-			throw std::runtime_error("Can't create framebiuffer");
-		}
-		ressource.swapchainImage = swpachainImage.image;
-		ressource.imageIndex = imageIndex;
+		create_framebuffer(ressource.framebuffer, swpachain_image);
+		ressource.swapchain_image = swpachain_image.image;
+		ressource.image_index = imageIndex;
 
 		return ressource;
 	}
 
-	void RenderWindow::present(uint32_t imageIndex, Vk::Semaphore const& semaphore) {
+	void RenderWindow::present(uint32_t imageIndex, const Vk::Semaphore& semaphore) {
 		VkSwapchainKHR vkSwapchain = m_swapchain();
+		VkSemaphore vk_semaphore = semaphore();
 		VkPresentInfoKHR presentInfo = {
 			VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,                        // VkStructureType              sType
 			nullptr,                                                   // const void                  *pNext
 			1,                                                         // uint32_t                     waitSemaphoreCount
-			&semaphore(),                                              // const VkSemaphore           *pWaitSemaphores
+			&vk_semaphore,                                             // const VkSemaphore           *pWaitSemaphores
 			1,                                                         // uint32_t                     swapchainCount
 			&vkSwapchain,                                              // const VkSwapchainKHR        *pSwapchains
 			&imageIndex,                                               // const uint32_t              *pImageIndices
 			nullptr                                                    // VkResult                    *pResults
 		};
-		VkResult result = m_vulkan.getDevice().presentQueue().present(presentInfo);
+		VkResult result = m_vulkan.get_device().present_queue().present(presentInfo);
 
 		switch (result) {
 		case VK_SUCCESS:
 			break;
 		case VK_ERROR_OUT_OF_DATE_KHR:
 		case VK_SUBOPTIMAL_KHR:
-			onWindowSizeChanged();
+			on_window_size_changed();
 		default:
 			throw std::runtime_error("Problem occurred during image presentation!");
 		}
 	}
 
-	Vk::RenderPass& RenderWindow::getRenderPass() {
-		return m_renderPass;
+	Vk::RenderPass& RenderWindow::get_render_pass() {
+		return m_render_pass;
 	}
 
-	RenderDevice const& RenderWindow::getDevice() const {
-		return m_vulkan.getDevice();
+	const RenderDevice& RenderWindow::get_device() const {
+		return m_vulkan.get_device();
 	}
 
-	bool RenderWindow::createSwapchain() {
-		VkSurfaceCapabilitiesKHR surfaceCapabilities;
-		if (!m_surface.getCapabilities(m_vulkan.getDevice().getHandle().getPhysicalDevice(), surfaceCapabilities)) {
-			std::cerr << "Error: Can't get surface capabilities" << std::endl;
-			return false;
+	void RenderWindow::create_swapchain() {
+		VkSurfaceCapabilitiesKHR surface_capabilities{ m_surface.get_capabilities(m_vulkan.get_device().get_handle().get_physical_device()) };
+		uint32_t image_count{ get_swapchain_num_images(surface_capabilities) };
+		VkImageUsageFlags swapchain_usage_flag{ get_swapchain_usage_flags(surface_capabilities) };
+		VkSurfaceTransformFlagBitsKHR swapchain_transform{ get_swapchain_transform(surface_capabilities) };
+		VkExtent2D swapchain_extend{ get_swapchain_extent(surface_capabilities, size()) };
+		std::vector<VkSurfaceFormatKHR> surface_formats{ m_surface.get_formats(m_vulkan.get_device().get_handle().get_physical_device()) };
+		VkSurfaceFormatKHR surface_format{ get_swapchain_format(surface_formats) };
+		std::vector<VkPresentModeKHR> present_modes{ m_surface.get_present_modes(m_vulkan.get_device().get_handle().get_physical_device()) };
+		VkPresentModeKHR present_mode{ get_swapchain_present_mode(present_modes) };
+
+		if (static_cast<int>(swapchain_usage_flag) == -1) {
+			throw std::runtime_error("Wrong swapchain usage flag");
+		}
+		if (static_cast<int>(present_mode) == -1) {
+			throw std::runtime_error("Wrong present mode");
 		}
 
-		uint32_t imageCount{ getSwapchainNumImages(surfaceCapabilities) };
-		VkImageUsageFlags swapchainUsageFlag{ getSwapchainUsageFlags(surfaceCapabilities) };
-		VkSurfaceTransformFlagBitsKHR swapchainTransform{ getSwapchainTransform(surfaceCapabilities) };
-		VkExtent2D swapchainExtend{ getSwapchainExtent(surfaceCapabilities, size()) };
-
-		std::vector<VkSurfaceFormatKHR> surfaceFormats;
-		if (!m_surface.getFormats(m_vulkan.getDevice().getHandle().getPhysicalDevice(), surfaceFormats)) {
-			std::cerr << "Error: Can't get surface formats" << std::endl;
-			return false;
-		}
-
-		VkSurfaceFormatKHR surfaceFormat{ getSwapchainFormat(surfaceFormats) };
-
-		std::vector<VkPresentModeKHR> presentModes;
-		if (!m_surface.getPresentModes(m_vulkan.getDevice().getHandle().getPhysicalDevice(), presentModes)) {
-			std::cerr << "Error: Can't get surface present modes" << std::endl;
-			return false;
-		}
-
-		VkPresentModeKHR presentMode{ getSwapchainPresentMode(presentModes) };
-
-		if (static_cast<int>(swapchainUsageFlag) == -1) {
-			return false;
-		}
-		if (static_cast<int>(presentMode) == -1) {
-			return false;
-		}
-
-		VkSwapchainCreateInfoKHR swapchainCreateInfo = {
+		VkSwapchainCreateInfoKHR swapchain_create_info = {
 			VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,  // VkStructureType                sType
 			nullptr,                                      // const void                    *pNext
 			0,                                            // VkSwapchainCreateFlagsKHR      flags
 			m_surface(),                                  // VkSurfaceKHR                   surface
-			imageCount,                                   // uint32_t                       minImageCount
-			surfaceFormat.format,                         // VkFormat                       imageFormat
-			surfaceFormat.colorSpace,                     // VkColorSpaceKHR                imageColorSpace
-			swapchainExtend,                              // VkExtent2D                     imageExtent
+			image_count,                                   // uint32_t                       minImageCount
+			surface_format.format,                         // VkFormat                       imageFormat
+			surface_format.colorSpace,                     // VkColorSpaceKHR                imageColorSpace
+			swapchain_extend,                              // VkExtent2D                     imageExtent
 			1,                                            // uint32_t                       imageArrayLayers
-			swapchainUsageFlag,                           // VkImageUsageFlags              imageUsage
+			swapchain_usage_flag,                           // VkImageUsageFlags              imageUsage
 			VK_SHARING_MODE_EXCLUSIVE,                    // VkSharingMode                  imageSharingMode
 			0,                                            // uint32_t                       queueFamilyIndexCount
 			nullptr,                                      // const uint32_t                *pQueueFamilyIndices
-			swapchainTransform,                           // VkSurfaceTransformFlagBitsKHR  preTransform
+			swapchain_transform,                           // VkSurfaceTransformFlagBitsKHR  preTransform
 			VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,            // VkCompositeAlphaFlagBitsKHR    compositeAlpha
-			presentMode,                                  // VkPresentModeKHR               presentMode
+			present_mode,                                  // VkPresentModeKHR               presentMode
 			VK_TRUE,                                      // VkBool32                       clipped
 			m_swapchain()                                 // VkSwapchainKHR                 oldSwapchain
 		};
 
-		Vk::Swapchain newSwapchain;
-		if (!newSwapchain.create(m_vulkan.getDevice().getHandle(), swapchainCreateInfo)) {
-			std::cerr << "Error: Can't create swapchain" << std::endl;
-			return false;
-		}
+		Vk::Swapchain new_swapchain;
+		new_swapchain.create(m_vulkan.get_device().get_handle(), swapchain_create_info);
 
-		m_swapchain = std::move(newSwapchain);
-		m_swapchainSize = size();
-
-		return true;
+		m_swapchain = std::move(new_swapchain);
+		m_swapchain_size = size();
 	}
 
-	bool RenderWindow::createRenderPass() {
-		std::vector<VkAttachmentDescription> attachmentDescriptions = {
+	void RenderWindow::create_render_pass() {
+		std::vector<VkAttachmentDescription> attachment_descriptions = {
 			{
 				0,                                   // VkAttachmentDescriptionFlags   flags
-				m_swapchain.getFormat(),             // VkFormat                       format
+				m_swapchain.get_format(),             // VkFormat                       format
 				VK_SAMPLE_COUNT_1_BIT,               // VkSampleCountFlagBits          samples
 				VK_ATTACHMENT_LOAD_OP_CLEAR,         // VkAttachmentLoadOp             loadOp
 				VK_ATTACHMENT_STORE_OP_STORE,        // VkAttachmentStoreOp            storeOp
@@ -245,26 +195,26 @@ namespace Nth {
 			}
 		};
 
-		VkAttachmentReference colorAttachmentReferences = {
+		VkAttachmentReference color_attachment_references = {
 			0,                                          // uint32_t                       attachment
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL    // VkImageLayout                  layout
 		};
 
-		VkAttachmentReference depthAttachmentRef = {
+		VkAttachmentReference depth_attachment_ref = {
 			1,                                               // uint32_t                       attachment
 			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL // VkImageLayout                  layout
 		};
 
-		VkSubpassDescription subpassDescriptions[] = {
+		VkSubpassDescription subpass_descriptions[] = {
 			{
 				0,                                          // VkSubpassDescriptionFlags      flags
 				VK_PIPELINE_BIND_POINT_GRAPHICS,            // VkPipelineBindPoint            pipelineBindPoint
 				0,                                          // uint32_t                       inputAttachmentCount
 				nullptr,                                    // const VkAttachmentReference   *pInputAttachments
 				1,                                          // uint32_t                       colorAttachmentCount
-				&colorAttachmentReferences,                 // const VkAttachmentReference   *pColorAttachments
+				&color_attachment_references,                 // const VkAttachmentReference   *pColorAttachments
 				nullptr,                                    // const VkAttachmentReference   *pResolveAttachments
-				&depthAttachmentRef,                        // const VkAttachmentReference   *pDepthStencilAttachment
+				&depth_attachment_ref,                        // const VkAttachmentReference   *pDepthStencilAttachment
 				0,                                          // uint32_t                       preserveAttachmentCount
 				nullptr                                     // const uint32_t*                pPreserveAttachments
 			}
@@ -300,67 +250,51 @@ namespace Nth {
 			}
 		};
 
-		VkRenderPassCreateInfo renderPassCreateInfo = {
+		VkRenderPassCreateInfo render_pass_create_info = {
 			VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,            // VkStructureType                sType
 			nullptr,                                              // const void                    *pNext
 			0,                                                    // VkRenderPassCreateFlags        flags
-			static_cast<uint32_t>(attachmentDescriptions.size()), // uint32_t                       attachmentCount
-			attachmentDescriptions.data(),                        // const VkAttachmentDescription *pAttachments
+			static_cast<uint32_t>(attachment_descriptions.size()), // uint32_t                       attachmentCount
+			attachment_descriptions.data(),                        // const VkAttachmentDescription *pAttachments
 			1,                                                    // uint32_t                       subpassCount
-			subpassDescriptions,                                  // const VkSubpassDescription    *pSubpasses
+			subpass_descriptions,                                  // const VkSubpassDescription    *pSubpasses
 			static_cast<uint32_t>(dependencies.size()),           // uint32_t                       dependencyCount
 			dependencies.data()                                   // const VkSubpassDependency     *pDependencies
 		};
 
-		if (!m_renderPass.create(m_vulkan.getDevice().getHandle(), renderPassCreateInfo)) {
-			std::cerr << "Could not create render pass !" << std::endl;
-			return false;
-		}
-
-		return true;
-
+		m_render_pass.create(m_vulkan.get_device().get_handle(), render_pass_create_info);
 	}
 
-	bool RenderWindow::createDepthRessource() {
+	void RenderWindow::create_depth_ressource() {
 		DepthImage newDepth;
 
-		if (!newDepth.create(m_vulkan.getDevice(), m_swapchainSize)) {
-			return false;
-		}
+		newDepth.create(m_vulkan.get_device(), m_swapchain_size);
 
 		m_depth = std::move(newDepth);
-
-		return true;
 	}
 
-	void RenderWindow::onWindowSizeChanged() {
-		m_vulkan.getDevice().getHandle().waitIdle();
+	void RenderWindow::on_window_size_changed() {
+		m_vulkan.get_device().get_handle().wait_idle();
 
-		if (!createSwapchain()) {
-			throw std::runtime_error("Can't re-create swapchain");
-		}
-
-		if (!createDepthRessource()) {
-			throw std::runtime_error("Can't re-create depth ressource");
-		}
-
+		create_swapchain();
+		create_depth_ressource();
 	}
 
-	VkSurfaceFormatKHR RenderWindow::getSwapchainFormat(std::vector<VkSurfaceFormatKHR> const& surfaceFormats) const {
-		if ((surfaceFormats.size() == 1) && (surfaceFormats[0].format == VK_FORMAT_UNDEFINED)) {
+	VkSurfaceFormatKHR RenderWindow::get_swapchain_format(const std::vector<VkSurfaceFormatKHR>& surface_formats) const {
+		if ((surface_formats.size() == 1) && (surface_formats[0].format == VK_FORMAT_UNDEFINED)) {
 			return{ VK_FORMAT_R8G8B8A8_UNORM, VK_COLORSPACE_SRGB_NONLINEAR_KHR };
 		}
 
-		for (VkSurfaceFormatKHR const& surfaceFormat : surfaceFormats) {
-			if (surfaceFormat.format == VK_FORMAT_R8G8B8A8_UNORM) {
-				return surfaceFormat;
+		for (const VkSurfaceFormatKHR& surface_format : surface_formats) {
+			if (surface_format.format == VK_FORMAT_R8G8B8A8_UNORM) {
+				return surface_format;
 			}
 		}
 
-		return surfaceFormats[0];
+		return surface_formats[0];
 	}
 
-	uint32_t RenderWindow::getSwapchainNumImages(VkSurfaceCapabilitiesKHR const& capabilities) const {
+	uint32_t RenderWindow::get_swapchain_num_images(const VkSurfaceCapabilitiesKHR& capabilities) const {
 		uint32_t imageCount = capabilities.minImageCount + 1;
 		if ((capabilities.maxImageCount > 0) && (imageCount > capabilities.maxImageCount)) {
 			imageCount = capabilities.maxImageCount;
@@ -369,7 +303,7 @@ namespace Nth {
 		return imageCount;
 	}
 
-	VkExtent2D RenderWindow::getSwapchainExtent(VkSurfaceCapabilitiesKHR const& capabilities, Vector2ui const& size) const {
+	VkExtent2D RenderWindow::get_swapchain_extent(const VkSurfaceCapabilitiesKHR& capabilities, const Vector2ui& size) const {
 		if (capabilities.currentExtent.width == -1) {
 			VkExtent2D swapchainExtent = { size.x, size.y };
 			if (swapchainExtent.width < capabilities.minImageExtent.width) {
@@ -390,7 +324,7 @@ namespace Nth {
 		return capabilities.currentExtent;
 	}
 
-	VkImageUsageFlags RenderWindow::getSwapchainUsageFlags(VkSurfaceCapabilitiesKHR const& capabilities) const {
+	VkImageUsageFlags RenderWindow::get_swapchain_usage_flags(const VkSurfaceCapabilitiesKHR& capabilities) const {
 		if (capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT) {
 			return VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 		}
@@ -409,7 +343,7 @@ namespace Nth {
 		return static_cast<VkImageUsageFlags>(-1);
 	}
 
-	VkSurfaceTransformFlagBitsKHR RenderWindow::getSwapchainTransform(VkSurfaceCapabilitiesKHR const& capabilities) const {
+	VkSurfaceTransformFlagBitsKHR RenderWindow::get_swapchain_transform(const VkSurfaceCapabilitiesKHR& capabilities) const {
 		if (capabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
 			return VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 		}
@@ -418,17 +352,17 @@ namespace Nth {
 		}
 	}
 
-	VkPresentModeKHR RenderWindow::getSwapchainPresentMode(std::vector<VkPresentModeKHR> const& presentModes) const {
+	VkPresentModeKHR RenderWindow::get_swapchain_present_mode(const std::vector<VkPresentModeKHR>& present_modes) const {
 		// FIFO present mode is always available
 		// MAILBOX is the lowest latency V-Sync enabled mode (somNTHing like triple-buffering) so use it if available
-		for (VkPresentModeKHR const& presentMode : presentModes) {
-			if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
-				return presentMode;
+		for (const VkPresentModeKHR& present_mode : present_modes) {
+			if (present_mode == VK_PRESENT_MODE_MAILBOX_KHR) {
+				return present_mode;
 			}
 		}
-		for (VkPresentModeKHR const& presentMode : presentModes) {
-			if (presentMode == VK_PRESENT_MODE_FIFO_KHR) {
-				return presentMode;
+		for (const VkPresentModeKHR& present_mode : present_modes) {
+			if (present_mode == VK_PRESENT_MODE_FIFO_KHR) {
+				return present_mode;
 			}
 		}
 
@@ -436,7 +370,7 @@ namespace Nth {
 		return static_cast<VkPresentModeKHR>(-1);
 	}
 
-	bool RenderWindow::createFramebuffer(Vk::Framebuffer& framebuffer, Vk::SwapchainImage const& swapchainImage) const {
+	void RenderWindow::create_framebuffer(Vk::Framebuffer& framebuffer, const Vk::SwapchainImage& swapchainImage) const {
 		std::vector<VkImageView> attachements{
 			swapchainImage.view(),
 			m_depth.view()()
@@ -446,29 +380,24 @@ namespace Nth {
 		VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,  // VkStructureType                sType
 			nullptr,                                    // const void                    *pNext
 			0,                                          // VkFramebufferCreateFlags       flags
-			m_renderPass(),                             // VkRenderPass                   renderPass
+			m_render_pass(),                             // VkRenderPass                   renderPass
 			static_cast<uint32_t>(attachements.size()), // uint32_t                       attachmentCount
 			attachements.data(),                        // const VkImageView             *pAttachments
-			m_swapchainSize.x,                          // uint32_t                       width
-			m_swapchainSize.y,                          // uint32_t                       height
+			m_swapchain_size.x,                          // uint32_t                       width
+			m_swapchain_size.y,                          // uint32_t                       height
 			1                                           // uint32_t                       layers
 		};
 
-		return framebuffer.create(m_vulkan.getDevice().getHandle(), framebufferCreateInfo);
+		framebuffer.create(m_vulkan.get_device().get_handle(), framebufferCreateInfo);
 	}
 
-	bool RenderWindow::createRenderingResources() {
-		m_renderingResources.emplace_back(RenderingResource{ *this });
-		m_renderingResources.emplace_back(RenderingResource{ *this });
-		m_renderingResources.emplace_back(RenderingResource{ *this });
+	void RenderWindow::create_rendering_resources() {
+		m_rendering_resources.emplace_back(RenderingResource{ *this });
+		m_rendering_resources.emplace_back(RenderingResource{ *this });
+		m_rendering_resources.emplace_back(RenderingResource{ *this });
 
-		for (size_t i = 0; i < m_renderingResources.size(); ++i) {
-			if (!m_renderingResources[i].create(m_vulkan.getDevice().graphicsQueue().index())) {
-				std::cerr << "Can't create rendering ressource" << std::endl;
-				return false;
-			}
+		for (size_t i = 0; i < m_rendering_resources.size(); ++i) {
+			m_rendering_resources[i].create(m_vulkan.get_device().graphics_queue().index());
 		}
-
-		return true;
 	}
 }

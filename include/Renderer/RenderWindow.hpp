@@ -12,7 +12,7 @@
 #include <Renderer/SceneParameters.hpp>
 #include <Renderer/RenderingResource.hpp>
 
-#include <Math/Vector2.hpp>
+#include <Maths/Vector2.hpp>
 
 #include <vector>
 
@@ -24,49 +24,49 @@ namespace Nth {
 
 	class RenderWindow : public Window {
 	public:
-		RenderWindow(RenderInstance& vulkanInstance);
-		RenderWindow(RenderInstance& vulkanInstance, VideoMode const& mode, const std::string_view title);
-		RenderWindow(RenderWindow const&) = delete;
+		RenderWindow(RenderInstance& vulkan_instance);
+		RenderWindow(RenderInstance& vulkan_instance, const std::string& title);
+		RenderWindow(const RenderWindow&) = delete;
 		RenderWindow(RenderWindow&&) = default;
 		~RenderWindow();
 
-		bool create(VideoMode const& mode, const std::string_view title);
+		void create();
 
 		RenderingResource& aquireNextImage();
-		void present(uint32_t imageIndex, Vk::Semaphore const& semaphore);
+		void present(uint32_t imageIndex, const Vk::Semaphore& semaphore);
 
-		Vk::RenderPass& getRenderPass();
-		RenderDevice const& getDevice() const;
+		Vk::RenderPass& get_render_pass();
+		const RenderDevice& get_device() const;
 
-		RenderWindow& operator=(RenderWindow const&) = delete;
+		RenderWindow& operator=(const RenderWindow&) = delete;
 		RenderWindow& operator=(RenderWindow&&) = default;
 
 	private:
-		bool createSwapchain();
-		bool createRenderPass();
-		bool createDepthRessource();
-		void onWindowSizeChanged();
+		void create_swapchain();
+		void create_render_pass();
+		void create_depth_ressource();
+		void on_window_size_changed();
 
-		VkSurfaceFormatKHR getSwapchainFormat(std::vector<VkSurfaceFormatKHR> const& surfaceFormats) const;
-		uint32_t getSwapchainNumImages(VkSurfaceCapabilitiesKHR const& capabilities) const;
-		VkExtent2D getSwapchainExtent(VkSurfaceCapabilitiesKHR const& capabilities, Vector2ui const& size) const;
-		VkImageUsageFlags getSwapchainUsageFlags(VkSurfaceCapabilitiesKHR const& capabilities) const;
-		VkSurfaceTransformFlagBitsKHR getSwapchainTransform(VkSurfaceCapabilitiesKHR const& capabilities) const;
-		VkPresentModeKHR getSwapchainPresentMode(std::vector<VkPresentModeKHR> const& presentModes) const;
+		VkSurfaceFormatKHR get_swapchain_format(const std::vector<VkSurfaceFormatKHR>& surfaceFormats) const;
+		uint32_t get_swapchain_num_images(const VkSurfaceCapabilitiesKHR& capabilities) const;
+		VkExtent2D get_swapchain_extent(const VkSurfaceCapabilitiesKHR& capabilities, const Vector2ui& size) const;
+		VkImageUsageFlags get_swapchain_usage_flags(const VkSurfaceCapabilitiesKHR& capabilities) const;
+		VkSurfaceTransformFlagBitsKHR get_swapchain_transform(const VkSurfaceCapabilitiesKHR& capabilities) const;
+		VkPresentModeKHR get_swapchain_present_mode(const std::vector<VkPresentModeKHR>& presentModes) const;
 
-		bool createFramebuffer(Vk::Framebuffer& framebuffer, Vk::SwapchainImage const& swapchainImage) const;
-		bool createRenderingResources();
+		void create_framebuffer(Vk::Framebuffer& framebuffer, const Vk::SwapchainImage& swapchain_image) const;
+		void create_rendering_resources();
 
 		RenderInstance& m_vulkan;
 		Vk::Surface m_surface;
 		Vk::Swapchain m_swapchain;
-		Vk::RenderPass m_renderPass;
+		Vk::RenderPass m_render_pass;
 		DepthImage m_depth;
 
 		size_t m_ressourceIndex;
-		std::vector<RenderingResource> m_renderingResources;
+		std::vector<RenderingResource> m_rendering_resources;
 
-		Vector2ui m_swapchainSize;
+		Vector2ui m_swapchain_size;
 	};
 }
 

@@ -5,8 +5,8 @@
 
 #include <vulkan/vulkan.h>
 
-#include <Math/Vector3.hpp>
-#include <Math/Vector2.hpp>
+#include <Maths/Vector3.hpp>
+#include <Maths/Vector2.hpp>
 
 namespace Nth {
 	
@@ -19,10 +19,10 @@ namespace Nth {
 
 	struct Vertex {
 		Vector3f pos;
-		Vector2f texturePos;
+		Vector2f texture_pos;
 		Vector3f normal;
 
-		static VertexInputDescription getVertexDescription();
+		static VertexInputDescription get_vertex_description();
 	};
 
 }

@@ -12,22 +12,22 @@ namespace Nth {
 	class DepthImage {
 	public:
 		DepthImage() = default;
-		DepthImage(DepthImage const&) = delete;
+		DepthImage(const DepthImage&) = delete;
 		DepthImage(DepthImage&&) = default;
 		~DepthImage() = default;
 
-		bool create(RenderDevice const& device, Vector2<unsigned int> const& size);
+		void create(const RenderDevice& device, const Vector2<unsigned int>& size);
 		
-		Vk::ImageView const& view() const;
-		Vk::Image const& image() const;
+		const Vk::ImageView& view() const;
+		const Vk::Image& image() const;
 		VkFormat format() const;
 
-		DepthImage& operator=(DepthImage const&) = delete;
+		DepthImage& operator=(const DepthImage&) = delete;
 		DepthImage& operator=(DepthImage&&) = default;
 	private:
-		VkFormat findDepthFormat(Vk::Device const& device) const;
-		VkFormat findSupportedFormat(Vk::Device const& device, std::vector<VkFormat> const& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
-		bool hasStencilComponent(VkFormat format) const;
+		VkFormat find_depth_format(const Vk::Device& device) const;
+		VkFormat find_supported_format(const Vk::Device& device, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
+		bool has_stencil_component(VkFormat format) const;
 
 		RenderImage m_image;
 		VkFormat m_format;

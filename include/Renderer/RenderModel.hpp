@@ -8,11 +8,11 @@
 
 namespace Nth {
 	struct RenderMesh {
-		RenderBuffer vertexBuffer;
-		RenderBuffer indexBuffer;
+		RenderBuffer vertex_buffer;
+		RenderBuffer index_buffer;
 
 		std::vector<uint32_t> indices;
-		size_t textureIndex;
+		size_t texture_index;
 	};
 
 	struct RenderModel {

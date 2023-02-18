@@ -20,21 +20,21 @@ namespace Nth {
 	class RenderInstance {
 	public:
 		RenderInstance();
-		RenderInstance(RenderInstance const&) = delete;
+		RenderInstance(const RenderInstance&) = delete;
 		RenderInstance(RenderInstance&&) = delete;
 		~RenderInstance();
 
-		bool createDevice(Vk::Surface& surface);
+		void create_device(Vk::Surface& surface);
 
-		Vk::Instance& getHandle();
-		Vk::Instance const& getHandle() const;
-		RenderDevice& getDevice();
-		RenderDevice const& getDevice() const;
+		Vk::Instance& get_handle();
+		const Vk::Instance& get_handle() const;
+		RenderDevice& get_device();
+		const RenderDevice& get_device() const;
 
-		RenderInstance& operator=(RenderInstance const&) = delete;
+		RenderInstance& operator=(const RenderInstance&) = delete;
 		RenderInstance& operator=(RenderInstance&&) = delete;
 	private:
-		bool checkPhysicalDeviceProperties(Vk::PhysicalDevice& physicalDevice, Vk::Surface& surface, uint32_t& graphicsQueueFamilyIndex, uint32_t& presentQueueFamilyIndex);
+		bool check_physical_device_properties(Vk::PhysicalDevice& physicalDevice, Vk::Surface& surface, uint32_t& graphicsQueueFamilyIndex, uint32_t& presentQueueFamilyIndex);
 
 		Vk::Instance m_instance;
 		RenderDevice m_device;

@@ -10,48 +10,31 @@ namespace Nth {
 	RenderingResource::RenderingResource(RenderWindow& owner):
 		m_owner(owner){ }
 
-	bool RenderingResource::create(uint32_t familyIndex) {
-		Vk::Device const& device{ m_owner.getDevice().getHandle() };
+	void RenderingResource::create(uint32_t familyIndex) {
+		const Vk::Device& device{ m_owner.get_device().get_handle() };
 
-		if (!commandPool.create(device, familyIndex, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT)) {
-			std::cerr << "Can't create command buffer pool" << std::endl;
-			return false;
-		}
+		command_pool.create(device, familyIndex, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
 
-		if (!commandPool.allocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, commandBuffer)) {
-			std::cerr << "Can't allocate command buffer" << std::endl;
-			return false;
-		}
+		command_pool.allocate_command_buffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, command_buffer);
 
-		if (!imageAvailableSemaphore.create(device)) {
-			std::cerr << "Error: Can't create image available semaphore" << std::endl;
-			return false;
-		}
+		image_available_semaphore.create(device);
 
-		if (!finishedRenderingSemaphore.create(device)) {
-			std::cerr << "Error: Can't create rendering finished semaphore" << std::endl;
-			return false;
-		}
+		finished_rendering_semaphore.create(device);
 
-		if (!fence.create(device, VK_FENCE_CREATE_SIGNALED_BIT)) {
-			std::cerr << "Could not create a fence!" << std::endl;
-			return false;
-		}
-
-		return true;
+		fence.create(device, VK_FENCE_CREATE_SIGNALED_BIT);
 	}
 
 	void RenderingResource::prepare(std::function<void(Vk::CommandBuffer&)> action) {
-		VkCommandBufferBeginInfo commandBufferBeginInfo = {
+		VkCommandBufferBeginInfo command_buffer_begin_info = {
 			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,        // VkStructureType                        sType
 			nullptr,                                            // const void                            *pNext
 			VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,        // VkCommandBufferUsageFlags              flags
 			nullptr                                             // const VkCommandBufferInheritanceInfo  *pInheritanceInfo
 		};
 
-		commandBuffer.begin(commandBufferBeginInfo);
+		command_buffer.begin(command_buffer_begin_info);
 
-		VkImageSubresourceRange imageSubresourceRange = {
+		VkImageSubresourceRange image_subresource_range = {
 			VK_IMAGE_ASPECT_COLOR_BIT,                          // VkImageAspectFlags                     aspectMask
 			0,                                                  // uint32_t                               baseMipLevel
 			1,                                                  // uint32_t                               levelCount
@@ -59,23 +42,23 @@ namespace Nth {
 			1                                                   // uint32_t                               layerCount
 		};
 
-		RenderDevice const& device{ m_owner.getDevice() };
+		const RenderDevice& device{ m_owner.get_device() };
 
-		if (device.presentQueue()!= device.graphicsQueue()) {
-			VkImageMemoryBarrier barrierFromPresentToDraw = {
+		if (device.present_queue()!= device.graphics_queue()) {
+			VkImageMemoryBarrier barrier_from_present_to_draw = {
 				VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,           // VkStructureType                        sType
 				nullptr,                                          // const void                            *pNext
 				VK_ACCESS_MEMORY_READ_BIT,                        // VkAccessFlags                          srcAccessMask
 				VK_ACCESS_MEMORY_READ_BIT,                        // VkAccessFlags                          dstAccessMask
 				VK_IMAGE_LAYOUT_UNDEFINED,                        // VkImageLayout                          oldLayout
 				VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,                  // VkImageLayout                          newLayout
-				device.presentQueue().index(),                    // uint32_t                               srcQueueFamilyIndex
-				device.graphicsQueue().index(),                   // uint32_t                               dstQueueFamilyIndex
-				swapchainImage,                                   // VkImage                                image
-				imageSubresourceRange                             // VkImageSubresourceRange                subresourceRange
+				device.present_queue().index(),                    // uint32_t                               srcQueueFamilyIndex
+				device.graphics_queue().index(),                   // uint32_t                               dstQueueFamilyIndex
+				swapchain_image,                                   // VkImage                                image
+				image_subresource_range                             // VkImageSubresourceRange                subresourceRange
 			};
 
-			commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrierFromPresentToDraw);
+			command_buffer.pipeline_barrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier_from_present_to_draw);
 		}
 
 		std::vector<VkClearValue> clearValues(2);
@@ -84,10 +67,10 @@ namespace Nth {
 
 		Vector2ui size = m_owner.size();
 
-		VkRenderPassBeginInfo renderPassBeginInfo = {
+		VkRenderPassBeginInfo render_pass_begin_info = {
 			VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,           // VkStructureType                        sType
 			nullptr,                                            // const void                            *pNext
-			m_owner.getRenderPass()(),                          // VkRenderPass                           renderPass
+			m_owner.get_render_pass()(),                          // VkRenderPass                           renderPass
 			framebuffer(),                                      // VkFramebuffer                          framebuffer
 			{                                                   // VkRect2D                               renderArea
 				{                                                 // VkOffset2D                             offset
@@ -103,7 +86,7 @@ namespace Nth {
 			clearValues.data()                                 // const VkClearValue                    *pClearValues
 		};
 
-		commandBuffer.beginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+		command_buffer.begin_render_pass(render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
 		VkViewport viewport = {
 			0.0f,                               // float                                  x
@@ -125,14 +108,14 @@ namespace Nth {
 			}
 		};
 
-		commandBuffer.setViewport(viewport);
-		commandBuffer.setScissor(scissor);
+		command_buffer.set_viewport(viewport);
+		command_buffer.set_scissor(scissor);
 
-		action(commandBuffer);
+		action(command_buffer);
 
-		commandBuffer.endRenderPass();
+		command_buffer.end_render_pass();
 
-		if (device.presentQueue() != device.graphicsQueue()) {
+		if (device.present_queue() != device.graphics_queue()) {
 			VkImageMemoryBarrier barrierFromDrawToPresent = {
 				VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,           // VkStructureType                        sType
 				nullptr,                                          // const void                            *pNext
@@ -140,37 +123,37 @@ namespace Nth {
 				VK_ACCESS_MEMORY_READ_BIT,                        // VkAccessFlags                          dstAccessMask
 				VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,                  // VkImageLayout                          oldLayout
 				VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,                  // VkImageLayout                          newLayout
-				device.graphicsQueue().index(),                   // uint32_t                               srcQueueFamilyIndex
-				device.presentQueue().index(),                    // uint32_t                               dstQueueFamilyIndex
-				swapchainImage,                                   // VkImage                                image
-				imageSubresourceRange                             // VkImageSubresourceRange                subresourceRange
+				device.graphics_queue().index(),                   // uint32_t                               srcQueueFamilyIndex
+				device.present_queue().index(),                    // uint32_t                               dstQueueFamilyIndex
+				swapchain_image,                                   // VkImage                                image
+				image_subresource_range                             // VkImageSubresourceRange                subresourceRange
 			};
-			commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrierFromDrawToPresent);
+			command_buffer.pipeline_barrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrierFromDrawToPresent);
 		}
 
-		if (!commandBuffer.end()) {
-			throw std::runtime_error("Could not record command buffer !");
-		}
+		command_buffer.end();
 	}
 
 	void RenderingResource::present() {
-		VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		VkSubmitInfo submitInfo = {
+		VkPipelineStageFlags wait_dst_stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+		VkSemaphore vk_image_available_semaphore = image_available_semaphore();
+		VkCommandBuffer vk_command_buffer = command_buffer();
+		VkSemaphore vk_finished_rendering_semaphore = finished_rendering_semaphore();
+		VkSubmitInfo submit_info = {
 			VK_STRUCTURE_TYPE_SUBMIT_INFO,               // VkStructureType              sType
 			nullptr,                                     // const void                  *pNext
 			1,                                           // uint32_t                     waitSemaphoreCount
-			&imageAvailableSemaphore(),                  // const VkSemaphore           *pWaitSemaphores
-			&waitDstStageMask,                           // const VkPipelineStageFlags  *pWaitDstStageMask;
+			&vk_image_available_semaphore,               // const VkSemaphore           *pWaitSemaphores
+			&wait_dst_stage_mask,                        // const VkPipelineStageFlags  *pWaitDstStageMask;
 			1,                                           // uint32_t                     commandBufferCount
-			&commandBuffer(),                            // const VkCommandBuffer       *pCommandBuffers
+			&vk_command_buffer,                          // const VkCommandBuffer       *pCommandBuffers
 			1,                                           // uint32_t                     signalSemaphoreCount
-			&finishedRenderingSemaphore()                // const VkSemaphore           *pSignalSemaphores
+			&vk_finished_rendering_semaphore             // const VkSemaphore           *pSignalSemaphores
 		};
 
-		if (!m_owner.getDevice().graphicsQueue().submit(submitInfo, fence())) {
-			throw std::runtime_error("Can't submit ressource to graphics queue");
-		}
+		m_owner.get_device().graphics_queue().submit(submit_info, fence());
 
-		m_owner.present(imageIndex, finishedRenderingSemaphore);
+		m_owner.present(image_index, finished_rendering_semaphore);
 	}
 }

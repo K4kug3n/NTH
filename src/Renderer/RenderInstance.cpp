@@ -25,19 +25,19 @@ namespace Nth {
 			Vk::VulkanLoader::vkEnumerateInstanceVersion(&supportedApi);
 		}
 
-		std::unordered_set<std::string> availableLayer{};
-		for (VkLayerProperties const& layerProp : Vk::VulkanLoader::enumerateLayerProperties()) {
-			availableLayer.insert(layerProp.layerName);
+		std::unordered_set<std::string> available_layer{};
+		for (const VkLayerProperties& layer_prop : Vk::VulkanLoader::enumerate_layer_properties()) {
+			available_layer.insert(layer_prop.layerName);
 		}
 
-		std::vector<const char*> enabledLayer;
+		std::vector<const char*> enabled_layer;
 		#if !defined(NDEBUG)
-		if (availableLayer.count("VK_LAYER_KHRONOS_validation")) {
-			enabledLayer.push_back("VK_LAYER_KHRONOS_validation");
+		if (available_layer.count("VK_LAYER_KHRONOS_validation")) {
+			enabled_layer.push_back("VK_LAYER_KHRONOS_validation");
 		}
 		#endif
 
-		std::vector<const char*> enabledExtensions;
+		std::vector<const char*> enabled_extensions;
 		#ifdef VK_USE_PLATFORM_XCB_KHR
 		enabledExtensions.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
 		#endif
@@ -45,67 +45,63 @@ namespace Nth {
 		enabledExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
 		#endif
 		#ifdef VK_USE_PLATFORM_WIN32_KHR
-		enabledExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+		enabled_extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
 		#endif
 
-		enabledExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+		enabled_extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 
-		if (!m_instance.create("NTH_RENDERER_VK_", VK_MAKE_VERSION(0, 0, 1), "NTH", VK_MAKE_VERSION(0, 0, 1), supportedApi, enabledLayer, enabledExtensions)) {
-			throw std::runtime_error("Can't create Instance");
-		}
+		m_instance.create("NTH_RENDERER", VK_MAKE_VERSION(0, 0, 1), "NTH", VK_MAKE_VERSION(0, 0, 1), supportedApi, enabled_layer, enabled_extensions);
 
-		for (auto const& device : m_instance.enumeratePhysicalDevices()) {
-			std::cout << "Device: " << device.getProperties().deviceName << std::endl;
+		for (const auto& device : m_instance.enumerate_physical_devices()) {
+			std::cout << "Device: " << device.get_properties().deviceName << std::endl;
 		}
 	}
 
 	RenderInstance::~RenderInstance() {
 	}
 
-	bool RenderInstance::createDevice(Vk::Surface& surface) {
-		uint32_t presentQueueFamilyIndex = UINT32_MAX;
-		uint32_t graphicsQueueFamilyIndex = UINT32_MAX;
+	void RenderInstance::create_device(Vk::Surface& surface) {
+		uint32_t present_queue_family_index = UINT32_MAX;
+		uint32_t graphics_queue_family_index = UINT32_MAX;
 
-		std::vector<Vk::PhysicalDevice> physicalDevices = m_instance.enumeratePhysicalDevices();
-		if (physicalDevices.empty()) {
-			std::cerr << "Error: No physical device detected" << std::endl;
-			return false;
+		std::vector<Vk::PhysicalDevice> physical_devices = m_instance.enumerate_physical_devices();
+		if (physical_devices.empty()) {
+			throw std::runtime_error("No physical device detected");
 		}
 
-		size_t selectedIndex{ physicalDevices.size() };
-		for (size_t i{ 0 }; i < physicalDevices.size(); ++i) {
-			if (checkPhysicalDeviceProperties(physicalDevices[i], surface, presentQueueFamilyIndex, graphicsQueueFamilyIndex)) {
+		size_t selectedIndex{ physical_devices.size() };
+		for (size_t i{ 0 }; i < physical_devices.size(); ++i) {
+			if (check_physical_device_properties(physical_devices[i], surface, present_queue_family_index, graphics_queue_family_index)) {
 				selectedIndex = i;
 			};
 		}
 
-		if (selectedIndex == physicalDevices.size()) {
-			std::cerr << "Error : Can't find physical with needed properties" << std::endl;
-			return false;
+		if (selectedIndex == physical_devices.size()) {
+			throw std::runtime_error("Can't find physical with needed properties");
 		}
 
-		Vk::PhysicalDevice& physicalDevice{ physicalDevices[selectedIndex] };
+		Vk::PhysicalDevice& physical_device{ physical_devices[selectedIndex] };
 
-		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-		std::vector<float> queuePriorities = { 1.0f };
+		std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
+		std::vector<float> queue_priorities = { 1.0f };
 
-		queueCreateInfos.push_back({
+		queue_create_infos.push_back({
 			VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,  // VkStructureType              sType
 			nullptr,                                     // const void                  *pNext
 			0,                                           // VkDeviceQueueCreateFlags     flags
-			graphicsQueueFamilyIndex,                    // uint32_t                     queueFamilyIndex
+			graphics_queue_family_index,                    // uint32_t                     queueFamilyIndex
 			1,                                           // uint32_t                     queueCount
-			queuePriorities.data()                       // const float                 *pQueuePriorities
+			queue_priorities.data()                       // const float                 *pQueuePriorities
 		});
 
-		if (graphicsQueueFamilyIndex != presentQueueFamilyIndex) {
-			queueCreateInfos.push_back({
+		if (graphics_queue_family_index != present_queue_family_index) {
+			queue_create_infos.push_back({
 				VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,  // VkStructureType              sType
 				nullptr,                                     // const void                  *pNext
 				0,                                           // VkDeviceQueueCreateFlags     flags
-				presentQueueFamilyIndex,                     // uint32_t                     queueFamilyIndex
+				present_queue_family_index,                     // uint32_t                     queueFamilyIndex
 				1,                                           // uint32_t                     queueCount
-				queuePriorities.data()                       // const float                 *pQueuePriorities
+				queue_priorities.data()                       // const float                 *pQueuePriorities
 			});
 		}
 
@@ -118,8 +114,8 @@ namespace Nth {
 			VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,             // VkStructureType                    sType
 			nullptr,                                          // const void                        *pNext
 			0,                                                // VkDeviceCreateFlags                flags
-			static_cast<uint32_t>(queueCreateInfos.size()),   // uint32_t                           queueCreateInfoCount
-			queueCreateInfos.data(),                          // const VkDeviceQueueCreateInfo     *pQueueCreateInfos
+			static_cast<uint32_t>(queue_create_infos.size()),   // uint32_t                           queueCreateInfoCount
+			queue_create_infos.data(),                          // const VkDeviceQueueCreateInfo     *pQueueCreateInfos
 			0,                                                // uint32_t                           enabledLayerCount
 			nullptr,                                          // const char * const                *ppEnabledLayerNames
 			static_cast<uint32_t>(extensions.size()),         // uint32_t                           enabledExtensionCount
@@ -127,78 +123,76 @@ namespace Nth {
 			nullptr                                           // const VkPhysicalDeviceFeatures    *pEnabledFeatures
 		};
 
-		m_device.create(std::move(physicalDevice), deviceCreateInfo, presentQueueFamilyIndex, graphicsQueueFamilyIndex);
-
-		return true;
+		m_device.create(std::move(physical_device), deviceCreateInfo, present_queue_family_index, graphics_queue_family_index);
 	}
 
-	Vk::Instance& RenderInstance::getHandle() {
+	Vk::Instance& RenderInstance::get_handle() {
 		return m_instance;
 	}
 
-	Vk::Instance const& RenderInstance::getHandle() const {
+	const Vk::Instance& RenderInstance::get_handle() const {
 		return m_instance;
 	}
 
-	RenderDevice& RenderInstance::getDevice() {
+	RenderDevice& RenderInstance::get_device() {
 		return m_device;
 	}
 
-	RenderDevice const& RenderInstance::getDevice() const {
+	const RenderDevice& RenderInstance::get_device() const {
 		return m_device;
 	}
 
-	bool RenderInstance::checkPhysicalDeviceProperties(Vk::PhysicalDevice& physicalDevice, Vk::Surface& surface, uint32_t& graphicsQueueFamilyIndex, uint32_t& presentQueueFamilyIndex) {
-		std::vector<char const*> devicesExtensionsNames = {
+	bool RenderInstance::check_physical_device_properties(Vk::PhysicalDevice& physical_device, Vk::Surface& surface, uint32_t& graphics_queue_family_index, uint32_t& present_queue_family_index) {
+		std::vector<char const*> devices_extensions_names = {
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME
 		};
 
-		for (auto const& name : devicesExtensionsNames) {
-			if (!physicalDevice.isSupportedExtension(name)) {
-				std::cerr << "Warning: physical device " << physicalDevice() << " don't support " << name << std::endl;
+		for (const auto& name : devices_extensions_names) {
+			if (!physical_device.is_supported_extension(name)) {
+				std::cerr << "Warning: physical device " << physical_device() << " don't support " << name << std::endl;
 				return false;
 			}
 		}
 
-		VkPhysicalDeviceProperties properties{ physicalDevice.getProperties() };
-		VkPhysicalDeviceFeatures features{ physicalDevice.getFeatures() };
+		VkPhysicalDeviceProperties properties{ physical_device.get_properties() };
+		VkPhysicalDeviceFeatures features{ physical_device.get_features() };
 
-		uint32_t majorVersion = VK_VERSION_MAJOR(properties.apiVersion);
-		if ((majorVersion < 1) && (properties.limits.maxImageDimension2D < 4096)) {
-			std::cerr << "Warning: physical device " << physicalDevice() << "don't support require parameters" << std::endl;
+		uint32_t major_version = VK_VERSION_MAJOR(properties.apiVersion);
+		if ((major_version < 1) && (properties.limits.maxImageDimension2D < 4096)) {
+			std::cerr << "Warning: physical device " << physical_device() << "don't support require parameters" << std::endl;
 			return false;
 		}
 
-		std::vector<VkQueueFamilyProperties> queueFamiliesProperities{ physicalDevice.getQueueFamilyProperties() };
+		std::vector<VkQueueFamilyProperties> queueFamiliesProperities{ physical_device.get_queue_family_properties() };
 
 		for (size_t i{ 0 }; i < queueFamiliesProperities.size(); ++i) {
-			bool supported{ false };
-			if (!surface.getPhysicalDeviceSurfaceSupport(physicalDevice, static_cast<uint32_t>(i), supported)) {
+			bool supported = surface.get_physical_device_surface_support(physical_device, static_cast<uint32_t>(i));
+			if (!supported) {
 				std::cerr << "Warning: Can't get support of queue " << i << std::endl;
 			}
 
 			if (queueFamiliesProperities[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) { // Support graphics operations
 				if (supported) { // Prefer a queue that do everythings
-					graphicsQueueFamilyIndex = static_cast<uint32_t>(i);
-					presentQueueFamilyIndex = static_cast<uint32_t>(i);
+					graphics_queue_family_index = static_cast<uint32_t>(i);
+					present_queue_family_index = static_cast<uint32_t>(i);
 					return true; // We have all we want
 				}
-				else if (graphicsQueueFamilyIndex == UINT32_MAX) {
-					graphicsQueueFamilyIndex = static_cast<uint32_t>(i);
+				else if (graphics_queue_family_index == UINT32_MAX) {
+					graphics_queue_family_index = static_cast<uint32_t>(i);
 				}
 			}
 			else if (supported) {
-				presentQueueFamilyIndex = static_cast<uint32_t>(i);
+				present_queue_family_index = static_cast<uint32_t>(i);
 			}
 		}
 
-		if (graphicsQueueFamilyIndex == UINT32_MAX) {
-			std::cerr << "Warning: Physical device " << physicalDevice() << " haven't graphics queue" << std::endl;
+		if (graphics_queue_family_index == UINT32_MAX) {
+			std::cerr << "Warning: Physical device " << physical_device() << " haven't graphics queue" << std::endl;
 			return false;
 		}
 
-		if (presentQueueFamilyIndex == UINT32_MAX) {
-			std::cerr << "Warning: Physical device " << physicalDevice() << " doesn't support this surface" << std::endl;
+		if (present_queue_family_index == UINT32_MAX) {
+			std::cerr << "Warning: Physical device " << physical_device() << " doesn't support this surface" << std::endl;
 			return false;
 		}
 

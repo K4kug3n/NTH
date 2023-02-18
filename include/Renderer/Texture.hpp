@@ -16,8 +16,8 @@ namespace Nth {
 		unsigned int width;
 	};
 
-	Texture textureFromFile(std::filesystem::path const& path);
-	Texture uniformTexture(Color const& color);
+	Texture texture_from_file(const std::filesystem::path& path);
+	Texture uniform_texture(const Color& color);
 }
 
 #endif

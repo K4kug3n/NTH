@@ -3,17 +3,17 @@
 #include <Renderer/Vulkan/Device.hpp>
 #include <Renderer/Vertex.hpp>
 
-#include <Util/Reader.hpp>
+#include <Utils/Reader.hpp>
 
 #include <iostream>
 
 namespace Nth {
-	bool Material::createPipeline(Vk::Device const& device, Vk::RenderPass const& renderPass, std::filesystem::path const& vertexShaderName, std::filesystem::path const& fragmentShaderName, std::vector<VkDescriptorSetLayout> const& descriptorSetLayouts) {
-		Vk::ShaderModule vertexShaderModule = createShaderModule(device, vertexShaderName);
-		Vk::ShaderModule fragmentShaderModule = createShaderModule(device, fragmentShaderName);
+	void Material::create_pipeline(const Vk::Device& device, const Vk::RenderPass& render_pass, const std::filesystem::path& vertex_shader_name, const std::filesystem::path& fragment_shader_name, const std::vector<VkDescriptorSetLayout>& descriptor_set_layouts) {
+		Vk::ShaderModule vertex_shader_module = create_shader_module(device, vertex_shader_name);
+		Vk::ShaderModule fragment_shader_module = create_shader_module(device, fragment_shader_name);
 
-		if (!vertexShaderModule.isValid() || !fragmentShaderModule.isValid()) {
-			return false;
+		if (!vertex_shader_module.is_valid() || !fragment_shader_module.is_valid()) {
+			throw std::runtime_error("Can't create vertex or shader module");
 		}
 
 		std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos = {
@@ -23,7 +23,7 @@ namespace Nth {
 				nullptr,                                                    // const void                                    *pNext
 				0,                                                          // VkPipelineShaderStageCreateFlags               flags
 				VK_SHADER_STAGE_VERTEX_BIT,                                 // VkShaderStageFlagBits                          stage
-				vertexShaderModule(),                                       // VkShaderModule                                 module
+				vertex_shader_module(),                                       // VkShaderModule                                 module
 				"main",                                                     // const char                                    *pName
 				nullptr                                                     // const VkSpecializationInfo                    *pSpecializationInfo
 			},
@@ -33,24 +33,24 @@ namespace Nth {
 				nullptr,                                                    // const void                                    *pNext
 				0,                                                          // VkPipelineShaderStageCreateFlags               flags
 				VK_SHADER_STAGE_FRAGMENT_BIT,                               // VkShaderStageFlagBits                          stage
-				fragmentShaderModule(),                                     // VkShaderModule                                 module
+				fragment_shader_module(),                                     // VkShaderModule                                 module
 				"main",                                                     // const char                                    *pName
 				nullptr                                                     // const VkSpecializationInfo                    *pSpecializationInfo
 			}
 		};
 
-		VertexInputDescription vertexInputDescription = Vertex::getVertexDescription();
+		VertexInputDescription vertex_input_description = Vertex::get_vertex_description();
 		VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo = {
 			VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,       // VkStructureType                                sType
 			nullptr,                                                         // const void                                    *pNext
 			0,                                                               // VkPipelineVertexInputStateCreateFlags          flags
-			static_cast<uint32_t>(vertexInputDescription.bindings.size()),   // uint32_t                                       vertexBindingDescriptionCount
-			vertexInputDescription.bindings.data(),                          // const VkVertexInputBindingDescription         *pVertexBindingDescriptions
-			static_cast<uint32_t>(vertexInputDescription.attributes.size()), // uint32_t                                       vertexAttributeDescriptionCount
-			vertexInputDescription.attributes.data()                         // const VkVertexInputAttributeDescription       *pVertexAttributeDescriptions
+			static_cast<uint32_t>(vertex_input_description.bindings.size()),   // uint32_t                                       vertexBindingDescriptionCount
+			vertex_input_description.bindings.data(),                          // const VkVertexInputBindingDescription         *pVertexBindingDescriptions
+			static_cast<uint32_t>(vertex_input_description.attributes.size()), // uint32_t                                       vertexAttributeDescriptionCount
+			vertex_input_description.attributes.data()                         // const VkVertexInputAttributeDescription       *pVertexAttributeDescriptions
 		};
 
-		VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo = {
+		VkPipelineInputAssemblyStateCreateInfo input_assembly_state_create_info = {
 			VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,  // VkStructureType                                sType
 			nullptr,                                                      // const void                                    *pNext
 			0,                                                            // VkPipelineInputAssemblyStateCreateFlags        flags
@@ -58,7 +58,7 @@ namespace Nth {
 			VK_FALSE                                                      // VkBool32                                       primitiveRestartEnable
 		};
 
-		VkPipelineViewportStateCreateInfo viewportStateCreateInfo = {
+		VkPipelineViewportStateCreateInfo viewport_state_create_info = {
 			VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,        // VkStructureType                                sType
 			nullptr,                                                      // const void                                    *pNext
 			0,                                                            // VkPipelineViewportStateCreateFlags             flags
@@ -68,7 +68,7 @@ namespace Nth {
 			nullptr                                                       // const VkRect2D                                *pScissors
 		};
 
-		VkPipelineRasterizationStateCreateInfo rasterizationStateCreateInfo = {
+		VkPipelineRasterizationStateCreateInfo rasterization_state_create_info = {
 			VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,   // VkStructureType                                sType
 			nullptr,                                                      // const void                                    *pNext
 			0,                                                            // VkPipelineRasterizationStateCreateFlags        flags
@@ -84,7 +84,7 @@ namespace Nth {
 			1.0f                                                          // float                                          lineWidth
 		};
 
-		VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo = {
+		VkPipelineMultisampleStateCreateInfo multisample_state_create_info = {
 			VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,     // VkStructureType                                sType
 			nullptr,                                                      // const void                                    *pNext
 			0,                                                            // VkPipelineMultisampleStateCreateFlags          flags
@@ -96,7 +96,7 @@ namespace Nth {
 			VK_FALSE                                                      // VkBool32                                       alphaToOneEnable
 		};
 
-		VkPipelineColorBlendAttachmentState colorBlendAttachmentState = {
+		VkPipelineColorBlendAttachmentState color_blend_attachment_state = {
 			VK_FALSE,                                                     // VkBool32                                       blendEnable
 			VK_BLEND_FACTOR_ONE,                                          // VkBlendFactor                                  srcColorBlendFactor
 			VK_BLEND_FACTOR_ZERO,                                         // VkBlendFactor                                  dstColorBlendFactor
@@ -108,14 +108,14 @@ namespace Nth {
 			VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
 		};
 
-		VkPipelineColorBlendStateCreateInfo colorBlendStateCreateInfo = {
+		VkPipelineColorBlendStateCreateInfo color_blend_state_create_info = {
 			VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,     // VkStructureType                                sType
 			nullptr,                                                      // const void                                    *pNext
 			0,                                                            // VkPipelineColorBlendStateCreateFlags           flags
 			VK_FALSE,                                                     // VkBool32                                       logicOpEnable
 			VK_LOGIC_OP_COPY,                                             // VkLogicOp                                      logicOp
 			1,                                                            // uint32_t                                       attachmentCount
-			&colorBlendAttachmentState,                                   // const VkPipelineColorBlendAttachmentState     *pAttachments
+			&color_blend_attachment_state,                                   // const VkPipelineColorBlendAttachmentState     *pAttachments
 			{ 0.0f, 0.0f, 0.0f, 0.0f }                                    // float                                          blendConstants[4]
 		};
 
@@ -124,7 +124,7 @@ namespace Nth {
 			VK_DYNAMIC_STATE_SCISSOR,
 		};
 
-		VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = {
+		VkPipelineDynamicStateCreateInfo dynamic_state_create_info = {
 			VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,         // VkStructureType                                sType
 			nullptr,                                                      // const void                                    *pNext
 			0,                                                            // VkPipelineDynamicStateCreateFlags              flags
@@ -132,69 +132,61 @@ namespace Nth {
 			dynamic_states.data()                                         // const VkDynamicState                          *pDynamicStates
 		};
 
-		if (!createPipelineLayout(device, descriptorSetLayouts)) {
-			return false;
-		}
+		create_pipeline_layout(device, descriptor_set_layouts);
 
-		VkPipelineDepthStencilStateCreateInfo depthStencil{};
-		depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-		depthStencil.depthTestEnable = VK_TRUE;
-		depthStencil.depthWriteEnable = VK_TRUE;
-		depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-		depthStencil.depthBoundsTestEnable = VK_FALSE;
-		depthStencil.minDepthBounds = 0.0f; // Optional
-		depthStencil.maxDepthBounds = 1.0f; // Optional
-		depthStencil.stencilTestEnable = VK_FALSE;
-		depthStencil.front = {}; // Optional
-		depthStencil.back = {}; // Optional
+		VkPipelineDepthStencilStateCreateInfo depth_stencil{};
+		depth_stencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		depth_stencil.depthTestEnable = VK_TRUE;
+		depth_stencil.depthWriteEnable = VK_TRUE;
+		depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS;
+		depth_stencil.depthBoundsTestEnable = VK_FALSE;
+		depth_stencil.minDepthBounds = 0.0f; // Optional
+		depth_stencil.maxDepthBounds = 1.0f; // Optional
+		depth_stencil.stencilTestEnable = VK_FALSE;
+		depth_stencil.front = {}; // Optional
+		depth_stencil.back = {}; // Optional
 
-		VkGraphicsPipelineCreateInfo pipelineCreateInfo = {
+		VkGraphicsPipelineCreateInfo pipeline_create_info = {
 			VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,       // VkStructureType                                sType
 			nullptr,                                               // const void                                    *pNext
 			0,                                                     // VkPipelineCreateFlags                          flags
 			static_cast<uint32_t>(shaderStageCreateInfos.size()),  // uint32_t                                       stageCount
 			shaderStageCreateInfos.data(),                         // const VkPipelineShaderStageCreateInfo         *pStages
 			&vertexInputStateCreateInfo,                           // const VkPipelineVertexInputStateCreateInfo    *pVertexInputState;
-			&inputAssemblyStateCreateInfo,                         // const VkPipelineInputAssemblyStateCreateInfo  *pInputAssemblyState
+			&input_assembly_state_create_info,                         // const VkPipelineInputAssemblyStateCreateInfo  *pInputAssemblyState
 			nullptr,                                               // const VkPipelineTessellationStateCreateInfo   *pTessellationState
-			&viewportStateCreateInfo,                              // const VkPipelineViewportStateCreateInfo       *pViewportState
-			&rasterizationStateCreateInfo,                         // const VkPipelineRasterizationStateCreateInfo  *pRasterizationState
-			&multisampleStateCreateInfo,                           // const VkPipelineMultisampleStateCreateInfo    *pMultisampleState
-			&depthStencil,                                         // const VkPipelineDepthStencilStateCreateInfo   *pDepthStencilState
-			&colorBlendStateCreateInfo,                            // const VkPipelineColorBlendStateCreateInfo     *pColorBlendState
-			&dynamicStateCreateInfo,                               // const VkPipelineDynamicStateCreateInfo        *pDynamicState
-			pipelineLayout(),                                      // VkPipelineLayout                               layout
-			renderPass(),                                          // VkRenderPass                                   renderPass
+			&viewport_state_create_info,                              // const VkPipelineViewportStateCreateInfo       *pViewportState
+			&rasterization_state_create_info,                         // const VkPipelineRasterizationStateCreateInfo  *pRasterizationState
+			&multisample_state_create_info,                           // const VkPipelineMultisampleStateCreateInfo    *pMultisampleState
+			&depth_stencil,                                         // const VkPipelineDepthStencilStateCreateInfo   *pDepthStencilState
+			&color_blend_state_create_info,                            // const VkPipelineColorBlendStateCreateInfo     *pColorBlendState
+			&dynamic_state_create_info,                               // const VkPipelineDynamicStateCreateInfo        *pDynamicState
+			pipeline_layout(),                                      // VkPipelineLayout                               layout
+			render_pass(),                                          // VkRenderPass                                   renderPass
 			0,                                                     // uint32_t                                       subpass
 			VK_NULL_HANDLE,                                        // VkPipeline                                     basePipelineHandle
 			-1                                                     // int32_t                                        basePipelineIndex
 		};
 
-		if (!pipeline.createGraphics(device, VK_NULL_HANDLE, pipelineCreateInfo)) {
-			std::cerr << "Error: Could not create graphics pipeline!" << std::endl;
-			return false;
-		}
-		return true;
+		pipeline.create_graphics(device, VK_NULL_HANDLE, pipeline_create_info);
 	}
 
-	bool Material::createPipelineLayout(Vk::Device const& device, std::vector<VkDescriptorSetLayout> const& descriptorSetLayouts) {
-		return pipelineLayout.create(
+	void Material::create_pipeline_layout(const Vk::Device& device, const std::vector<VkDescriptorSetLayout>& descriptor_set_layouts) {
+		pipeline_layout.create(
 			device,
 			0,
-			static_cast<uint32_t>(descriptorSetLayouts.size()),
-			descriptorSetLayouts.data(),
+			static_cast<uint32_t>(descriptor_set_layouts.size()),
+			descriptor_set_layouts.data(),
 			0,
 			nullptr
 		);
 	}
 
-	Vk::ShaderModule Material::createShaderModule(Vk::Device const& device, std::filesystem::path const& path) const {
-		std::vector<char> code{ readBinaryFile(path) };
+	Vk::ShaderModule Material::create_shader_module(const Vk::Device& device, const std::filesystem::path& path) const {
+		std::vector<char> code{ read_binary_file(path) };
 
 		Vk::ShaderModule shader;
-		if (!shader.create(device, code.size(), reinterpret_cast<const uint32_t*>(&code[0]))) {
-			throw std::runtime_error("Can't create shader module");
-		}
+		shader.create(device, code.size(), reinterpret_cast<const uint32_t*>(&code[0]));
 
 		return shader;
 	}

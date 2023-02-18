@@ -27,61 +27,61 @@ namespace Nth {
 	class Renderer {
 	public:
 		Renderer();
-		Renderer(Renderer const&) = delete;
+		Renderer(const Renderer&) = delete;
 		Renderer(Renderer&&) = default;
 		~Renderer() = default;
 
-		RenderWindow& getWindow(VideoMode const& mode, const std::string_view title);
+		RenderWindow& get_window();
 
 		// TODO: Review this API
-		Material createMaterial(MaterialInfos const& infos);
+		Material create_material(const MaterialInfos& infos);
 
-		size_t registerModel(Model const& model);
+		size_t register_model(const Model& model);
 
-		void draw(std::vector<RenderObject> const& objects);
+		void draw(const std::vector<RenderObject>& objects);
 
 		// TODO: Move out, used for sync destructor
-		void waitIdle() const;
+		void wait_idle() const;
 
 		// TODO: Move out
 		LightGpuObject light;
 		Camera camera;
 
-		static constexpr uint32_t resourceCount = 3;
+		static constexpr uint32_t resource_count = 3;
 
-		Renderer& operator=(Renderer const&) = delete;
+		Renderer& operator=(const Renderer&) = delete;
 		Renderer& operator=(Renderer&&) = default;
 
 	private:
-		ViewerGpuObject getViewerData() const;
-		bool updateDescriptorSet();
+		ViewerGpuObject get_viewer_data() const;
+		void update_descriptor_set();
 
 		RenderInstance m_vulkan;
-		RenderWindow m_renderWindow;
+		RenderWindow m_render_window;
 
-		DescriptorAllocator m_descriptorAllocator;
+		DescriptorAllocator m_descriptor_allocator;
 
 		// TODO: May move it in dedicated class
-		size_t addDescriptorSetLayout(std::vector<BindingInfo> const& bindings);
-		std::vector<Vk::DescriptorSetLayout> m_descriptorSetLayouts;
-		ShaderBinding allocateShaderBinding(size_t index);
+		size_t add_descriptor_set_layout(const std::vector<BindingInfo>& bindings);
+		std::vector<Vk::DescriptorSetLayout> m_descriptor_set_layouts;
+		ShaderBinding allocate_shader_binding(size_t index);
 
 		size_t m_resourceIndex;
 
-		std::array<ShaderBinding, Renderer::resourceCount> m_modelBindings;
-		std::array<RenderBuffer, Renderer::resourceCount> m_modelBuffers;
+		std::array<ShaderBinding, Renderer::resource_count> m_model_bindings;
+		std::array<RenderBuffer, Renderer::resource_count> m_model_buffers;
 
-		std::array<ShaderBinding, Renderer::resourceCount> m_viewerBindings;
-		std::array<RenderBuffer, Renderer::resourceCount> m_viewerBuffers;
+		std::array<ShaderBinding, Renderer::resource_count> m_viewer_bindings;
+		std::array<RenderBuffer, Renderer::resource_count> m_viewer_buffers;
 
-		std::array<ShaderBinding, Renderer::resourceCount> m_lightBindings;
-		std::array<RenderBuffer, Renderer::resourceCount> m_lightBuffers;
+		std::array<ShaderBinding, Renderer::resource_count> m_light_bindings;
+		std::array<RenderBuffer, Renderer::resource_count> m_light_buffers;
 
 		// TODO: Review this
-		RenderMesh registerMesh(Mesh const& mesh) const;
-		RenderTexture registerTexture(Texture const& texture);
+		RenderMesh register_mesh(const Mesh& mesh) const;
+		RenderTexture register_texture(const Texture& texture);
 
-		std::vector<RenderModel> m_Renders;
+		std::vector<RenderModel> m_renders;
 	};
 }
 

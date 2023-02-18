@@ -14,22 +14,22 @@ namespace Nth {
 	class Model {
 	public:
 		Model() = default;
-		Model(std::filesystem::path const& path);
+		Model(const std::filesystem::path& path);
 
 		// TODO: Cleanup
 		std::vector<Texture> m_textures_loaded;
 		std::vector<Mesh> meshes;
 
-		void addMesh(Mesh&& mesh);
-		size_t addTexture(Texture&& texture);
+		void add_mesh(Mesh&& mesh);
+		size_t add_texture(Texture&& texture);
 
-		std::vector<Texture> const& textures() const;
+		const std::vector<Texture>& textures() const;
 
-		void loadFromFile(std::filesystem::path const& path);
+		void load_from_file(const std::filesystem::path& path);
 	private:
-		void processNode(aiNode* node, const aiScene* scene, aiMatrix4x4 const& parentTransformation);
-		Mesh processMesh(aiMesh* mesh, const aiScene* scene, aiMatrix4x4 const& transformation);
-		std::vector<size_t> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string_view typeName);
+		void process_node(aiNode* node, const aiScene* scene, const aiMatrix4x4& parent_transformation);
+		Mesh process_mesh(aiMesh* mesh, const aiScene* scene, const aiMatrix4x4& transformation);
+		std::vector<size_t> load_material_textures(aiMaterial* mat, aiTextureType type, std::string_view type_name);
 
 		std::filesystem::path m_directory;
 	};

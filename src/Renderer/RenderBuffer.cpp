@@ -12,11 +12,11 @@
 namespace Nth {
 	RenderBuffer::RenderBuffer() :
 		m_device(nullptr),
-		m_memoryProperty(VK_MEMORY_PROPERTY_FLAG_BITS_MAX_ENUM) { }
+		m_memory_property(VK_MEMORY_PROPERTY_FLAG_BITS_MAX_ENUM) { }
 
-	RenderBuffer::RenderBuffer(RenderDevice const& device, VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size) :
+	RenderBuffer::RenderBuffer(const RenderDevice& device, VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size) :
 		m_device(&device),
-		m_memoryProperty(memoryProperty) {
+		m_memory_property(memoryProperty) {
 		VkBufferCreateInfo bufferCreateInfo = {
 			VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,             // VkStructureType                sType
 			nullptr,                                          // const void                    *pNext
@@ -28,46 +28,40 @@ namespace Nth {
 			nullptr                                           // const uint32_t                *pQueueFamilyIndices
 		};
 
-		if (!handle.create(device.getHandle(), bufferCreateInfo)) {
-			throw std::runtime_error("Could not create buffer!");
-		}
+		handle.create(device.get_handle(), bufferCreateInfo);
 
-		if (!allocateBufferMemory(device.getHandle(), memoryProperty, handle, m_memory)) {
-			throw std::runtime_error("Could not allocate memory for buffer!");
-		}
+		allocate_buffer_memory(device.get_handle(), memoryProperty, handle, m_memory);
 
-		if (!handle.bindBufferMemory(m_memory)) {
-			throw std::runtime_error("Could not bind memory to buffer!");
-		}
+		handle.bind_buffer_memory(m_memory);
 
 		if (memoryProperty & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
-			createStaging(device.getHandle(), size);
+			create_staging(device.get_handle(), size);
 		}
 	}
 
 	void RenderBuffer::copy(const void* data, size_t size) {
-		if (m_memoryProperty & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
-			copyByStaging(data, size);
+		if (m_memory_property & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+			copy_by_staging(data, size);
 		}
 		else {
 			m_memory.map(0, size, 0);
-			void* mappedPtr = m_memory.getMappedPointer();
+			void* mappedPtr = m_memory.get_mapped_pointer();
 
 			std::memcpy(mappedPtr, data, size);
 
-			m_memory.flushMappedMemory(0, size);
+			m_memory.flush_mapped_memory(0, size);
 
 			m_memory.unmap();
 		}
 	}
 
-	bool RenderBuffer::allocateBufferMemory(Vk::Device const& device, VkMemoryPropertyFlagBits memoryProperty, Vk::Buffer& buffer, Vk::DeviceMemory& memory) {
-		VkMemoryRequirements bufferMemoryRequirements = buffer.getMemoryRequirements();;
-		VkPhysicalDeviceMemoryProperties memoryProperties = device.getPhysicalDevice().getMemoryProperties();
+	void RenderBuffer::allocate_buffer_memory(const Vk::Device& device, VkMemoryPropertyFlagBits memory_property, Vk::Buffer& buffer, Vk::DeviceMemory& memory) {
+		VkMemoryRequirements bufferMemoryRequirements = buffer.get_memory_requirements();;
+		VkPhysicalDeviceMemoryProperties memoryProperties = device.get_physical_device().get_memory_properties();
 
 		for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i) {
 			if ((bufferMemoryRequirements.memoryTypeBits & (1 << i)) &&
-				(memoryProperties.memoryTypes[i].propertyFlags & memoryProperty) == memoryProperty) {
+				(memoryProperties.memoryTypes[i].propertyFlags & memory_property) == memory_property) {
 
 				VkMemoryAllocateInfo memoryAllocateInfo = {
 					VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,     // VkStructureType                        sType
@@ -76,16 +70,12 @@ namespace Nth {
 					i                                           // uint32_t                               memoryTypeIndex
 				};
 
-				if (memory.create(device, memoryAllocateInfo)) {
-					return true;
-				}
+				memory.create(device, memoryAllocateInfo);
 			}
 		}
-
-		return false;
 	}
 
-	void RenderBuffer::createStaging(Vk::Device const& device, VkDeviceSize size) {
+	void RenderBuffer::create_staging(const Vk::Device& device, VkDeviceSize size) {
 		VkBufferCreateInfo stagingCreateInfo = {
 			VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,             // VkStructureType                sType
 			nullptr,                                          // const void                    *pNext
@@ -97,52 +87,44 @@ namespace Nth {
 			nullptr                                           // const uint32_t                *pQueueFamilyIndices
 		};
 
-		if (!m_staging.create(device, stagingCreateInfo)) {
-			throw std::runtime_error("Could not create staging!");
-		}
+		m_staging.create(device, stagingCreateInfo);
 
-		if (!allocateBufferMemory(device, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, m_staging, m_stagingMemory)) {
-			throw std::runtime_error("Could not allocate staging!");
-		}
+		allocate_buffer_memory(device, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, m_staging, m_staging_memory);
 
-		if (!m_staging.bindBufferMemory(m_stagingMemory)) {
-			throw std::runtime_error("Could not bind staging memory!");
-		}
+		m_staging.bind_buffer_memory(m_staging_memory);
 	}
 
-	void RenderBuffer::copyByStaging(const void* data, size_t size) {
+	void RenderBuffer::copy_by_staging(const void* data, size_t size) {
 		assert(m_device != nullptr);
 
-		if (!m_stagingMemory.map(0, handle.getSize(), 0)) {
-			throw std::runtime_error("Could not map memory and upload data to a staging buffer!");
-		}
+		m_staging_memory.map(0, handle.get_size(), 0);
 
-		void* stagingBufferMemoryPointer = m_stagingMemory.getMappedPointer();
+		void* staging_buffer_memory_pointer = m_staging_memory.get_mapped_pointer();
 
-		std::memcpy(stagingBufferMemoryPointer, data, size);
+		std::memcpy(staging_buffer_memory_pointer, data, size);
 
-		m_stagingMemory.flushMappedMemory(0, m_staging.getSize());
+		m_staging_memory.flush_mapped_memory(0, m_staging.get_size());
 
-		m_stagingMemory.unmap();
+		m_staging_memory.unmap();
 
-		VkCommandBufferBeginInfo commandBufferBeginInfo = {
+		VkCommandBufferBeginInfo command_buffer_begin_info = {
 			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, // VkStructureType              sType
 			nullptr,                                     // const void                  *pNext
 			VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, // VkCommandBufferUsageFlags    flags
 			nullptr                                      // const VkCommandBufferInheritanceInfo  *pInheritanceInfo
 		};
 
-		Vk::CommandBuffer commandBuffer{ m_device->allocateCommandBuffer() };
-		commandBuffer.begin(commandBufferBeginInfo);
+		Vk::CommandBuffer command_buffer{ m_device->allocate_command_buffer() };
+		command_buffer.begin(command_buffer_begin_info);
 
 		VkBufferCopy bufferCopyInfo = {
 			0,                                // VkDeviceSize       srcOffset
 			0,                                // VkDeviceSize       dstOffset
-			handle.getSize()                  // VkDeviceSize       size
+			handle.get_size()                  // VkDeviceSize       size
 		};
-		commandBuffer.copyBuffer(m_staging(), handle(), bufferCopyInfo);
+		command_buffer.copy_buffer(m_staging(), handle(), bufferCopyInfo);
 
-		VkBufferMemoryBarrier bufferMemoryBarrier = {
+		VkBufferMemoryBarrier buffer_memory_barrier = {
 			VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, // VkStructureType    sType;
 			nullptr,                                 // const void        *pNext
 			VK_ACCESS_TRANSFER_WRITE_BIT,            // VkAccessFlags      srcAccessMask
@@ -153,27 +135,26 @@ namespace Nth {
 			0,                                       // VkDeviceSize       offset
 			VK_WHOLE_SIZE                            // VkDeviceSize       size
 		};
-		commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr, 1, &bufferMemoryBarrier, 0, nullptr);
+		command_buffer.pipeline_barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr, 1, &buffer_memory_barrier, 0, nullptr);
 
-		commandBuffer.end();
+		command_buffer.end();
 
 		// Submit command buffer and copy data from staging buffer to a vertex buffer
-		VkSubmitInfo submitInfo = {
+		VkCommandBuffer vk_command_buffer = command_buffer();
+		VkSubmitInfo submit_info = {
 			VK_STRUCTURE_TYPE_SUBMIT_INFO,    // VkStructureType    sType
 			nullptr,                          // const void        *pNext
 			0,                                // uint32_t           waitSemaphoreCount
 			nullptr,                          // const VkSemaphore *pWaitSemaphores
 			nullptr,                          // const VkPipelineStageFlags *pWaitDstStageMask;
 			1,                                // uint32_t           commandBufferCount
-			&commandBuffer(),                 // const VkCommandBuffer *pCommandBuffers
+			&vk_command_buffer,               // const VkCommandBuffer *pCommandBuffers
 			0,                                // uint32_t           signalSemaphoreCount
 			nullptr                           // const VkSemaphore *pSignalSemaphores
 		};
 
-		if (!m_device->presentQueue().submit(submitInfo, VK_NULL_HANDLE)) {
-			throw std::runtime_error("Can't submit copy");
-		}
+		m_device->present_queue().submit(submit_info, VK_NULL_HANDLE);
 
-		m_device->getHandle().waitIdle();
+		m_device->get_handle().wait_idle();
 	}
 }

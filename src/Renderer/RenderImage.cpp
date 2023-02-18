@@ -10,8 +10,8 @@
 #include <cassert>
 
 namespace Nth {
-	void RenderImage::create(RenderDevice const& device, uint32_t width, uint32_t height, size_t stagingSize, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties) {
-		VkImageCreateInfo imageCreateInfo = {
+	void RenderImage::create(const RenderDevice& device, uint32_t width, uint32_t height, size_t staging_size, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties) {
+		VkImageCreateInfo image_create_info = {
 			VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,  // VkStructureType        sType;
 			nullptr,                              // const void            *pNext
 			0,                                    // VkImageCreateFlags     flags
@@ -33,38 +33,32 @@ namespace Nth {
 			VK_IMAGE_LAYOUT_UNDEFINED             // VkImageLayout          initialLayout
 		};
 
-		if (!handle.create(device.getHandle(), imageCreateInfo)) {
-			throw std::runtime_error("Can't create image for Vulkan Image");
-		}
+		handle.create(device.get_handle(), image_create_info);
 
-		VkMemoryRequirements memRequirements = handle.getImageMemoryRequirements();
+		VkMemoryRequirements mem_requirements = handle.get_image_memory_requirements();
 
-		VkMemoryAllocateInfo memoryAllocateInfo = {
-			VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,                                        // VkStructureType                        sType
-			nullptr,                                                                       // const void                            *pNext
-			memRequirements.size,                                                          // VkDeviceSize                           allocationSize
-			findMemoryType(device.getHandle(), memRequirements.memoryTypeBits, properties) // uint32_t                               memoryTypeIndex
+		VkMemoryAllocateInfo memory_allocate_info = {
+			VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,                                            // VkStructureType                        sType
+			nullptr,                                                                           // const void                            *pNext
+			mem_requirements.size,                                                             // VkDeviceSize                           allocationSize
+			find_memory_type(device.get_handle(), mem_requirements.memoryTypeBits, properties) // uint32_t                               memoryTypeIndex
 		};
 
-		if (!memory.create(device.getHandle(), memoryAllocateInfo)) {
-			throw std::runtime_error("Can't create memory for Vulkan Image");
-		}
+		memory.create(device.get_handle(), memory_allocate_info);
 
-		if (!handle.bindImageMemory(memory)) {
-			throw std::runtime_error("Could not bind image memory to buffer!");
-		}
+		handle.bind_image_memory(memory);
 
-		if (stagingSize > 0) {
-			createStaging(device.getHandle(), stagingSize);
+		if (staging_size > 0) {
+			create_staging(device.get_handle(), staging_size);
 		}
 
 		m_device = &device;
 	}
 
-	void RenderImage::createView(VkFormat format, VkImageAspectFlags aspectFlags) {
+	void RenderImage::create_view(VkFormat format, VkImageAspectFlags aspectFlags) {
 		assert(m_device != nullptr);
 
-		VkImageViewCreateInfo imageViewCreateInfo = {
+		VkImageViewCreateInfo image_view_create_info = {
 			VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, // VkStructureType          sType
 			nullptr,                                  // const void              *pNext
 			0,                                        // VkImageViewCreateFlags   flags
@@ -86,37 +80,31 @@ namespace Nth {
 			}
 		};
 
-		if (!view.create(m_device->getHandle(), imageViewCreateInfo)) {
-			throw std::runtime_error("Can't create view for Vulkan Image");
-		}
+		view.create(m_device->get_handle(), image_view_create_info);
 	}
 
 	void RenderImage::copy(void const* data, size_t size, uint32_t width, uint32_t height) {
 		assert(m_device != nullptr);
 
-		if (!m_stagingMemory.map(0, size, 0)) {
-			throw std::runtime_error("Could not map memory and upload texture data to a staging buffer!");
-		}
-		void* stagingBufferMemoryPointer = m_stagingMemory.getMappedPointer();
+		m_staging_memory.map(0, size, 0);
+		void* stagingBufferMemoryPointer = m_staging_memory.get_mapped_pointer();
 
 		std::memcpy(stagingBufferMemoryPointer, data, size);
 
-		if (!m_stagingMemory.flushMappedMemory(0, size)) {
-			throw std::runtime_error("Could not flush mapped memory to a staging buffer!");
-		}
+		m_staging_memory.flush_mapped_memory(0, size);
 
-		m_stagingMemory.unmap();
+		m_staging_memory.unmap();
 
 		// Prepare command buffer to copy data from staging buffer to a vertex buffer
-		VkCommandBufferBeginInfo commandBufferBeginInfo = {
+		VkCommandBufferBeginInfo command_buffer_begin_info = {
 			VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,  // VkStructureType                        sType
 			nullptr,                                      // const void                            *pNext
 			VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,  // VkCommandBufferUsageFlags              flags
 			nullptr                                       // const VkCommandBufferInheritanceInfo  *pInheritanceInfo
 		};
 
-		Vk::CommandBuffer commandBuffer{ m_device->allocateCommandBuffer() };
-		commandBuffer.begin(commandBufferBeginInfo);
+		Vk::CommandBuffer command_buffer{ m_device->allocate_command_buffer() };
+		command_buffer.begin(command_buffer_begin_info);
 
 		VkImageSubresourceRange image_subresource_range = {
 			VK_IMAGE_ASPECT_COLOR_BIT,              // VkImageAspectFlags        aspectMask
@@ -126,7 +114,7 @@ namespace Nth {
 			1                                       // uint32_t                  layerCount
 		};
 
-		VkImageMemoryBarrier imageMemoryBarrierFromUndefinedToTransferDst = {
+		VkImageMemoryBarrier image_memory_barrier_from_undefined_to_transfer_dst = {
 			VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, // VkStructureType           sType
 			nullptr,                                // const void               *pNext
 			0,                                      // VkAccessFlags             srcAccessMask
@@ -138,9 +126,9 @@ namespace Nth {
 			handle(),                               // VkImage                   image
 			image_subresource_range                 // VkImageSubresourceRange   subresourceRange
 		};
-		commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrierFromUndefinedToTransferDst);
+		command_buffer.pipeline_barrier(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &image_memory_barrier_from_undefined_to_transfer_dst);
 
-		VkBufferImageCopy bufferImageCopyInfo = {
+		VkBufferImageCopy buffer_image_copy_info = {
 			0,                                  // VkDeviceSize               bufferOffset
 			0,                                  // uint32_t                   bufferRowLength
 			0,                                  // uint32_t                   bufferImageHeight
@@ -161,9 +149,9 @@ namespace Nth {
 				1                                   // uint32_t                   depth
 			}
 		};
-		commandBuffer.copyBufferToImage(m_staging(), handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &bufferImageCopyInfo);
+		command_buffer.copy_buffer_to_image(m_staging(), handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_image_copy_info);
 
-		VkImageMemoryBarrier imageMemoryBarrierFromTransferToShaderRead = {
+		VkImageMemoryBarrier image_memory_barrier_from_transfer_to_shader_read = {
 			VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,   // VkStructureType              sType
 			nullptr,                                  // const void                  *pNext
 			VK_ACCESS_TRANSFER_WRITE_BIT,             // VkAccessFlags                srcAccessMask
@@ -175,43 +163,42 @@ namespace Nth {
 			handle(),                                 // VkImage                      image
 			image_subresource_range                   // VkImageSubresourceRange      subresourceRange
 		};
-		commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrierFromTransferToShaderRead);
+		command_buffer.pipeline_barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &image_memory_barrier_from_transfer_to_shader_read);
 
-		commandBuffer.end();
+		command_buffer.end();
 
 		// Submit command buffer and copy data from staging buffer to a vertex buffer
-		VkSubmitInfo submitInfo = {
+		VkCommandBuffer vk_command_buffer = command_buffer();
+		VkSubmitInfo submit_info = {
 			VK_STRUCTURE_TYPE_SUBMIT_INFO,            // VkStructureType              sType
 			nullptr,                                  // const void                  *pNext
 			0,                                        // uint32_t                     waitSemaphoreCount
 			nullptr,                                  // const VkSemaphore           *pWaitSemaphores
 			nullptr,                                  // const VkPipelineStageFlags  *pWaitDstStageMask;
 			1,                                        // uint32_t                     commandBufferCount
-			&commandBuffer(),                         // const VkCommandBuffer       *pCommandBuffers
+			&vk_command_buffer,                       // const VkCommandBuffer       *pCommandBuffers
 			0,                                        // uint32_t                     signalSemaphoreCount
 			nullptr                                   // const VkSemaphore           *pSignalSemaphores
 		};
 
-		if (!m_device->graphicsQueue().submit(submitInfo, VK_NULL_HANDLE)) {
-			throw std::runtime_error("Can't submit to present queue");
-		}
+		m_device->graphics_queue().submit(submit_info, VK_NULL_HANDLE);
 
-		m_device->getHandle().waitIdle();
+		m_device->get_handle().wait_idle();
 	}
 
-	uint32_t RenderImage::findMemoryType(Vk::Device const& device, uint32_t memoryTypeBit, VkMemoryPropertyFlags properties) const {
-		VkPhysicalDeviceMemoryProperties memProperties = device.getPhysicalDevice().getMemoryProperties();
+	uint32_t RenderImage::find_memory_type(const Vk::Device& device, uint32_t memory_type_bit, VkMemoryPropertyFlags properties) const {
+		VkPhysicalDeviceMemoryProperties mem_properties = device.get_physical_device().get_memory_properties();
 
-		for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-			if ((memoryTypeBit & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+		for (uint32_t i = 0; i < mem_properties.memoryTypeCount; i++) {
+			if ((memory_type_bit & (1 << i)) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties) {
 				return i;
 			}
 		}
 
 		throw std::runtime_error("Canno't find suitable memory type!");
 	}
-	void RenderImage::createStaging(Vk::Device const& device, size_t size) {
-		VkBufferCreateInfo stagingCreateInfo = {
+	void RenderImage::create_staging(const Vk::Device& device, size_t size) {
+		VkBufferCreateInfo staging_create_info = {
 			VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,             // VkStructureType                sType
 			nullptr,                                          // const void                    *pNext
 			0,                                                // VkBufferCreateFlags            flags
@@ -222,25 +209,19 @@ namespace Nth {
 			nullptr                                           // const uint32_t                *pQueueFamilyIndices
 		};
 
-		if (!m_staging.create(device, stagingCreateInfo)) {
-			throw std::runtime_error("Could not create staging!");
-		}
+		m_staging.create(device, staging_create_info);
 
-		VkMemoryRequirements stagingMemRequirements = m_staging.getMemoryRequirements();
+		VkMemoryRequirements staging_mem_requirements = m_staging.get_memory_requirements();
 
-		VkMemoryAllocateInfo stagingMemoryAllocateInfo = {
+		VkMemoryAllocateInfo staging_memory_allocate_info = {
 			VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,                                                             // VkStructureType     sType
 			nullptr,                                                                                            // const void         *pNext
-			stagingMemRequirements.size,                                                                        // VkDeviceSize        allocationSize
-			findMemoryType(device, stagingMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)  // uint32_t            memoryTypeIndex
+			staging_mem_requirements.size,                                                                        // VkDeviceSize        allocationSize
+			find_memory_type(device, staging_mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)  // uint32_t            memoryTypeIndex
 		};
 
-		if (!m_stagingMemory.create(device, stagingMemoryAllocateInfo)) {
-			throw std::runtime_error("Can't create memory for Vulkan Image");
-		}
+		m_staging_memory.create(device, staging_memory_allocate_info);
 
-		if (!m_staging.bindBufferMemory(m_stagingMemory)) {
-			throw std::runtime_error("Could not bind staging memory!");
-		}
+		m_staging.bind_buffer_memory(m_staging_memory);
 	}
 }

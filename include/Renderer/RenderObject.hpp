@@ -1,17 +1,17 @@
 #ifndef NTH_RENDERER_RENDEROBJECT_HPP
 #define NTH_RENDERER_RENDEROBJECT_HPP
 
-#include <Math/Matrix4.hpp>
+#include <Maths/Matrix4.hpp>
 
 namespace Nth {
 	class Material;
 
 	class RenderObject {
 	public:
-		size_t modelIndex;
+		size_t model_index;
 		Material* material;
 
-		Matrix4f transformMatrix;
+		Matrix4f transform_matrix;
 	};
 }
 

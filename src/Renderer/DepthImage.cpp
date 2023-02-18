@@ -3,13 +3,13 @@
 #include <Renderer/Vulkan/Device.hpp>
 #include <Renderer/Vulkan/PhysicalDevice.hpp>
 #include <Renderer/RenderDevice.hpp>
-#include <Math/Vector2.hpp>
+#include <Maths/Vector2.hpp>
 
 #include <iostream>
 
 namespace Nth {
-	bool DepthImage::create(RenderDevice const& device, Vector2<unsigned int> const& size) {
-		m_format = findDepthFormat(device.getHandle());
+	void DepthImage::create(const RenderDevice& device, const Vector2<unsigned int>& size) {
+		m_format = find_depth_format(device.get_handle());
 
 		m_image.create(
 			device,
@@ -21,16 +21,14 @@ namespace Nth {
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-		m_image.createView(m_format, VK_IMAGE_ASPECT_DEPTH_BIT);
-
-		return true;
+		m_image.create_view(m_format, VK_IMAGE_ASPECT_DEPTH_BIT);
 	}
 
-	Vk::ImageView const& DepthImage::view() const {
+	const Vk::ImageView& DepthImage::view() const {
 		return m_image.view;
 	}
 
-	Vk::Image const& DepthImage::image() const {
+	const Vk::Image& DepthImage::image() const {
 		return m_image.handle;
 	}
 
@@ -38,8 +36,8 @@ namespace Nth {
 		return m_format;
 	}
 
-	VkFormat DepthImage::findDepthFormat(Vk::Device const& device) const {
-		return findSupportedFormat(
+	VkFormat DepthImage::find_depth_format(const Vk::Device& device) const {
+		return find_supported_format(
 			device,
 			{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
 			VK_IMAGE_TILING_OPTIMAL,
@@ -47,11 +45,11 @@ namespace Nth {
 		);
 	}
 
-	VkFormat DepthImage::findSupportedFormat(Vk::Device const& device, std::vector<VkFormat> const& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const {
-		Vk::PhysicalDevice const& physicalDevice = device.getPhysicalDevice();
+	VkFormat DepthImage::find_supported_format(const Vk::Device& device, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const {
+		const Vk::PhysicalDevice& physicalDevice = device.get_physical_device();
 
 		for (VkFormat format : candidates) {
-			VkFormatProperties props = physicalDevice.getFormatProperties(format);
+			VkFormatProperties props = physicalDevice.get_format_properties(format);
 
 			if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
 				return format;
@@ -64,7 +62,7 @@ namespace Nth {
 		throw std::runtime_error("Canno't find supported format!");
 	}
 
-	bool DepthImage::hasStencilComponent(VkFormat format) const {
+	bool DepthImage::has_stencil_component(VkFormat format) const {
 		return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 	}
 }

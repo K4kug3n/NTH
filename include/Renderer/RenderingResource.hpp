@@ -17,26 +17,26 @@ namespace Nth {
 	class RenderingResource {
 	public:
 		RenderingResource(RenderWindow& owner);
-		RenderingResource(RenderingResource const&) = delete;
+		RenderingResource(const RenderingResource&) = delete;
 		RenderingResource(RenderingResource&&) = default;
 		~RenderingResource() = default;
 
-		bool create(uint32_t familyIndex);
+		void create(uint32_t family_index);
 
 		void prepare(std::function<void(Vk::CommandBuffer&)> action);
 		void present();
 
 		Vk::Framebuffer framebuffer;
-		Vk::CommandPool commandPool;
-		Vk::CommandBuffer commandBuffer;
-		Vk::Semaphore imageAvailableSemaphore;
-		Vk::Semaphore finishedRenderingSemaphore;
+		Vk::CommandPool command_pool;
+		Vk::CommandBuffer command_buffer;
+		Vk::Semaphore image_available_semaphore;
+		Vk::Semaphore finished_rendering_semaphore;
 		Vk::Fence fence;
 
-		VkImage swapchainImage;
-		uint32_t imageIndex;
+		VkImage swapchain_image;
+		uint32_t image_index;
 
-		RenderingResource& operator=(RenderingResource const&) = delete;
+		RenderingResource& operator=(const RenderingResource&) = delete;
 		RenderingResource& operator=(RenderingResource&&) = default;
 
 	private:

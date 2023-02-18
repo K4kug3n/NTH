@@ -8,13 +8,13 @@ namespace Nth {
 	Mesh::Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices, std::vector<size_t> texturesIndex) :
 		vertices(std::move(vertices)),
 		indices(std::move(indices)),
-		texturesIndex(std::move(texturesIndex)) { }
+		textures_index(std::move(texturesIndex)) { }
 
-	void Mesh::addTextureIndex(size_t index) {
-		texturesIndex.push_back(index);
+	void Mesh::add_texture_index(size_t index) {
+		textures_index.push_back(index);
 	}
 
-	Mesh Mesh::FromOBJ(const std::string_view filename) {
+	Mesh Mesh::FromOBJ(std::string_view filename) {
 		tinyobj::attrib_t attrib;
 		std::vector<tinyobj::shape_t> shapes;
 		std::vector<tinyobj::material_t> materials;
@@ -37,7 +37,7 @@ namespace Nth {
 				};
 
 				if (index.texcoord_index >= 0) {
-					vertex.texturePos = {
+					vertex.texture_pos = {
 						attrib.texcoords[2 * index.texcoord_index + 0],
 						1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
 					};
@@ -64,25 +64,25 @@ namespace Nth {
 
 		Vertex left_top;
 		left_top.pos = { 0.f, 0.f, 0.f };
-		left_top.texturePos = { 0.f, 0.f };
+		left_top.texture_pos = { 0.f, 0.f };
 		left_top.normal = { 0.f, 0.f, 1.f };
 		mesh.vertices.push_back(std::move(left_top));
 
 		Vertex right_top;
 		right_top.pos = { 1.f, 0.f, 0.f };
-		right_top.texturePos = { 0.f, 0.f };
+		right_top.texture_pos = { 0.f, 0.f };
 		right_top.normal = { 0.f, 0.f, 1.f };
 		mesh.vertices.push_back(std::move(right_top));
 
 		Vertex left_bot;
 		left_bot.pos = { 0.f, 1.f, 0.f };
-		left_bot.texturePos = { 0.f, 0.f };
+		left_bot.texture_pos = { 0.f, 0.f };
 		left_bot.normal = { 0.f, 0.f, 1.f };
 		mesh.vertices.push_back(std::move(left_bot));
 
 		Vertex right_bot;
 		right_bot.pos = { 1.f, 1.f, 0.f };
-		right_bot.texturePos = { 0.f, 0.f };
+		right_bot.texture_pos = { 0.f, 0.f };
 		right_bot.normal = { 0.f, 0.f, 1.f };
 		mesh.vertices.push_back(std::move(right_bot));
 

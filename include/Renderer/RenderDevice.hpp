@@ -17,30 +17,30 @@ namespace Nth {
 
 	class RenderDevice {
 	public:
-		RenderDevice(RenderInstance const& instance);
+		RenderDevice(const RenderInstance& instance);
 		RenderDevice() = delete;
-		RenderDevice(RenderDevice const&) = delete;
+		RenderDevice(const RenderDevice&) = delete;
 		RenderDevice(RenderDevice&&) = delete;
 		~RenderDevice();
 
 		//TODO: Review this
-		void create(Vk::PhysicalDevice physicalDevice, VkDeviceCreateInfo const& infos, uint32_t presentQueueFamilyIndex, uint32_t graphicQueueFamilyIndex);
+		void create(Vk::PhysicalDevice physicalDevice, const VkDeviceCreateInfo& infos, uint32_t present_queue_family_index, uint32_t graphic_queue_family_index);
 
-		Vk::CommandBuffer allocateCommandBuffer() const;
+		Vk::CommandBuffer allocate_command_buffer() const;
 
-		Vk::Queue& presentQueue();
-		Vk::Queue const& presentQueue() const;
-		Vk::Queue& graphicsQueue();
-		Vk::Queue const& graphicsQueue() const;
-		Vk::Device& getHandle();
-		Vk::Device const& getHandle() const;
+		Vk::Queue& present_queue();
+		const Vk::Queue& present_queue() const;
+		Vk::Queue& graphics_queue();
+		const Vk::Queue& graphics_queue() const;
+		Vk::Device& get_handle();
+		const Vk::Device& get_handle() const;
 
-		RenderDevice& operator=(RenderDevice const&) = delete;
+		RenderDevice& operator=(const RenderDevice&) = delete;
 		RenderDevice& operator=(RenderDevice&&) = delete;
 	private:
-		RenderInstance const& m_instance;
-		Vk::Queue m_presentQueue;
-		Vk::Queue m_graphicsQueue;
+		const RenderInstance& m_instance;
+		Vk::Queue m_present_queue;
+		Vk::Queue m_graphics_queue;
 
 		Vk::CommandPool m_pool;
 

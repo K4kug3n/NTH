@@ -9,17 +9,17 @@ namespace Nth {
 	};
 
 	struct X11Handle {
-		void * dpy; // Display
+		void* dpy; // Display
 		unsigned long window; // Window
 	};
 
 	struct Win32Handle {
-		void * hinstance; // HINSTANCE
-		void * hwnd; // HWND
+		void* hinstance; // HINSTANCE
+		void* hwnd; // HWND
 	};
 
 	struct WindowHandle{
-		WindowProtocol protocol = WindowProtocol::Unknow;
+		WindowProtocol subsystem = WindowProtocol::Unknow;
 
 		union{
 			X11Handle x11;

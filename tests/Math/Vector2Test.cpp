@@ -1,6 +1,6 @@
 #include <catch2/catch_all.hpp>
 
-#include "Math/Vector2.hpp"
+#include "Maths/Vector2.hpp"
 
 using namespace Nth;
 

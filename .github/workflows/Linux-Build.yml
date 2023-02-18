@@ -21,4 +21,4 @@ jobs:
         run: xmake build --yes
 
       - name: Run tests
-        run: xmake run test
+        run: xmake run tests

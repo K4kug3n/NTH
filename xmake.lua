@@ -20,15 +20,15 @@ if is_plat("windows") then
 	add_defines("NTH_WINDOWS", "VK_USE_PLATFORM_WIN32_KHR")
 end
 
-target("basic_render")
-	add_files("exemples/basic_render/main.cpp")
+target("basic")
+	add_files("exemples/basic/main.cpp")
 
 	set_rundir("assets")
 
 	add_packages("vulkan-memory-allocator", "vulkan-headers", "libsdl", "tinyobjloader", "stb", "assimp")
 
 
-target("test")
+target("tests")
 	add_files("tests/**.cpp")
 
 	add_packages("catch2", "vulkan-memory-allocator", "vulkan-headers", "libsdl", "tinyobjloader", "stb", "assimp")

@@ -1,55 +1,38 @@
 #ifndef NTH_WINDOW_WINDOW_HPP
 #define NTH_WINDOW_WINDOW_HPP
 
-#include <Window/VideoMode.hpp>
-#include <Window/WindowEvent.hpp>
-#include <Window/EventHandler.hpp>
-#include <Window/WindowHandle.hpp>
-
-#include <Math/Vector2.hpp>
+#include <string>
 
 #include <SDL2/SDL_video.h>
-#include <SDL2/SDL_events.h>
 
-#include <string_view>
+#include <Maths/Vector2.hpp>
+#include <Utils/MovablePtr.hpp>
 
 namespace Nth {
+	struct WindowHandle;
 
-	class Window
-	{
+	class Window {
 	public:
 		Window();
-		Window(VideoMode const& mode, const std::string_view title);
+		Window(const std::string& title, unsigned x, unsigned y, unsigned w, unsigned h, uint32_t flags);
+		Window(Window&&) = default;
+		Window(const Window&) = delete;
 		~Window();
 
-		static bool initialize();
-		static void uninitialize();
-		static void setRelativeMouseMode(bool enabled);
+		WindowHandle handle();
+		bool is_open() const;
+		void poll_event();
+		const Vector2ui& size() const;
 
-		bool create(VideoMode const& mode, const std::string_view title);
-		void close();
-		void setTitle(std::string const& title);
+		Window& operator=(Window&&) = default;
+		Window& operator=(const Window&) = delete;
 
-		bool isOpen();
-
-		void processEvent() const;
-
-		Vector2ui size() const;
-		EventHandler& getEventHandler();
-		WindowHandle getHandle() const;
-
+		static void Init();
 	private:
-		static int handleInput(void* userdata, SDL_Event* event);
-
-		void handleEvent(WindowEvent const& event);
-		void destroy();
-
-		EventHandler m_eventHandler;
-		SDL_Window * m_handle;
-		bool m_closed;
+		MovablePtr<SDL_Window> m_handle;
 		Vector2ui m_size;
+		bool m_is_running;
 	};
-
 }
 
 #endif

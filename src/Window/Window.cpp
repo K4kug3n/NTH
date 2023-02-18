@@ -1,107 +1,39 @@
 #include <Window/Window.hpp>
 
+#include <Window/WindowHandle.hpp>
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
 
-#include <iostream>
-#include <algorithm>
+#include <stdexcept>
 
 namespace Nth {
 	Window::Window() :
-		m_handle{ nullptr },
-		m_closed{ false },
-		m_size{ 0, 0 }{}
+		m_handle(),
+		m_size(0, 0),
+		m_is_running(false) {}
 
-	Window::Window(VideoMode const& mode, const std::string_view title) :
-		m_closed{ false } {
-		create(mode, title);
+	Window::Window(const std::string& title, unsigned x, unsigned y, unsigned w, unsigned h, uint32_t flags) :
+		m_handle(SDL_CreateWindow(title.data(), x, y, w, h, flags)),
+		m_size(w, h),
+		m_is_running(true) {
+		if (!m_handle) {
+			throw std::runtime_error("Failed to create SDL Window" + std::string(SDL_GetError()));
+		}
 	}
 
 	Window::~Window() {
-		destroy();
-	}
-
-	bool Window::initialize() {
-		if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-			std::cerr << "Could not initialize SDL_VIDEO" << std::endl;
-			return false;
-		}
-
-		return true;
-	}
-
-	void Window::uninitialize() {
-		SDL_Quit();
-	}
-
-	void Window::setRelativeMouseMode(bool enabled) {
-		if (enabled) {
-			SDL_SetRelativeMouseMode(SDL_TRUE);
-		}
-		else {
-			SDL_SetRelativeMouseMode(SDL_FALSE);
-		}
-	}
-
-	bool Window::create(VideoMode const& mode, const std::string_view title) {
-		m_handle = SDL_CreateWindow(title.data(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, mode.width, mode.height, SDL_WINDOW_RESIZABLE);
-
-		if (!m_handle) {
-			std::cerr << "Could not create the window" << std::endl;
-			return false;
-		}
-
-		m_size.x = mode.width;
-		m_size.y = mode.height;
-
-		SDL_AddEventWatch(handleInput, this);
-
-		return true;
-	}
-
-	void Window::close(){
-		m_closed = true;
-	}
-
-	void Window::setTitle(std::string const& title) {
-		SDL_SetWindowTitle(m_handle, title.c_str());
-	}
-
-	bool Window::isOpen() {
-		if (!m_handle) {
-			return false;
-		}
-
-		if (m_closed) {
-			destroy();
-			return false;
-		}
-
-		return true;
-	}
-
-	void Window::processEvent() const {
 		if (m_handle) {
-			SDL_PumpEvents();
+			SDL_DestroyWindow(m_handle.get());
 		}
 	}
 
-	Vector2ui Window::size() const {
-		return m_size;
-	}
-
-	EventHandler& Window::getEventHandler() {
-		return m_eventHandler;
-	}
-
-	WindowHandle Window::getHandle() const {
-		if (!m_handle) {
-			throw std::runtime_error("Window not created, can't get handle");
-		}
+	WindowHandle Window::handle() {
+		assert(m_handle);
 
 		SDL_SysWMinfo info;
 		SDL_VERSION(&info.version);
-		if (!SDL_GetWindowWMInfo(m_handle, &info)) {
+		if (!SDL_GetWindowWMInfo(m_handle.get(), &info)) {
 			throw std::runtime_error("Can't retrived window infos");
 		}
 
@@ -113,7 +45,7 @@ namespace Nth {
 			handle.x11.dpy = info.info.x11.display;
 			handle.x11.window = info.info.x11.window;
 			break;
-		
+
 		#elif defined(SDL)
 		case SDL_SYSWM_COCOA: // MacOSX Not supported
 			handle.protocol = WindowProtocol::Unknow;
@@ -126,91 +58,49 @@ namespace Nth {
 
 		#elif defined(SDL_VIDEO_DRIVER_WINDOWS)
 		case SDL_SYSWM_WINDOWS:
-			handle.protocol = WindowProtocol::Windows;
+			handle.subsystem = WindowProtocol::Windows;
 			handle.windows.hinstance = info.info.win.hinstance;
 			handle.windows.hwnd = info.info.win.window;
 			break;
 
 		#endif
 		default:
-			handle.protocol = WindowProtocol::Unknow;
+			handle.subsystem = WindowProtocol::Unknow;
 			break;
 		}
 
 		return handle;
 	}
 
-	int Window::handleInput(void* userdata, SDL_Event* event) {
-		try {
-			auto window{ static_cast<Window*>(userdata) };
+	bool Window::is_open() const {
+		return m_is_running;
+	}
 
-			WindowEvent wEvent;
-			wEvent.type = WindowEventType::Max;
-			switch (event->type) {
+	void Window::poll_event() {
+		SDL_Event event;
+		while (SDL_PollEvent(&event)) {
+			switch (event.type) {
+			case SDL_QUIT:
+				m_is_running = false;
+				break;
 			case SDL_WINDOWEVENT:
-				switch (event->window.event) {
-				case SDL_WINDOWEVENT_CLOSE:
-					wEvent.type = WindowEventType::Quit;
-					break;
-				case SDL_WINDOWEVENT_RESIZED:
-					wEvent.type = WindowEventType::Resized;
-
-					window->m_size.x = static_cast<unsigned int>(std::max(0, event->window.data1));
-					window->m_size.y = static_cast<unsigned int>(std::max(0, event->window.data2));
-					break;
+				if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+					m_size = Vector2ui(event.window.data1, event.window.data2);
 				}
 				break;
-
-			case SDL_KEYDOWN:
-				wEvent.type = WindowEventType::KeyDown;
-				wEvent.key = event->key;
-				break;
-
-			case SDL_KEYUP:
-				wEvent.type = WindowEventType::KeyUp;
-				wEvent.key = event->key;
-				break;
-
-			case SDL_MOUSEBUTTONDOWN:
-				break;
-
-			case SDL_MOUSEBUTTONUP:
-				break;
-
-			case SDL_MOUSEMOTION:
-				wEvent.type = WindowEventType::MouseMove;
-
-				wEvent.x = event->motion.x;
-				wEvent.y = event->motion.y;
-				wEvent.xrel = event->motion.xrel;
-				wEvent.yrel = event->motion.yrel;
+			default:
 				break;
 			}
-
-			if (wEvent.type != WindowEventType::Max) {
-				window->handleEvent(wEvent);
-			}
-
 		}
-		catch (std::exception const& e) {
-			std::cerr << e.what() << std::endl;
-		}
-		catch (...) {
-			std::cerr << "Unknow error occured" << std::endl;
-		}
-
-		return 0;
 	}
 
-	void Window::handleEvent(WindowEvent const& event) {
-		m_eventHandler.dispatch(event);
+	const Vector2ui& Window::size() const {
+		return m_size;
 	}
 
-	void Window::destroy() {
-		if (m_handle) {
-			SDL_DestroyWindow(m_handle);
-			SDL_DelEventWatch(handleInput, this);
-			m_handle = nullptr;
+	void Window::Init() {
+		if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+			throw std::runtime_error("Failed to init SDL VIDEO : " + std::string(SDL_GetError()));
 		}
 	}
 }

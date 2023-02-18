@@ -1,9 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 
-#include <Math/Matrix4.hpp>
-#include <Math/Angle.hpp>
-#include <Math/Vector4.hpp>
+#include <Maths/Matrix4.hpp>
+#include <Maths/Angle.hpp>
+#include <Maths/Vector4.hpp>
 
 using namespace Nth;
 
@@ -29,10 +29,10 @@ TEST_CASE("Matrix4", "[Mat4]") {
 		Matrix4f translate = Matrix4f::Translation({2.f, 3.f, 4.f });
 		REQUIRE(translate == Matrix4f{ 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 2.f, 3.f, 4.f, 1.f });
 
-		Matrix4f rotate = Matrix4f::Rotation(toRadians(90.f), { 0.f, 1.f, 0.f });
+		Matrix4f rotate = Matrix4f::Rotation(to_radians(90.f), { 0.f, 1.f, 0.f });
 		REQUIRE(rotate == Matrix4f{ -4.37113883e-08f, 0.f, -1.f, 0.f, 0.f, 0.999999940f, 0.f, 0.f, 1.f, 0.f, -4.37113883e-08f, 0.f, 0.f, 0.f, 0.f, 1.f });
 
-		Matrix4f perspective = Matrix4f::Perspective(toRadians(45.f), static_cast<float>(1920) / static_cast<float>(1080), 0.1f, 10.f);
+		Matrix4f perspective = Matrix4f::Perspective(to_radians(45.f), static_cast<float>(1920) / static_cast<float>(1080), 0.1f, 10.f);
 		REQUIRE(perspective == Matrix4f{ 1.35799515f, 0.f, 0.f, 0.f, 0.f, 2.41421342f, 0.f, 0.f, 0.f, 0.f, -1.01010108f, -1.f, 0.f, 0.f, -0.101010107f, 0.f });
 
 		Matrix4f scale = Matrix4f::Scale({ 2.f, 3.f, 4.f });

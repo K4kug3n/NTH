@@ -39,10 +39,10 @@ namespace Nth {
 
 		std::vector<const char*> enabled_extensions;
 		#ifdef VK_USE_PLATFORM_XCB_KHR
-		enabledExtensions.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
+		enabled_extensions.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
 		#endif
 		#ifdef VK_USE_PLATFORM_XLIB_KHR
-		enabledExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+		enabled_extensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
 		#endif
 		#ifdef VK_USE_PLATFORM_WIN32_KHR
 		enabled_extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);

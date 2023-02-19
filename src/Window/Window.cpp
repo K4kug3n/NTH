@@ -41,19 +41,19 @@ namespace Nth {
 		switch (info.subsystem) {
 		#if defined(SDL_VIDEO_DRIVER_X11)
 		case SDL_SYSWM_X11:
-			handle.protocol = WindowProtocol::X11;
+			handle.subsystem = WindowProtocol::X11;
 			handle.x11.dpy = info.info.x11.display;
 			handle.x11.window = info.info.x11.window;
 			break;
 
 		#elif defined(SDL)
 		case SDL_SYSWM_COCOA: // MacOSX Not supported
-			handle.protocol = WindowProtocol::Unknow;
+			handle.subsystem = WindowProtocol::Unknow;
 			break;
 
 		#elif defined(SDL_VIDEO_DRIVER_WAYLAND)
 		case SDL_SYSWM_WAYLAND: // Wayland not supported yet
-			handle.protocol = WindowProtocol::Unknow;
+			handle.subsystem = WindowProtocol::Unknow;
 			break;
 
 		#elif defined(SDL_VIDEO_DRIVER_WINDOWS)

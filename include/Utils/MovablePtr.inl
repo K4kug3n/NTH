@@ -15,7 +15,7 @@ namespace Nth {
 	template<typename T>
 	inline MovablePtr<T>::MovablePtr(MovablePtr<T>&& other) :
 		m_handle(nullptr) {
-		std::swap(m_handle, other.m_handle)
+		std::swap(m_handle, other.m_handle);
 	}
 
 	template<typename T>
@@ -30,13 +30,13 @@ namespace Nth {
 
 	template<typename T>
 	inline T& MovablePtr<T>::operator*() {
-		assert(m_handle != nullptr)
+		assert(m_handle != nullptr);
 		return *m_handle;
 	}
 
 	template<typename T>
 	inline const T& MovablePtr<T>::operator*() const {
-		assert(m_handle != nullptr)
+		assert(m_handle != nullptr);
 		return *m_handle;
 	}
 
@@ -47,7 +47,7 @@ namespace Nth {
 
 	template<typename T>
 	inline MovablePtr<T>& MovablePtr<T>::operator=(MovablePtr&& other) {
-		std::swap(m_handle, other.m_handle)
+		std::swap(m_handle, other.m_handle);
 
 		return *this;
 	}

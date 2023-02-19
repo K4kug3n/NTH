@@ -7,7 +7,7 @@ add_includedirs("include")
 add_headerfiles("include/**.hpp", "include/**.inl")
 add_files("src/**.cpp")
 
-set_languages("cxx17")
+set_languages("c++17")
 set_warnings("allextra")
 
 add_defines("VK_NO_PROTOTYPES")

@@ -1,9 +1,10 @@
 #include <Renderer/Renderer.hpp>
-#include <Renderer/RenderWindow.hpp>
 #include <Renderer/RenderObject.hpp>
 #include <Renderer/Mesh.hpp>
 #include <Renderer/Model.hpp>
 #include <Renderer/Texture.hpp>
+
+#include <Window/Window.hpp>
 
 #include <Maths/Angle.hpp>
 
@@ -14,10 +15,10 @@
 
 int main() {
 	Nth::Window::Init();
+	Nth::Window window{ "Hello World", 100, 100, 640, 480, 0 };
 
 	Nth::Renderer renderer;
-
-	Nth::RenderWindow& window{ renderer.get_window() };
+	renderer.set_render_on(window);
 
 	Nth::MaterialInfos basic_material_infos = {
 		"vert.spv",

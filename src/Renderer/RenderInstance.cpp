@@ -60,7 +60,7 @@ namespace Nth {
 	RenderInstance::~RenderInstance() {
 	}
 
-	void RenderInstance::create_device(Vk::Surface& surface) {
+	void RenderInstance::create_device(const Vk::Surface& surface) {
 		uint32_t present_queue_family_index = UINT32_MAX;
 		uint32_t graphics_queue_family_index = UINT32_MAX;
 
@@ -142,7 +142,7 @@ namespace Nth {
 		return m_device;
 	}
 
-	bool RenderInstance::check_physical_device_properties(Vk::PhysicalDevice& physical_device, Vk::Surface& surface, uint32_t& graphics_queue_family_index, uint32_t& present_queue_family_index) {
+	bool RenderInstance::check_physical_device_properties(Vk::PhysicalDevice& physical_device, const Vk::Surface& surface, uint32_t& graphics_queue_family_index, uint32_t& present_queue_family_index) {
 		std::vector<char const*> devices_extensions_names = {
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME
 		};

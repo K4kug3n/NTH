@@ -3,7 +3,7 @@
 
 #include <Renderer/RenderInstance.hpp>
 #include <Renderer/Vulkan/DescriptorSetLayout.hpp>
-#include <Renderer/RenderWindow.hpp>
+#include <Renderer/RenderSurface.hpp>
 #include <Renderer/Material.hpp>
 #include <Renderer/DescriptorAllocator.hpp>
 #include <Renderer/Mesh.hpp>
@@ -23,6 +23,7 @@ namespace Nth {
 	class Model;
 	struct Texture;
 	struct BindingInfo;
+	class Window;
 
 	class Renderer {
 	public:
@@ -31,7 +32,7 @@ namespace Nth {
 		Renderer(Renderer&&) = default;
 		~Renderer() = default;
 
-		RenderWindow& get_window();
+		void set_render_on(Window& window);
 
 		// TODO: Review this API
 		Material create_material(const MaterialInfos& infos);
@@ -57,7 +58,7 @@ namespace Nth {
 		void update_descriptor_set();
 
 		RenderInstance m_vulkan;
-		RenderWindow m_render_window;
+		RenderSurface m_render_surface;
 
 		DescriptorAllocator m_descriptor_allocator;
 
@@ -80,6 +81,7 @@ namespace Nth {
 		// TODO: Review this
 		RenderMesh register_mesh(const Mesh& mesh) const;
 		RenderTexture register_texture(const Texture& texture);
+		Window* m_window;
 
 		std::vector<RenderModel> m_renders;
 	};

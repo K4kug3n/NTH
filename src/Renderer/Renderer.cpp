@@ -4,6 +4,9 @@
 #include <Renderer/Model.hpp>
 #include <Renderer/Texture.hpp>
 
+#include <Window/Window.hpp>
+#include <Window/WindowHandle.hpp>
+
 #include <Maths/Angle.hpp>
 
 #include <Utils/Image.hpp>
@@ -14,10 +17,22 @@
 namespace Nth {
 	Renderer::Renderer() :
 		m_vulkan(),
-		m_render_window(m_vulkan, ""),
-		m_resourceIndex(0) { }
+		m_render_surface(m_vulkan),
+		m_resourceIndex(0),
+		m_renders(),
+		m_descriptor_allocator(),
+		m_light_bindings(), 
+		m_light_buffers(),
+		light(),
+		camera(),
+		m_window(nullptr) { }
 
-	RenderWindow& Renderer::get_window() {
+	void Renderer::set_render_on(Window& window) {
+		m_window = &window;
+		m_render_surface.create(window.handle());
+		m_vulkan.create_device(m_render_surface.get_handle());
+		m_render_surface.init_render_pipeline(window.size());
+
 		size_t viewLayoutIndex = add_descriptor_set_layout({ BindingInfo{ ShaderType::Vertex, BindingType::Uniform, 0, 0 } });
 		size_t modelLayoutIndex = add_descriptor_set_layout({ BindingInfo{ ShaderType::Vertex, BindingType::Storage, 1, 0 } });
 		size_t lightLayoutIndex = add_descriptor_set_layout({ BindingInfo{ ShaderType::Fragment, BindingType::Uniform, 2, 0 } });
@@ -53,8 +68,6 @@ namespace Nth {
 		}
 
 		update_descriptor_set();
-
-		return m_render_window;
 	}
 
 	Material Renderer::create_material(const MaterialInfos& infos) {
@@ -64,7 +77,7 @@ namespace Nth {
 		}
 
 		Material material;
-		material.create_pipeline(m_vulkan.get_device().get_handle(), m_render_window.get_render_pass(), infos.vertexShaderName, infos.fragmentShaderName, vk_descritptor_layouts);
+		material.create_pipeline(m_vulkan.get_device().get_handle(), m_render_surface.get_render_pass(), infos.vertexShaderName, infos.fragmentShaderName, vk_descritptor_layouts);
 
 		return material;
 	}
@@ -97,7 +110,8 @@ namespace Nth {
 	}
 
 	void Renderer::draw(const std::vector<RenderObject>& objects) {
-		RenderingResource& image = m_render_window.aquireNextImage();
+		assert(m_window != nullptr);
+		RenderingResource& image = m_render_surface.aquire_next_image(m_window->size());
 
 		ViewerGpuObject viewer = get_viewer_data();
 
@@ -152,7 +166,7 @@ namespace Nth {
 			}
 		});
 
-		image.present();
+		image.present(m_window->size());
 		
 		m_resourceIndex = (m_resourceIndex + 1) % Renderer::resource_count;
 	}
@@ -164,7 +178,7 @@ namespace Nth {
 	ViewerGpuObject Renderer::get_viewer_data() const {
 		ViewerGpuObject ubo{};
 
-		Vector2ui size = m_render_window.size();
+		Vector2ui size = m_render_surface.size();
 
 		ubo.view = camera.get_view_matrix();
 		ubo.proj = Matrix4f::Perspective(to_radians(45.0f), static_cast<float>(size.x) / static_cast<float>(size.y), 0.1f, 10.0f);

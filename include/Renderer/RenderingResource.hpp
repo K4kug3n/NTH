@@ -11,12 +11,14 @@
 
 namespace Nth {
 	class Vk::Device;
-	class RenderWindow;
-	class RenderDevice;
+	class RenderSurface;
+	class RenderInstance;
+	template<typename T> class Vector2;
+	using Vector2ui = Vector2<unsigned int>;
 
 	class RenderingResource {
 	public:
-		RenderingResource(RenderWindow& owner);
+		RenderingResource(RenderInstance& instance, RenderSurface& surface);
 		RenderingResource(const RenderingResource&) = delete;
 		RenderingResource(RenderingResource&&) = default;
 		~RenderingResource() = default;
@@ -24,7 +26,7 @@ namespace Nth {
 		void create(uint32_t family_index);
 
 		void prepare(std::function<void(Vk::CommandBuffer&)> action);
-		void present();
+		void present(const Vector2ui& size);
 
 		Vk::Framebuffer framebuffer;
 		Vk::CommandPool command_pool;
@@ -40,7 +42,8 @@ namespace Nth {
 		RenderingResource& operator=(RenderingResource&&) = default;
 
 	private:
-		RenderWindow& m_owner;
+		RenderInstance& m_instance;
+		RenderSurface& m_surface;
 	};
 }
 

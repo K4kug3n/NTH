@@ -2,16 +2,17 @@
 
 #include <Renderer/Vulkan/CommandPool.hpp>
 #include <Renderer/Vulkan/Device.hpp>
-#include <Renderer/RenderWindow.hpp>
+#include <Renderer/RenderSurface.hpp>
 
-#include <iostream>
+#include <Maths/Vector2.hpp>
 
 namespace Nth {
-	RenderingResource::RenderingResource(RenderWindow& owner):
-		m_owner(owner){ }
+	RenderingResource::RenderingResource(RenderInstance& instance, RenderSurface& surface):
+		m_instance(instance),
+		m_surface(surface) { }
 
 	void RenderingResource::create(uint32_t familyIndex) {
-		const Vk::Device& device{ m_owner.get_device().get_handle() };
+		const Vk::Device& device{ m_instance.get_device().get_handle() };
 
 		command_pool.create(device, familyIndex, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
 
@@ -42,7 +43,7 @@ namespace Nth {
 			1                                                   // uint32_t                               layerCount
 		};
 
-		const RenderDevice& device{ m_owner.get_device() };
+		const RenderDevice& device{ m_instance.get_device() };
 
 		if (device.present_queue()!= device.graphics_queue()) {
 			VkImageMemoryBarrier barrier_from_present_to_draw = {
@@ -65,12 +66,12 @@ namespace Nth {
 		clearValues[0].color = { 1.0f, 0.8f, 0.4f, 0.0f };
 		clearValues[1].depthStencil = { 1.0f, 0 };
 
-		Vector2ui size = m_owner.size();
+		Vector2ui size = m_surface.size();
 
 		VkRenderPassBeginInfo render_pass_begin_info = {
 			VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,           // VkStructureType                        sType
 			nullptr,                                            // const void                            *pNext
-			m_owner.get_render_pass()(),                          // VkRenderPass                           renderPass
+			m_surface.get_render_pass()(),                      // VkRenderPass                           renderPass
 			framebuffer(),                                      // VkFramebuffer                          framebuffer
 			{                                                   // VkRect2D                               renderArea
 				{                                                 // VkOffset2D                             offset
@@ -134,7 +135,7 @@ namespace Nth {
 		command_buffer.end();
 	}
 
-	void RenderingResource::present() {
+	void RenderingResource::present(const Vector2ui& size) {
 		VkPipelineStageFlags wait_dst_stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
 		VkSemaphore vk_image_available_semaphore = image_available_semaphore();
@@ -152,8 +153,8 @@ namespace Nth {
 			&vk_finished_rendering_semaphore             // const VkSemaphore           *pSignalSemaphores
 		};
 
-		m_owner.get_device().graphics_queue().submit(submit_info, fence());
+		m_instance.get_device().graphics_queue().submit(submit_info, fence());
 
-		m_owner.present(image_index, finished_rendering_semaphore);
+		m_surface.present(image_index, finished_rendering_semaphore, size);
 	}
 }

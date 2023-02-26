@@ -16,7 +16,7 @@ namespace Nth {
 		~RenderTexture() = default;
 
 		void create(const RenderDevice& device, uint32_t width, uint32_t height, size_t size, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties);
-		void createView(VkFormat format, VkImageAspectFlags aspect_flags);
+		void create_view(VkFormat format, VkImageAspectFlags aspect_flags);
 
 		RenderImage image;
 		Vk::Sampler sampler;
@@ -26,7 +26,7 @@ namespace Nth {
 		RenderTexture& operator=(const RenderTexture&) = delete;
 		RenderTexture& operator=(RenderTexture&&) = default;
 	private:
-		void createSampler(const Vk::Device& device);
+		void create_sampler(const Vk::Device& device);
 	};
 }
 

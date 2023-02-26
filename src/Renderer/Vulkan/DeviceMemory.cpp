@@ -3,6 +3,7 @@
 #include <Renderer/Vulkan/Device.hpp>
 #include <Renderer/Vulkan/VkUtils.hpp>
 
+#include <cassert>
 #include <iostream>
 
 namespace Nth {

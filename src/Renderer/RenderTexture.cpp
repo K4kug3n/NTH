@@ -9,14 +9,14 @@ namespace Nth {
 	void RenderTexture::create(const RenderDevice& device, uint32_t width, uint32_t height, size_t size, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties) {
 		image.create(device, width, height, size, format, tiling, usage, properties);
 
-		createSampler(device.get_handle());
+		create_sampler(device.get_handle());
 	}
 
-	void RenderTexture::createView(VkFormat format, VkImageAspectFlags aspectFlags) {
+	void RenderTexture::create_view(VkFormat format, VkImageAspectFlags aspectFlags) {
 		image.create_view(format, aspectFlags);
 	}
 
-	void RenderTexture::createSampler(const Vk::Device& device) {
+	void RenderTexture::create_sampler(const Vk::Device& device) {
 		VkSamplerCreateInfo sampler_create_info = {
 			VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,         // VkStructureType        sType
 			nullptr,                                       // const void*            pNext

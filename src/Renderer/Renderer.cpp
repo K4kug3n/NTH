@@ -202,49 +202,49 @@ namespace Nth {
 
 	size_t Renderer::add_descriptor_set_layout(const std::vector<BindingInfo>& bindings) {
 		// Use "set" information
-		std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
+		std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
 		for (const auto& binding : bindings) {
-			VkDescriptorSetLayoutBinding layoutBinding;
-			layoutBinding.binding = binding.binding_index;
+			VkDescriptorSetLayoutBinding layout_binding;
+			layout_binding.binding = binding.binding_index;
 
 			switch (binding.binding_type) {
 			case BindingType::Uniform:
-				layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 				break;
 			case BindingType::Texture:
-				layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 				break;
 			case BindingType::Storage:
-				layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+				layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 				break;
 			}
 
-			layoutBinding.descriptorCount = 1;
+			layout_binding.descriptorCount = 1;
 
 			switch (binding.shader_type) {
 			case ShaderType::Vertex:
-				layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+				layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 				break;
 			case ShaderType::Fragment:
-				layoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+				layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 				break;
 			}
 
-			layoutBinding.pImmutableSamplers = nullptr;
+			layout_binding.pImmutableSamplers = nullptr;
 
-			layoutBindings.push_back(std::move(layoutBinding));
+			layout_bindings.push_back(std::move(layout_binding));
 		}
 
-		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
-			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,  // VkStructureType                      sType
-			nullptr,                                              // const void                          *pNext
-			0,                                                    // VkDescriptorSetLayoutCreateFlags     flags
-			static_cast<uint32_t>(layoutBindings.size()),         // uint32_t                             bindingCount
-			layoutBindings.data()                                 // const VkDescriptorSetLayoutBinding  *pBindings
+		VkDescriptorSetLayoutCreateInfo descriptor_set_layout_create_info = {
+			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,   // VkStructureType                      sType
+			nullptr,                                               // const void                          *pNext
+			0,                                                     // VkDescriptorSetLayoutCreateFlags     flags
+			static_cast<uint32_t>(layout_bindings.size()),         // uint32_t                             bindingCount
+			layout_bindings.data()                                 // const VkDescriptorSetLayoutBinding  *pBindings
 		};
 
 		Vk::DescriptorSetLayout layout;
-		layout.create(m_vulkan.get_device().get_handle(), descriptorSetLayoutCreateInfo);
+		layout.create(m_vulkan.get_device().get_handle(), descriptor_set_layout_create_info);
 
 		m_descriptor_set_layouts.push_back(std::move(layout));
 
@@ -297,7 +297,7 @@ namespace Nth {
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 		);
 
-		registered_texture.createView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+		registered_texture.create_view(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
 
 		registered_texture.image.copy(texture.data.data(), static_cast<uint32_t>(texture.data.size()), texture.width, texture.height);
 

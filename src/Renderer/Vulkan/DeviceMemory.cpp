@@ -25,6 +25,7 @@ namespace Nth {
 		}
 
 		void DeviceMemory::create(const Device& device, const VkMemoryAllocateInfo& infos) {
+			assert(m_device == nullptr);
 			VkResult result{ device.vkAllocateMemory(device(), &infos, nullptr, &m_device_memory) };
 			if (result != VK_SUCCESS) {
 				throw std::runtime_error("Can't create DeviceMemory, " + to_string(result));
@@ -34,17 +35,17 @@ namespace Nth {
 		}
 
 		void DeviceMemory::map(VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags) {
-			void* memoryPointer;
-			VkResult result{ m_device->vkMapMemory((*m_device)(), m_device_memory, offset, size, flags, &memoryPointer) };
+			void* memory_pointer;
+			VkResult result{ m_device->vkMapMemory((*m_device)(), m_device_memory, offset, size, flags, &memory_pointer) };
 			if (result != VK_SUCCESS) {
 				throw std::runtime_error("Can't map memory," + to_string(result));
 			}
 
-			m_memory_pointer = memoryPointer;
+			m_memory_pointer = memory_pointer;
 		}
 
 		void DeviceMemory::flush_mapped_memory(VkDeviceSize offset, VkDeviceSize size) const {
-			VkMappedMemoryRange flushRange = {
+			VkMappedMemoryRange flush_range = {
 				VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,  // VkStructureType        sType
 				nullptr,                                // const void            *pNext
 				m_device_memory,                        // VkDeviceMemory         memory
@@ -52,7 +53,7 @@ namespace Nth {
 				size                                    // VkDeviceSize           size
 			};
 
-			VkResult result{ m_device->vkFlushMappedMemoryRanges((*m_device)(), 1, &flushRange) };
+			VkResult result{ m_device->vkFlushMappedMemoryRanges((*m_device)(), 1, &flush_range) };
 			if (result != VK_SUCCESS) {
 				throw std::runtime_error("Can't flush mapped memory, " + to_string(result));
 			}

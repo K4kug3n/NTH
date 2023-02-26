@@ -14,10 +14,10 @@ namespace Nth {
 		m_device(nullptr),
 		m_memory_property(VK_MEMORY_PROPERTY_FLAG_BITS_MAX_ENUM) { }
 
-	RenderBuffer::RenderBuffer(const RenderDevice& device, VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memoryProperty, VkDeviceSize size) :
+	RenderBuffer::RenderBuffer(const RenderDevice& device, VkBufferUsageFlags usage, VkMemoryPropertyFlagBits memory_property, VkDeviceSize size) :
 		m_device(&device),
-		m_memory_property(memoryProperty) {
-		VkBufferCreateInfo bufferCreateInfo = {
+		m_memory_property(memory_property) {
+		VkBufferCreateInfo buffer_create_info = {
 			VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,             // VkStructureType                sType
 			nullptr,                                          // const void                    *pNext
 			0,                                                // VkBufferCreateFlags            flags
@@ -28,13 +28,13 @@ namespace Nth {
 			nullptr                                           // const uint32_t                *pQueueFamilyIndices
 		};
 
-		handle.create(device.get_handle(), bufferCreateInfo);
+		handle.create(device.get_handle(), buffer_create_info);
 
-		allocate_buffer_memory(device.get_handle(), memoryProperty, handle, m_memory);
+		allocate_buffer_memory(device.get_handle(), memory_property, handle, m_memory);
 
 		handle.bind_buffer_memory(m_memory);
 
-		if (memoryProperty & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+		if (memory_property & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
 			create_staging(device.get_handle(), size);
 		}
 	}
@@ -56,27 +56,28 @@ namespace Nth {
 	}
 
 	void RenderBuffer::allocate_buffer_memory(const Vk::Device& device, VkMemoryPropertyFlagBits memory_property, Vk::Buffer& buffer, Vk::DeviceMemory& memory) {
-		VkMemoryRequirements bufferMemoryRequirements = buffer.get_memory_requirements();;
-		VkPhysicalDeviceMemoryProperties memoryProperties = device.get_physical_device().get_memory_properties();
+		VkMemoryRequirements buffer_memory_requirements = buffer.get_memory_requirements();;
+		VkPhysicalDeviceMemoryProperties memory_properties = device.get_physical_device().get_memory_properties();
 
-		for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i) {
-			if ((bufferMemoryRequirements.memoryTypeBits & (1 << i)) &&
-				(memoryProperties.memoryTypes[i].propertyFlags & memory_property) == memory_property) {
+		for (uint32_t i = 0; i < memory_properties.memoryTypeCount; ++i) {
+			if ((buffer_memory_requirements.memoryTypeBits & (1 << i)) &&
+				(memory_properties.memoryTypes[i].propertyFlags & memory_property) == memory_property) {
 
-				VkMemoryAllocateInfo memoryAllocateInfo = {
+				VkMemoryAllocateInfo memory_allocate_info = {
 					VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,     // VkStructureType                        sType
 					nullptr,                                    // const void                            *pNext
-					bufferMemoryRequirements.size,              // VkDeviceSize                           allocationSize
+					buffer_memory_requirements.size,            // VkDeviceSize                           allocationSize
 					i                                           // uint32_t                               memoryTypeIndex
 				};
 
-				memory.create(device, memoryAllocateInfo);
+				memory.create(device, memory_allocate_info);
+				break;
 			}
 		}
 	}
 
 	void RenderBuffer::create_staging(const Vk::Device& device, VkDeviceSize size) {
-		VkBufferCreateInfo stagingCreateInfo = {
+		VkBufferCreateInfo staging_create_info = {
 			VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,             // VkStructureType                sType
 			nullptr,                                          // const void                    *pNext
 			0,                                                // VkBufferCreateFlags            flags
@@ -87,7 +88,7 @@ namespace Nth {
 			nullptr                                           // const uint32_t                *pQueueFamilyIndices
 		};
 
-		m_staging.create(device, stagingCreateInfo);
+		m_staging.create(device, staging_create_info);
 
 		allocate_buffer_memory(device, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, m_staging, m_staging_memory);
 
@@ -117,12 +118,12 @@ namespace Nth {
 		Vk::CommandBuffer command_buffer{ m_device->allocate_command_buffer() };
 		command_buffer.begin(command_buffer_begin_info);
 
-		VkBufferCopy bufferCopyInfo = {
+		VkBufferCopy buffer_copy_info = {
 			0,                                // VkDeviceSize       srcOffset
 			0,                                // VkDeviceSize       dstOffset
 			handle.get_size()                  // VkDeviceSize       size
 		};
-		command_buffer.copy_buffer(m_staging(), handle(), bufferCopyInfo);
+		command_buffer.copy_buffer(m_staging(), handle(), buffer_copy_info);
 
 		VkBufferMemoryBarrier buffer_memory_barrier = {
 			VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, // VkStructureType    sType;

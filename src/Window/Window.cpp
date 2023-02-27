@@ -94,6 +94,10 @@ namespace Nth {
 		}
 	}
 
+	void Window::set_resizable() {
+		SDL_SetWindowResizable(m_handle.get(), SDL_TRUE);
+	}
+
 	const Vector2ui& Window::size() const {
 		return m_size;
 	}

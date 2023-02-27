@@ -22,6 +22,7 @@ namespace Nth {
 		WindowHandle handle();
 		bool is_open() const;
 		void poll_event();
+		void set_resizable();
 		const Vector2ui& size() const;
 
 		Window& operator=(Window&&) = default;

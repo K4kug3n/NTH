@@ -16,6 +16,7 @@
 int main() {
 	Nth::Window::Init();
 	Nth::Window window{ "Hello World", 100, 100, 640, 480, 0 };
+	window.set_resizable();
 
 	Nth::Renderer renderer;
 	renderer.set_render_on(window);

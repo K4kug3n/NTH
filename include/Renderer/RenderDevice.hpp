@@ -8,7 +8,6 @@
 
 namespace Nth {
 	namespace Vk {
-		class Surface;
 		class PhysicalDevice;
 		class CommandBuffer;
 	}

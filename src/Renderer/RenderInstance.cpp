@@ -69,18 +69,18 @@ namespace Nth {
 			throw std::runtime_error("No physical device detected");
 		}
 
-		size_t selectedIndex{ physical_devices.size() };
+		size_t selected_index{ physical_devices.size() };
 		for (size_t i{ 0 }; i < physical_devices.size(); ++i) {
 			if (check_physical_device_properties(physical_devices[i], surface, present_queue_family_index, graphics_queue_family_index)) {
-				selectedIndex = i;
+				selected_index = i;
 			};
 		}
 
-		if (selectedIndex == physical_devices.size()) {
+		if (selected_index == physical_devices.size()) {
 			throw std::runtime_error("Can't find physical with needed properties");
 		}
 
-		Vk::PhysicalDevice& physical_device{ physical_devices[selectedIndex] };
+		Vk::PhysicalDevice& physical_device{ physical_devices[selected_index] };
 
 		std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
 		std::vector<float> queue_priorities = { 1.0f };
@@ -110,7 +110,7 @@ namespace Nth {
 			VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME
 		};
 
-		VkDeviceCreateInfo deviceCreateInfo = {
+		VkDeviceCreateInfo device_create_info = {
 			VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,             // VkStructureType                    sType
 			nullptr,                                          // const void                        *pNext
 			0,                                                // VkDeviceCreateFlags                flags
@@ -123,7 +123,7 @@ namespace Nth {
 			nullptr                                           // const VkPhysicalDeviceFeatures    *pEnabledFeatures
 		};
 
-		m_device.create(std::move(physical_device), deviceCreateInfo, present_queue_family_index, graphics_queue_family_index);
+		m_device.create(std::move(physical_device), device_create_info, present_queue_family_index, graphics_queue_family_index);
 	}
 
 	Vk::Instance& RenderInstance::get_handle() {

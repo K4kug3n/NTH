@@ -1,10 +1,10 @@
 #version 450
 
-layout(set = 2, binding = 0) uniform LightGpuObject {
+layout(set = 2, binding = 0) uniform Light {
 	vec3 viewPos;
 
-	vec4 lightColor;
-	vec3 lightPos;
+	vec4 color;
+	vec3 position;
 	float ambientStrength;
 	float specularStrength;
 } light;
@@ -19,17 +19,17 @@ layout(location = 0) out vec4 o_Color;
 
 void main() {
 	vec3 norm = normalize(v_Normal);
-	vec3 lightDir = normalize(light.lightPos - v_FragPos);
+	vec3 lightDir = normalize(light.position - v_FragPos);
 
 	vec3 viewDir = normalize(light.viewPos - v_FragPos);
 	vec3 reflectDir = reflect(-lightDir, norm);  
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-	vec4 specular = light.specularStrength * spec * light.lightColor;  
+	vec4 specular = light.specularStrength * spec * light.color;  
 
 	float diff = max(dot(norm, lightDir), 0.0);
-	vec4 diffuse = diff * light.lightColor;
+	vec4 diffuse = diff * light.color;
 
-	vec4 ambient = light.ambientStrength * light.lightColor;
+	vec4 ambient = light.ambientStrength * light.color;
 
 	o_Color = (ambient + diffuse + specular) * texture( u_Texture, v_Texcoord );
 }

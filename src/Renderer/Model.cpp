@@ -43,7 +43,7 @@ namespace Nth {
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
 			throw std::runtime_error("ASSIMP::" + std::string{ import.GetErrorString() });
 		}
-		m_directory = "guitare";
+		m_directory = path.parent_path();
 
 		process_node(scene->mRootNode, scene, aiMatrix4x4{});
 	}

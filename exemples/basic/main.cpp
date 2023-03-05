@@ -28,7 +28,7 @@ int main() {
 
 	Nth::Material basic_material = renderer.create_material(basic_material_infos);
 
-	//Nth::Model model{ "./guitare/scene.gltf" };
+	//Nth::Model model{ "./boxs/scene.gltf" };
 
 	Nth::Texture uniform_texture{ Nth::uniform_texture(Nth::Color{ 255, 0, 0 }) };
 	

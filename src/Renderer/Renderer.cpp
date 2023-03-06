@@ -18,7 +18,7 @@ namespace Nth {
 	Renderer::Renderer() :
 		m_vulkan(),
 		m_render_surface(m_vulkan),
-		m_resourceIndex(0),
+		m_resource_index(0),
 		m_renders(),
 		m_descriptor_allocator(),
 		m_light_bindings(), 
@@ -116,59 +116,59 @@ namespace Nth {
 		ViewerGpuObject viewer = get_viewer_data();
 
 		// TODO: Move this logic
-		image.prepare([this, &objects, &viewer](Vk::CommandBuffer& commandBuffer) {
-			std::vector<ModelGpuObject> storageObjects(objects.size());
-			for (size_t i = 0; i < storageObjects.size(); ++i) {
-				storageObjects[i].model = objects[i].transform_matrix;
+		image.prepare([this, &objects, &viewer](Vk::CommandBuffer& command_buffer) {
+			std::vector<ModelGpuObject> storage_objects(objects.size());
+			for (size_t i = 0; i < storage_objects.size(); ++i) {
+				storage_objects[i].model = objects[i].transform_matrix;
 			}
 
-			m_model_buffers[m_resourceIndex].copy(storageObjects.data(), storageObjects.size() * sizeof(ModelGpuObject));
+			m_model_buffers[m_resource_index].copy(storage_objects.data(), storage_objects.size() * sizeof(ModelGpuObject));
 
-			m_light_buffers[m_resourceIndex].copy(&light, sizeof(LightGpuObject));
+			m_light_buffers[m_resource_index].copy(&light, sizeof(LightGpuObject));
 
-			m_viewer_buffers[m_resourceIndex].copy(&viewer, sizeof(ViewerGpuObject));
+			m_viewer_buffers[m_resource_index].copy(&viewer, sizeof(ViewerGpuObject));
 
-			Material* lastMaterial = nullptr;
+			Material* last_material = nullptr;
 			for (size_t i = 0; i < objects.size(); ++i) {
-				if (objects[i].material != lastMaterial) {
-					commandBuffer.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, objects[i].material->pipeline());
+				if (objects[i].material != last_material) {
+					command_buffer.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, objects[i].material->pipeline());
 
-					VkDescriptorSet vkDescriptorSet = m_viewer_bindings[m_resourceIndex].descriptor_set()();
-					commandBuffer.bind_descriptor_sets(objects[i].material->pipeline_layout(), 0, 1, &vkDescriptorSet, 0, nullptr);
+					VkDescriptorSet vk_descriptor_set = m_viewer_bindings[m_resource_index].descriptor_set()();
+					command_buffer.bind_descriptor_sets(objects[i].material->pipeline_layout(), 0, 1, &vk_descriptor_set, 0, nullptr);
 
-					VkDescriptorSet vkSsboDescriptorSet = m_model_bindings[m_resourceIndex].descriptor_set()();
-					commandBuffer.bind_descriptor_sets(objects[i].material->pipeline_layout(), 1, 1, &vkSsboDescriptorSet, 0, nullptr);
+					VkDescriptorSet vk_ssbo_descriptor_set = m_model_bindings[m_resource_index].descriptor_set()();
+					command_buffer.bind_descriptor_sets(objects[i].material->pipeline_layout(), 1, 1, &vk_ssbo_descriptor_set, 0, nullptr);
 
-					VkDescriptorSet vkLightDescriptorSet = m_light_bindings[m_resourceIndex].descriptor_set()();
-					commandBuffer.bind_descriptor_sets(objects[i].material->pipeline_layout(), 2, 1, &vkLightDescriptorSet, 0, nullptr);
+					VkDescriptorSet vk_light_descriptor_set = m_light_bindings[m_resource_index].descriptor_set()();
+					command_buffer.bind_descriptor_sets(objects[i].material->pipeline_layout(), 2, 1, &vk_light_descriptor_set, 0, nullptr);
 
-					lastMaterial = objects[i].material;
+					last_material = objects[i].material;
 				}
 
 				RenderTexture const* last_texture = nullptr;
 				const RenderModel& model = m_renders[objects[i].model_index];
 				for (const RenderMesh& mesh : model.meshes) {
 					VkDeviceSize offset = 0;
-					commandBuffer.bind_vertex_buffer(mesh.vertex_buffer.handle(), offset);
+					command_buffer.bind_vertex_buffer(mesh.vertex_buffer.handle(), offset);
 
-					commandBuffer.bind_index_buffer(mesh.index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+					command_buffer.bind_index_buffer(mesh.index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
 
 					const RenderTexture& texture{ model.textures[mesh.texture_index] };
 					if (&texture != last_texture) {
-						VkDescriptorSet vkTextureDescriptorSet = texture.binding.descriptor_set()();
-						commandBuffer.bind_descriptor_sets(objects[i].material->pipeline_layout(), 3, 1, &vkTextureDescriptorSet, 0, nullptr);
+						VkDescriptorSet vk_texture_descriptor_set = texture.binding.descriptor_set()();
+						command_buffer.bind_descriptor_sets(objects[i].material->pipeline_layout(), 3, 1, &vk_texture_descriptor_set, 0, nullptr);
 
 						last_texture = &texture;
 					}
 
-					commandBuffer.draw_indexed(static_cast<uint32_t>(mesh.indices.size()), 1, 0, 0, static_cast<uint32_t>(i));
+					command_buffer.draw_indexed(static_cast<uint32_t>(mesh.indices.size()), 1, 0, 0, static_cast<uint32_t>(i));
 				}
 			}
 		});
 
 		image.present(m_window->size());
 		
-		m_resourceIndex = (m_resourceIndex + 1) % Renderer::resource_count;
+		m_resource_index = (m_resource_index + 1) % Renderer::resource_count;
 	}
 
 	void Renderer::wait_idle() const {

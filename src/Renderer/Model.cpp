@@ -49,16 +49,16 @@ namespace Nth {
 	}
 
 	void Model::process_node(aiNode* node, const aiScene* scene, const aiMatrix4x4& parentTransformation) {
-		aiMatrix4x4 currentTransformation = node->mTransformation * parentTransformation;
+		aiMatrix4x4 current_transformation = node->mTransformation * parentTransformation;
 		
 		for (unsigned int i = 0; i < node->mNumMeshes; ++i) {
 			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-			meshes.push_back(process_mesh(mesh, scene, currentTransformation));
+			meshes.push_back(process_mesh(mesh, scene, current_transformation));
 		}
 
 		// then do the same for each of its children
 		for (unsigned int i = 0; i < node->mNumChildren; ++i) {
-			process_node(node->mChildren[i], scene, currentTransformation);
+			process_node(node->mChildren[i], scene, current_transformation);
 		}
 	}
 

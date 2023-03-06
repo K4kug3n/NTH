@@ -1,6 +1,7 @@
 #include <Window/Window.hpp>
 
 #include <Window/WindowHandle.hpp>
+#include <Window/Keyboard.hpp>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
@@ -88,6 +89,9 @@ namespace Nth {
 					m_size = Vector2ui(event.window.data1, event.window.data2);
 				}
 				break;
+			case SDL_KEYDOWN:
+				m_input_handler.handle(key_from_sdl(event.key.keysym.sym));
+				break;
 			default:
 				break;
 			}
@@ -96,6 +100,10 @@ namespace Nth {
 
 	void Window::set_resizable() {
 		SDL_SetWindowResizable(m_handle.get(), SDL_TRUE);
+	}
+
+	InputHandler& Window::input_handler() {
+		return m_input_handler;
 	}
 
 	const Vector2ui& Window::size() const {

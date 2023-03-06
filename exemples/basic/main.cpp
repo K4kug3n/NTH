@@ -54,7 +54,13 @@ int main() {
 		Nth::Matrix4f::Rotation(Nth::to_radians(90.f), {1.f, 0.f, 0.f}) * Nth::Matrix4f::Translation({ -1.f, 0.f, 0.f }) * Nth::Matrix4f::Scale({ 2.f, 2.f, 2.f })
 	}; 
 
-	renderer.camera.position = Nth::Vector3f{ 0.f, -1.f, -3.f };
+	renderer.camera.position = Nth::Vector3f{ 0.f, -1.f, -3.f }; 
+
+	Nth::InputHandler& input_handler = window.input_handler();
+	input_handler.set_callback(Nth::Keyboard::Z, [&renderer]() { renderer.camera.position.z += 0.1f; });
+	input_handler.set_callback(Nth::Keyboard::Q, [&renderer]() { renderer.camera.position.x += 0.1f; });
+	input_handler.set_callback(Nth::Keyboard::S, [&renderer]() { renderer.camera.position.z -= 0.1f; });
+	input_handler.set_callback(Nth::Keyboard::D, [&renderer]() { renderer.camera.position.x -= 0.1f; });
 
 	renderer.light = {
 		renderer.camera.position,

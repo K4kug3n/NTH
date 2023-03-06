@@ -7,6 +7,7 @@
 
 #include <Maths/Vector2.hpp>
 #include <Utils/MovablePtr.hpp>
+#include <Window/InputHandler.hpp>
 
 namespace Nth {
 	struct WindowHandle;
@@ -23,6 +24,7 @@ namespace Nth {
 		bool is_open() const;
 		void poll_event();
 		void set_resizable();
+		InputHandler& input_handler();
 		const Vector2ui& size() const;
 
 		Window& operator=(Window&&) = default;
@@ -31,8 +33,10 @@ namespace Nth {
 		static void Init();
 	private:
 		MovablePtr<SDL_Window> m_handle;
-		Vector2ui m_size;
+		InputHandler m_input_handler;
 		bool m_is_running;
+		Vector2ui m_size;
+		
 	};
 }
 

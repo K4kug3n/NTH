@@ -67,7 +67,7 @@ namespace Nth {
 		std::vector<Vk::DescriptorSetLayout> m_descriptor_set_layouts;
 		ShaderBinding allocate_shader_binding(size_t index);
 
-		size_t m_resourceIndex;
+		size_t m_resource_index;
 
 		std::array<ShaderBinding, Renderer::resource_count> m_model_bindings;
 		std::array<RenderBuffer, Renderer::resource_count> m_model_buffers;

@@ -9,7 +9,9 @@
 namespace Nth {
 	RenderingResource::RenderingResource(RenderInstance& instance, RenderSurface& surface):
 		m_instance(instance),
-		m_surface(surface) { }
+		m_surface(surface),
+		image_index(0),
+		swapchain_image(VK_NULL_HANDLE) { }
 
 	void RenderingResource::create(uint32_t familyIndex) {
 		const Vk::Device& device{ m_instance.get_device().get_handle() };
@@ -62,9 +64,9 @@ namespace Nth {
 			command_buffer.pipeline_barrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier_from_present_to_draw);
 		}
 
-		std::vector<VkClearValue> clearValues(2);
-		clearValues[0].color = { 1.0f, 0.8f, 0.4f, 0.0f };
-		clearValues[1].depthStencil = { 1.0f, 0 };
+		std::vector<VkClearValue> clear_values(2);
+		clear_values[0].color = { 1.0f, 0.8f, 0.4f, 0.0f };
+		clear_values[1].depthStencil = { 1.0f, 0 };
 
 		Vector2ui size = m_surface.size();
 
@@ -74,17 +76,17 @@ namespace Nth {
 			m_surface.get_render_pass()(),                      // VkRenderPass                           renderPass
 			framebuffer(),                                      // VkFramebuffer                          framebuffer
 			{                                                   // VkRect2D                               renderArea
-				{                                                 // VkOffset2D                             offset
+				{                                                  // VkOffset2D                             offset
 					0,                                                // int32_t                                x
 					0                                                 // int32_t                                y
 				},
-				{                                               // VkExtent2D                             extent;
+				{                                                  // VkExtent2D                             extent;
 					size.x,
 					size.y
 				}
 			},
-			static_cast<uint32_t>(clearValues.size()),         // uint32_t                               clearValueCount
-			clearValues.data()                                 // const VkClearValue                    *pClearValues
+			static_cast<uint32_t>(clear_values.size()),         // uint32_t                               clearValueCount
+			clear_values.data()                                 // const VkClearValue                    *pClearValues
 		};
 
 		command_buffer.begin_render_pass(render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
@@ -117,7 +119,7 @@ namespace Nth {
 		command_buffer.end_render_pass();
 
 		if (device.present_queue() != device.graphics_queue()) {
-			VkImageMemoryBarrier barrierFromDrawToPresent = {
+			VkImageMemoryBarrier barrier_from_draw_to_present = {
 				VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,           // VkStructureType                        sType
 				nullptr,                                          // const void                            *pNext
 				VK_ACCESS_MEMORY_READ_BIT,                        // VkAccessFlags                          srcAccessMask
@@ -129,7 +131,7 @@ namespace Nth {
 				swapchain_image,                                   // VkImage                                image
 				image_subresource_range                             // VkImageSubresourceRange                subresourceRange
 			};
-			command_buffer.pipeline_barrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrierFromDrawToPresent);
+			command_buffer.pipeline_barrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier_from_draw_to_present);
 		}
 
 		command_buffer.end();

@@ -9,7 +9,7 @@
 namespace Nth {
 	class InputHandler {
 	public:
-		InputHandler()= default;
+		InputHandler();
 		InputHandler(InputHandler&&) = default;
 		InputHandler(const InputHandler&) = delete;
 		~InputHandler()= default;

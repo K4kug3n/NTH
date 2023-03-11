@@ -44,7 +44,7 @@ int main() {
 	//	Nth::Matrix4f::Rotation(Nth::to_radians(90.f), {1.f, 0.f, 0.f}) * Nth::Matrix4f::Translation({ -1.f, 0.f, 0.f }) * Nth::Matrix4f::Scale({ 2.f, 2.f, 2.f })
 	//}; 
 
-	Nth::Model model{ "./boxs/scene.gltf" };
+	Nth::Model model = Nth::Model::LoadFromFile("./boxs/scene.gltf");
 	size_t model_index = renderer.register_model(model);
 
 	Nth::RenderObject obj{

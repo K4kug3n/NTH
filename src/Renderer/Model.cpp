@@ -13,10 +13,6 @@
 #include <iostream>
 
 namespace Nth {
-	Model::Model(const std::filesystem::path& path) {
-		load_from_file(path);
-	}
-
 	void Model::add_mesh(Mesh&& mesh) {
 		meshes.push_back(std::move(mesh));
 	}
@@ -36,20 +32,24 @@ namespace Nth {
 		return m_textures_loaded;
 	}
 
-	void Model::load_from_file(const std::filesystem::path& path) {
+	Model Model::LoadFromFile(const std::filesystem::path& path) {
 		Assimp::Importer import;
 		const aiScene* scene = import.ReadFile(path.string().c_str(), aiProcess_Triangulate | aiProcess_FlipUVs);
 
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
 			throw std::runtime_error("ASSIMP::" + std::string{ import.GetErrorString() });
 		}
-		m_directory = path.parent_path();
 
+		return Model{ path.parent_path(), scene };
+	}
+
+	Model::Model(const std::filesystem::path& directory, const aiScene* scene) :
+		m_directory(directory) {
 		process_node(scene->mRootNode, scene, aiMatrix4x4{});
 	}
 
-	void Model::process_node(aiNode* node, const aiScene* scene, const aiMatrix4x4& parentTransformation) {
-		aiMatrix4x4 current_transformation = node->mTransformation * parentTransformation;
+	void Model::process_node(aiNode* node, const aiScene* scene, const aiMatrix4x4& parent_transformation) {
+		aiMatrix4x4 current_transformation = node->mTransformation * parent_transformation;
 		
 		for (unsigned int i = 0; i < node->mNumMeshes; ++i) {
 			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
@@ -93,14 +93,14 @@ namespace Nth {
 		if (mesh->mMaterialIndex >= 0) {
 			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-			std::vector<size_t> diffuseMaps = load_material_textures(material, aiTextureType_DIFFUSE, "texture_diffuse");
-			textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+			std::vector<size_t> diffuse_maps = load_material_textures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+			textures.insert(textures.end(), diffuse_maps.begin(), diffuse_maps.end());
 
-			std::vector<size_t> specularMaps = load_material_textures(material, aiTextureType_SPECULAR, "texture_specular");
-			textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+			std::vector<size_t> specular_maps = load_material_textures(material, aiTextureType_SPECULAR, "texture_specular");
+			textures.insert(textures.end(), specular_maps.begin(), specular_maps.end());
 
-			std::vector<size_t> baseColors = load_material_textures(material, aiTextureType_BASE_COLOR, "base_color");
-			textures.insert(textures.end(), baseColors.begin(), baseColors.end());
+			std::vector<size_t> base_colors = load_material_textures(material, aiTextureType_BASE_COLOR, "base_color");
+			textures.insert(textures.end(), base_colors.begin(), base_colors.end());
 		}
 
 		return Mesh(vertices, indices, textures);
